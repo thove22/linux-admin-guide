@@ -16,6 +16,13 @@ O foco principal da administração de sistemas moderna, no entanto, é a virtua
 
 ## 2. O Monitor de Máquina Virtual (VMM) e os Princípios Fundamentais
 
+Na sua essência, um hypervisor é um árbitro de recursos. Historicamente conhecido como **Monitor de Máquina Virtual (VMM)**, este software atua como a camada intermediária entre o hardware físico de um servidor e as máquinas virtuais (VMs) que nele operam. Sem um hypervisor, múltiplos sistemas operativos a tentar aceder simultaneamente aos mesmos recursos de hardware — como disco ou memória — resultariam em conflitos imediatos e falhas críticas do sistema.
+O hypervisor desempenha duas funções vitais para garantir a estabilidade do ambiente:
+- **O "Simulador de Realidade" (Abstração de Hardware)**: Tal como um simulador de realidade virtual engana os sentidos humanos, o hypervisor engana o sistema operativo convidado (Guest OS). Ele cria a ilusão de que a máquina virtual tem acesso exclusivo e direto a componentes físicos (CPU, RAM, Discos), quando, na verdade, esta está a interagir com frações de recursos abstratos geridos pelo hypervisor.
+- **O "Controlador de Tráfego" (Alocação de Recursos)**: O hypervisor interseta todas as solicitações de Entrada/Saída (I/O) geradas pelas VMs. Quer seja um pedido de leitura no disco ou o envio de um pacote de rede, o hypervisor organiza, prioriza e encaminha esses pedidos para o hardware físico real de forma eficiente e justa, garantindo que nenhuma VM monopoliza o sistema.
+
+ ![Arquitetura de camadas: a hierarquia entre o hardware físico, o hypervisor e as VMs.](../assets/img/vmm2.png)
+### Os Requisitos de Popek e Goldberg
 A primeira iteração de virtualização ocorreu nos mainframes da IBM na década de 1960. Contudo, em 1974, Gerald J. Popek e Robert P. Goldberg formalizaram os requisitos arquitetónicos da virtualização num artigo fundamental.
 
 Segundo a sua definição, para um **Monitor de Máquina Virtual (VMM)** — ou **Hypervisor** — ser considerado eficiente, deve exibir três propriedades cruciais:
@@ -48,25 +55,7 @@ Os hypervisors são categorizados pela forma como são implementados na pilha de
 - **Casos de Uso:** ideais para ambientes de desenvolvimento local e testes à escala do utilizador individual.
 
 **Exemplos:** Oracle VM VirtualBox, VMware Workstation.
-
-## 4. A Stack de Engenharia: KVM e Virt-Manager
-
-Embora soluções como a VMware e o Xen tenham sido pioneiras na arquitetura x86, o mercado de virtualização expandiu-se com alternativas robustas orientadas ao ecossistema open-source. Em ambientes de engenharia assentes puramente em Linux, a eficiência e a integração profunda com o sistema operativo são imperativas.
-
-É neste contexto que se destaca o **KVM (Kernel-based Virtual Machine)**. Inicialmente desenvolvido pela Qumranet (adquirida pela Red Hat em 2008), o KVM representa uma abordagem arquitetónica distinta: em vez de construir um hypervisor de raiz, o KVM é entregue como um módulo do kernel Linux.
-
-Ao carregar este módulo, o próprio kernel Linux é convertido num hypervisor **Bare-Metal (Tipo 1)**. Isto traz vantagens técnicas massivas:
-
-- **Reaproveitamento de Código:** o KVM herda e utiliza as funcionalidades avançadas já existentes no Linux, como o escalonador de processos (**scheduler**) e a gestão avançada de memória, sem necessidade de duplicar estas funções.
-- **Adoção e Escalabilidade:** devido à sua performance e integração nativa, o KVM tornou-se a direção de futuro para a infraestrutura empresarial e é a espinha dorsal de soluções de computação em nuvem (**cloud computing**) abertas, como o OpenStack.
-
-### A Interface de Gestão: Virt-Manager
-
-Para interagir com o KVM e o daemon libvirt sem depender exclusivamente de extensas linhas de comandos QEMU, utiliza-se o **Virtual Machine Manager (virt-manager)**.
-
-Esta ferramenta gráfica atua como um painel de controlo central, permitindo provisionar, monitorizar e configurar máquinas virtuais (como instâncias CentOS) com um controlo granular sobre o hardware virtualizado, perfeitamente integrado em ambientes desktop Linux modernos de alta performance.
-
-## 5. Anatomia e Gestão da Máquina Virtual (VM)
+## 4. Anatomia e Gestão da Máquina Virtual (VM)
 
 No topo desta hierarquia (**Hardware -> Hypervisor -> VM**) encontra-se a própria Máquina Virtual. Fundamentalmente, a VM é caracterizada por dois estados de existência:
 
@@ -85,3 +74,23 @@ O encapsulamento lógico da VM introduz capacidades de administração de sistem
 - **Templates:** VMs preconfiguradas e seladas, utilizadas como "moldes" para implantar arquiteturas de software padronizadas.
 - **Snapshots (Pontos de Restauro):** congelamento do estado exato do sistema (memória e disco). As operações de escrita subsequentes são redirecionadas para um disco delta. Em caso de falha crítica durante uma atualização do CentOS, por exemplo, o administrador pode reverter a VM instantaneamente para o estado seguro anterior.
 - **OVF (Open Virtualization Format):** norma aberta que empacota a VM, permitindo a sua exportação e importação entre hypervisors de diferentes fornecedores.
+
+## 5. Solução Tecnológica Adotada: Ecossistema KVM e Virt-Manager
+
+Para a execução prática deste guia, foi selecionada uma stack tecnológica baseada em soluções open-source de alto desempenho nativas do Linux.
+Embora soluções como a VMware e o Xen tenham sido pioneiras na arquitetura x86, o mercado de virtualização expandiu-se com alternativas robustas orientadas ao ecossistema open-source. Em ambientes de engenharia assentes puramente em Linux, a eficiência e a integração profunda com osistema operativo são imperativas.
+
+É neste contexto que se destaca o **KVM (Kernel-based Virtual Machine)**. Inicialmente desenvolvido pela Qumranet (adquirida pela Red Hat em 2008), o KVM representa uma abordagem arquitetónica distinta: em vez de construir um hypervisor de raiz, o KVM é entregue como um módulo do kernel Linux.
+
+Ao carregar este módulo, o próprio kernel Linux é convertido num hypervisor **Bare-Metal (Tipo 1)**. Isto traz vantagens técnicas massivas:
+
+- **Reaproveitamento de Código:** o KVM herda e utiliza as funcionalidades avançadas já existentes no Linux, como o escalonador de processos (**scheduler**) e a gestão avançada de memória, sem necessidade de duplicar estas funções.
+- **Adoção e Escalabilidade:** devido à sua performance e integração nativa, o KVM tornou-se a direção de futuro para a infraestrutura empresarial e é a espinha dorsal de soluções de computação em nuvem (**cloud computing**) abertas, como o OpenStack.
+
+### A Interface de Gestão: Virt-Manager
+
+Para interagir com o KVM e o daemon libvirt sem depender exclusivamente de extensas linhas de comandos QEMU, utiliza-se o **Virtual Machine Manager (virt-manager)**.
+
+Esta ferramenta gráfica atua como um painel de controlo central, permitindo provisionar, monitorizar e configurar máquinas virtuais (como instâncias CentOS) com um controlo granular sobre o hardware virtualizado, perfeitamente integrado em ambientes desktop Linux modernos de alta performance.
+
+
