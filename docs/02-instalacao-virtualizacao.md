@@ -21,7 +21,11 @@ O hypervisor desempenha duas funções vitais para garantir a estabilidade do am
 - **O "Simulador de Realidade" (Abstração de Hardware)**: Tal como um simulador de realidade virtual engana os sentidos humanos, o hypervisor engana o sistema operativo convidado (Guest OS). Ele cria a ilusão de que a máquina virtual tem acesso exclusivo e direto a componentes físicos (CPU, RAM, Discos), quando, na verdade, esta está a interagir com frações de recursos abstratos geridos pelo hypervisor.
 - **O "Controlador de Tráfego" (Alocação de Recursos)**: O hypervisor interseta todas as solicitações de Entrada/Saída (I/O) geradas pelas VMs. Quer seja um pedido de leitura no disco ou o envio de um pacote de rede, o hypervisor organiza, prioriza e encaminha esses pedidos para o hardware físico real de forma eficiente e justa, garantindo que nenhuma VM monopoliza o sistema.
 
- ![Arquitetura de camadas: a hierarquia entre o hardware físico, o hypervisor e as VMs.](../assets/img/vmm2.png)
+<figure align="center">
+  <img src="../assets/vmm2" alt="Arquitetura VMM" width="500">
+  <figcaption><b>Figura 1:</b> Arquitetura de camadas: a hierarquia entre o hardware físico, o hypervisor e as VMs.</figcaption>
+</figure>
+
 ### Os Requisitos de Popek e Goldberg
 A primeira iteração de virtualização ocorreu nos mainframes da IBM na década de 1960. Contudo, em 1974, Gerald J. Popek e Robert P. Goldberg formalizaram os requisitos arquitetónicos da virtualização num artigo fundamental.
 
