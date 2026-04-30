@@ -22,7 +22,7 @@ O hypervisor desempenha duas funções vitais para garantir a estabilidade do am
 - **O "Controlador de Tráfego" (Alocação de Recursos)**: O hypervisor interseta todas as solicitações de Entrada/Saída (I/O) geradas pelas VMs. Quer seja um pedido de leitura no disco ou o envio de um pacote de rede, o hypervisor organiza, prioriza e encaminha esses pedidos para o hardware físico real de forma eficiente e justa, garantindo que nenhuma VM monopoliza o sistema.
 
 <figure align="center">
-  <img src="../assets/vmm2" alt="Arquitetura VMM" width="500">
+  <img src="../assets/img/vmm2" alt="Arquitetura VMM" width="500">
   <figcaption><b>Figura 1:</b> Arquitetura de camadas: a hierarquia entre o hardware físico, o hypervisor e as VMs.</figcaption>
 </figure>
 
