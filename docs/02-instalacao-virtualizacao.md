@@ -21,10 +21,12 @@ O hypervisor desempenha duas funções vitais para garantir a estabilidade do am
 - **O "Simulador de Realidade" (Abstração de Hardware)**: Tal como um simulador de realidade virtual engana os sentidos humanos, o hypervisor engana o sistema operativo convidado (Guest OS). Ele cria a ilusão de que a máquina virtual tem acesso exclusivo e direto a componentes físicos (CPU, RAM, Discos), quando, na verdade, esta está a interagir com frações de recursos abstratos geridos pelo hypervisor.
 - **O "Controlador de Tráfego" (Alocação de Recursos)**: O hypervisor interseta todas as solicitações de Entrada/Saída (I/O) geradas pelas VMs. Quer seja um pedido de leitura no disco ou o envio de um pacote de rede, o hypervisor organiza, prioriza e encaminha esses pedidos para o hardware físico real de forma eficiente e justa, garantindo que nenhuma VM monopoliza o sistema.
 
+
 <figure align="center">
   <img src="../assets/img/vmm2.png" alt="Arquitetura VMM" width="500">
   <figcaption><b>Figura 1:</b> Arquitetura de camadas: a hierarquia entre o hardware físico, o hypervisor e as VMs.</figcaption>
 </figure>
+
 
 ### Os Requisitos de Popek e Goldberg
 A primeira iteração de virtualização ocorreu nos mainframes da IBM na década de 1960. Contudo, em 1974, Gerald J. Popek e Robert P. Goldberg formalizaram os requisitos arquitetónicos da virtualização num artigo fundamental.
@@ -97,4 +99,15 @@ Para interagir com o KVM e o daemon libvirt sem depender exclusivamente de exten
 
 Esta ferramenta gráfica atua como um painel de controlo central, permitindo provisionar, monitorizar e configurar máquinas virtuais (como instâncias CentOS) com um controlo granular sobre o hardware virtualizado, perfeitamente integrado em ambientes desktop Linux modernos de alta performance.
 
+## 6. Criando a Maquina Virtual(VM)
 
+A criação de uma Máquina Virtual deve ser encarada como o provisionamento de um "contentor" de hardware lógico. É fundamental compreender que, nesta fase, a VM é o equivalente a um servidor de hardware físico acabado de sair da fábrica: uma estrutura funcional, mas desprovida de inteligência (sistema operativo).
+Para garantir um desempenho estável e alinhado com as exigências de um servidor moderno, adotaremos o seguinte dimensionamento de recursos:
+- **Processamento**: 2 vCPUs (fatias de tempo de processamento escalonadas pelo KVM).
+- **Memória RAM**: 4 GB (alocação lógica na memória física do host).
+- **Armazenamento**: 40 GB (ficheiro de disco virtual, preferencialmente em formato .qcow2).
+- **Rede**: 1 Interface de rede virtual (configurada em modo NAT ou Bridge).
+### Configuração da Instância
+Ao iniciar o assistente de criação no virt-manager, seguiremos a prática de separar a configuração do hardware do processo de instalação do software.
+No menu de criação, seleciona a opção "I will install the operating system later" (ou "Instalação Manual"). Esta abordagem é preferível em ambientes de engenharia, pois permite ao administrador validar a hierarquia de recursos e as definições de BIOS/UEFI virtuais antes de comprometer o armazenamento com a imagem do sistema operativo.
+Uma vez concluído este passo, teremos o "esqueleto" do nosso servidor pronto para receber o CentOS, processo que será detalhado na fase de implementação de sistemas operativos.
