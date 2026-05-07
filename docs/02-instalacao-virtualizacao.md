@@ -126,3 +126,15 @@ Na fase inicial do instalador Anaconda, o administrador de sistemas depara-se co
 - **Server (Minimal/Base):** Um ambiente minimalista, operado estritamente via linha de comandos (CLI).
 
 Para os propósitos deste guia, optaremos pela variante Server sem interface gráfica. Esta escolha fundamenta-seno princípio da otimização derecursos e segurança proativa. Em ambientes de produção, a ausência de uma GUI reduz drasticamente o consumo de vRAM e ciclos de vCPU, além de mitigar vulnerabilidades associadas a bibliotecas gráficas.
+
+### 7.2 Arquitetura de Armazenamento
+Após a definição do perfil de software, procedemos à configuração da persistência de dados. Ao aceder à secção de "Destino da Instalação" (Installation Destination), o sistema permite optar pelo particionamento automático ou manual.
+A abordagem aqui detalhada é o **particionamento manual** . Esta opção é imperativa em engenharia de sistemas, pois permite a segmentação granular do disco, a escolha de sistemas de ficheiros específicos para diferentes cargas de trabalho e a implementação de uma estratégia de gestão devolumes que facilite a escalabilidade futura.
+
+#### 7.2.1 LVM (Logical Volume Management) vs. Particionamento Estático
+A decisão arquitetural mais significativa nesta etapa é a escolha entre partições padrão (Standard Partitions) e o LVM.
+- **Particionamento Estático (Standard):** Mapeia diretamente os pontos de montagem a setores físicos ou partições primárias do disco. Embora simples, carece de flexibilidade; qualquer redimensionamento futuro exigiria a desmontagem do volume e, frequentemente, o risco de perda de dados ou manipulação direta de tabelas de partições em setores contíguos.
+- **LVM (Logical Volume Management):** Introduz uma camada de abstração entre o hardware físico (Physical Volumes) e o sistema de ficheiros (Logical Volumes). Através da criação de um **Volume Group (VG)**, o armazenamento é tratado como uma pool de recursos. Esta arquitetura permite a expansão dinâmica de volumes "a quente", a criação de snapshots para backup e a agregação de múltiplos discos físicos num único volume lógico.
+#### 7.2.2 Topologia de Partições e Taxonomia do XFS
+A topologia proposta para o vDisk de 40 GB segue um modelo de alta disponibilidade e performance. Abaixo, detalha-se a tabela de alocação:
+
