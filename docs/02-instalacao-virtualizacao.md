@@ -111,3 +111,9 @@ Para garantir um desempenho estável e alinhado com as exigências de um servido
 Ao iniciar o assistente de criação no virt-manager, seguiremos a prática de separar a configuração do hardware do processo de instalação do software.
 No menu de criação, seleciona a opção "I will install the operating system later" (ou "Instalação Manual"). Esta abordagem é preferível em ambientes de engenharia, pois permite ao administrador validar a hierarquia de recursos e as definições de BIOS/UEFI virtuais antes de comprometer o armazenamento com a imagem do sistema operativo.
 Uma vez concluído este passo, teremos o "esqueleto" do nosso servidor pronto para receber o CentOS, processo que será detalhado na fase de implementação de sistemas operativos.
+
+## Instalação  do Sistema Operacional CentOS
+
+Após a correta parametrização da instância virtual garantindo a alocação estratégica de unidades de processamento (vCPUs), memória volátil(vRAM) e armazenamento persistente (vDisk)  e a devida montagem da imagem ISO do CentOS Stream, inicia-se a fase de implementação do sistema. Esta etapa transcende a mera instalação de pacotes; trata-se da definição da arquitetura lógica e da topologia de dados que sustentarão as operações do servidor.
+O processo de instalação é o alicerce sobre o qual a estabilidade do sistema é construída. Nesta fase, abordaremos a estruturação do armazenamento através de volumes lógicos, a seleção de sistemas de ficheiros otimizados para alta disponibilidade e a implementação de políticas deacesso e identidade. A configuração subsequente visa criar um ambiente que não seja apenas funcional, mas também escalável e resiliente, seguindo as melhores práticas de engenharia de sistemas Linux.
+
