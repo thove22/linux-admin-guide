@@ -138,8 +138,9 @@ A decisão arquitetural mais significativa nesta etapa é a escolha entre parti�
 #### 7.2.2 Topologia de Partições e Taxonomia do XFS
 A topologia proposta para o vDisk de 40 GB segue um modelo de alta disponibilidade e performance. Abaixo, detalha-se a tabela de alocação:
 
+
 <figure align="center">
-  <img src="../assets/img/partables.drawio.png" alt="Tabela de Particoes" width="800">
+  <img src="../assets/img/partables.drawio.png" alt="Tabela de Particoes" width="500">
   <figcaption><b>Figura 3:</b>Tabela de particoes</figcaption>
 </figure>
 
