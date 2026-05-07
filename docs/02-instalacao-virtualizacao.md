@@ -152,6 +152,10 @@ A topologia proposta para o vDisk de 40 GB segue um modelo de alta disponibilida
 - **Volume Lógico de Troca (swap - 4 GiB)**: Funciona como uma extensão da Memória de Acesso Aleatório (vRAM) no armazenamento persistente. Em cenários de exaustão de memória física, o kernel recorre a este volume para paginação (paging), transferindo blocos de memória inativos da RAM para o disco. O dimensionamento de 4 GB está alinhado com a RAM da máquina virtual, prevenindo a invocação prematura do processo OOM Killer (Out-Of-Memory Killer) sob picos de carga.
 - **Volume Lógico Raiz (/ - 20 GiB)**: O nó superior da árvore do sistema de ficheiros. Acomoda os binários essenciais do sistema operativo (/bin, /sbin), as bibliotecas partilhadas (/lib), as definições estruturais (/etc) e, vitalmente num servidor, a geração de logs (/var/log). A sua formatação em XFS garante a integridade transacional necessária para ambientes com elevada concorrência de operações de E/S.
 
+##### Fundamentação do XFS:
+
+O sistema de ficheiros XFS foi selecionado como padrão para as partições de dados (/ e /boot). Ao contrário do ext4, o XFS é um sistema de ficheiros de 64 bits altamente escalável, desenhado para lidar com grandes volumes de dados e operações de E/S paralelas (multi-threaded I/O). A sua robustez na gestão de metadados e a capacidade de recuperação rápida após falhas de energia tornam-no a escolha industrial para distribuições baseadas em RHEL/CentOS.
+
 
 <figure align="center">
   <img src="../assets/img/centsuspart.png" alt="tabela de particoes" width="800">
@@ -159,3 +163,18 @@ A topologia proposta para o vDisk de 40 GB segue um modelo de alta disponibilida
 </figure>
 
 
+### 7.3 Gestão de Utilizadores e Privilégios
+
+Na fase final do provisionamento, através da secção "Definições de Utilizador" (User Settings) do instalador Anaconda, estabelece-se a fundação da segurança do sistema. Nesta etapa, procede-se à habilitação da conta de super-administração (root), à definição da respetiva credencial criptográfica (palavra-passe), à autorização de acesso remoto cifrado via protocolo SSH (Secure Shell) e ao provisionamento de uma conta de utilizador de sistema padrão. Esta estratificação primária é vital para garantir a integridade, a confidencialidade e a auditabilidade doservidor em ambiente de produção.
+
+#### 7.3.1 A Anatomia do Super-Utilizador (Root)
+
+No ecossistema Unix e nas distribuições Linux (como o CentOS), a conta root (cujo Identificador de Utilizador ou UID é invariavelmente 0) representa a entidade de autoridade suprema.
+
+A diferença arquitetural fundamental entre o root e um utilizador comum reside no mecanismo de controlo de acessos do kernel. Enquanto os utilizadores padrão estão estritamente submetidos ao Discretionary Access Control (DAC) — o que restringe as suas ações às permissões explícitas de leitura, escrita e execução dos ficheiros que lhes pertencem —, o utilizador root atua com isenção total do DAC.
+Isto significa que o root tem a capacidade de contornar qualquer restrição de permissão, podendo alterar ficheiros de sistema cruciais, carregar ou descarregar módulos de kernel, abrir portas de rede privilegiadas (abaixo de 1024) e interagir diretamente com o hardware.
+
+##### Privilégios e o Princípio do Privilégio Mínimo
+
+A criação paralela de um utilizador comum durante a instalação não é opcional do ponto de vista da segurança moderna; é uma exigência ditada pelo Princípio do Privilégio Mínimo (Principle of Least Privilege - PoLP).
+Este princípio de engenharia de software e sistemas postula que uma entidade (utilizador ou processo) deve possuir apenas os privilégios estritamente necessários para completar a sua tarefa, e por um tempo limitado.
