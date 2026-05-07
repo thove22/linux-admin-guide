@@ -28,7 +28,7 @@ O hypervisor desempenha duas funções vitais para garantir a estabilidade do am
 </figure>
 
 
-### Os Requisitos de Popek e Goldberg
+### 2.1 Os Requisitos de Popek e Goldberg
 A primeira iteração de virtualização ocorreu nos mainframes da IBM na década de 1960. Contudo, em 1974, Gerald J. Popek e Robert P. Goldberg formalizaram os requisitos arquitetónicos da virtualização num artigo fundamental.
 
 Segundo a sua definição, para um **Monitor de Máquina Virtual (VMM)** — ou **Hypervisor** — ser considerado eficiente, deve exibir três propriedades cruciais:
@@ -68,11 +68,11 @@ No topo desta hierarquia (**Hardware -> Hypervisor -> VM**) encontra-se a própr
 - **Estado Estático (Ficheiros de Dados):** do ponto de vista do sistema anfitrião, a VM é apenas um conjunto de ficheiros. Os cruciais são o ficheiro de configuração (que enumera o hardware virtual, como a capacidade de RAM) e o ficheiro de disco virtual (uma representação lógica do armazenamento, ex.: `.qcow2`).
 - **Estado Dinâmico (Instanciação):** quando em execução, é uma entidade ativa na RAM.
 
-### Mecanismos de Gestão de Recursos
+### 4.1 Mecanismos de Gestão de Recursos
 
 A gestão da CPU numa VM recorre a **vCPUs**. Uma vCPU não é um processador físico dedicado, mas sim uma fatia de tempo de execução (**time-slice**). O hypervisor (neste caso, o KVM) utiliza os seus algoritmos para distribuir os ciclos de processamento dos núcleos físicos entre as várias VMs, permitindo taxas de consolidação elevadas.
 
-### Funcionalidades Avançadas de Ficheiros
+### 4.2 Funcionalidades Avançadas de Ficheiros
 
 O encapsulamento lógico da VM introduz capacidades de administração de sistemas incomparáveis face ao hardware físico tradicional:
 
@@ -93,7 +93,7 @@ Ao carregar este módulo, o próprio kernel Linux é convertido num hypervisor *
 - **Reaproveitamento de Código:** o KVM herda e utiliza as funcionalidades avançadas já existentes no Linux, como o escalonador de processos (**scheduler**) e a gestão avançada de memória, sem necessidade de duplicar estas funções.
 - **Adoção e Escalabilidade:** devido à sua performance e integração nativa, o KVM tornou-se a direção de futuro para a infraestrutura empresarial e é a espinha dorsal de soluções de computação em nuvem (**cloud computing**) abertas, como o OpenStack.
 
-### A Interface de Gestão: Virt-Manager
+### 5.1 A Interface de Gestão: Virt-Manager
 
 Para interagir com o KVM e o daemon libvirt sem depender exclusivamente de extensas linhas de comandos QEMU, utiliza-se o **Virtual Machine Manager (virt-manager)**.
 
@@ -112,8 +112,17 @@ Ao iniciar o assistente de criação no virt-manager, seguiremos a prática de s
 No menu de criação, seleciona a opção "I will install the operating system later" (ou "Instalação Manual"). Esta abordagem é preferível em ambientes de engenharia, pois permite ao administrador validar a hierarquia de recursos e as definições de BIOS/UEFI virtuais antes de comprometer o armazenamento com a imagem do sistema operativo.
 Uma vez concluído este passo, teremos o "esqueleto" do nosso servidor pronto para receber o CentOS, processo que será detalhado na fase de implementação de sistemas operativos.
 
-## Instalação  do Sistema Operacional CentOS
+## 7. Instalação  do Sistema Operacional CentOS
 
 Após a correta parametrização da instância virtual garantindo a alocação estratégica de unidades de processamento (vCPUs), memória volátil(vRAM) e armazenamento persistente (vDisk)  e a devida montagem da imagem ISO do CentOS Stream, inicia-se a fase de implementação do sistema. Esta etapa transcende a mera instalação de pacotes; trata-se da definição da arquitetura lógica e da topologia de dados que sustentarão as operações do servidor.
+
 O processo de instalação é o alicerce sobre o qual a estabilidade do sistema é construída. Nesta fase, abordaremos a estruturação do armazenamento através de volumes lógicos, a seleção de sistemas de ficheiros otimizados para alta disponibilidade e a implementação de políticas deacesso e identidade. A configuração subsequente visa criar um ambiente que não seja apenas funcional, mas também escalável e resiliente, seguindo as melhores práticas de engenharia de sistemas Linux.
 
+### 7.1 Seleção de Software e Paradigma de Operação
+
+Na fase inicial do instalador Anaconda, o administrador de sistemas depara-se com a "Seleção de Software" (Software Selection), um passo crítico que define o perfil de carga e a superfície de ataque do servidor. O CentOS oferece diversos perfis, sendo os mais comuns:
+- **Workstation:** Destinado a estações de trabalho, incluindo interfaces gráficas completas e ferramentas de produtividade.
+- **Server with GUI:** Proporciona um ambiente de servidor com interface gráfica para facilitar a gestão através de ferramentas visuais.
+- **Server (Minimal/Base):** Um ambiente minimalista, operado estritamente via linha de comandos (CLI).
+
+Para os propósitos deste guia, optaremos pela variante Server sem interface gráfica. Esta escolha fundamenta-seno princípio da otimização derecursos e segurança proativa. Em ambientes de produção, a ausência de uma GUI reduz drasticamente o consumo de vRAM e ciclos de vCPU, além de mitigar vulnerabilidades associadas a bibliotecas gráficas.
