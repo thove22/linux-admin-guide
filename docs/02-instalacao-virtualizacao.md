@@ -24,7 +24,7 @@ O hypervisor desempenha duas funções vitais para garantir a estabilidade do am
 
 <figure align="center">
   <img src="../assets/img/vmm2.png" alt="Arquitetura VMM" width="500">
-  <figcaption><b>Figura 1:</b> Arquitetura de camadas: a hierarquia entre o hardware físico, o hypervisor e as VMs.</figcaption>
+  <figcaption><b>img 1:</b> Arquitetura de camadas: a hierarquia entre o hardware físico, o hypervisor e as VMs.</figcaption>
 </figure>
 
 
@@ -140,8 +140,8 @@ A topologia proposta para o vDisk de 40 GB segue um modelo de alta disponibilida
 
 
 <figure align="center">
-  <img src="../assets/img/partables.drawio.png" alt="Tabela de Particoes" width="500">
-  <figcaption><b>Figura 3:</b>Tabela de particoes</figcaption>
+  <img src="../assets/img/partables.drawio.png" alt="tabela de particoes" width="800">
+  <figcaption><b>img 3:</b>tabela de particoes</figcaption>
 </figure>
 
 
@@ -151,3 +151,11 @@ A topologia proposta para o vDisk de 40 GB segue um modelo de alta disponibilida
 - **Partição /boot (1 GiB)**: Segregada do Volume Group principal para garantir acessibilidade ininterrupta durante a fase de bootstrapping (inicialização). Este diretório abriga a imagem estática do kernel do Linux (vmlinuz), o sistema de ficheiros RAM provisório (initramfs) e as diretrizes do GRUB. A opção por não integrar o /boot no LVM mitiga falhas críticas no caso de o gestor de volumes lógicos não carregar atempadamente.
 - **Volume Lógico de Troca (swap - 4 GiB)**: Funciona como uma extensão da Memória de Acesso Aleatório (vRAM) no armazenamento persistente. Em cenários de exaustão de memória física, o kernel recorre a este volume para paginação (paging), transferindo blocos de memória inativos da RAM para o disco. O dimensionamento de 4 GB está alinhado com a RAM da máquina virtual, prevenindo a invocação prematura do processo OOM Killer (Out-Of-Memory Killer) sob picos de carga.
 - **Volume Lógico Raiz (/ - 20 GiB)**: O nó superior da árvore do sistema de ficheiros. Acomoda os binários essenciais do sistema operativo (/bin, /sbin), as bibliotecas partilhadas (/lib), as definições estruturais (/etc) e, vitalmente num servidor, a geração de logs (/var/log). A sua formatação em XFS garante a integridade transacional necessária para ambientes com elevada concorrência de operações de E/S.
+
+
+<figure align="center">
+  <img src="../assets/img/centsuspart.png" alt="tabela de particoes" width="800">
+  <figcaption><b>img 4:</b>Particionamento manual no instalador Anaconda</figcaption>
+</figure>
+
+
