@@ -144,3 +144,10 @@ A topologia proposta para o vDisk de 40 GB segue um modelo de alta disponibilida
   <figcaption><b>Figura 3:</b>Tabela de particoes</figcaption>
 </figure>
 
+
+##### Detalhamento Funcional da Topologia de Partições
+
+- **Partição biosboot (1 MiB)**: Esta é uma partição de transição, estritamente necessária em sistemas instanciados sob Legacy BIOS que adotam a moderna tabela de partições GPT (GUID Partition Table). Funciona como um repositório cru (sem sistema de ficheiros montável) que acomoda o segundo estágio do carregador de arranque (GRUB2). Sem a alocação deste segmento mínimo, o firmware do BIOS seria incapaz de mapear os vetores de arranque num disco GPT.
+- **Partição /boot (1 GiB)**: Segregada do Volume Group principal para garantir acessibilidade ininterrupta durante a fase de bootstrapping (inicialização). Este diretório abriga a imagem estática do kernel do Linux (vmlinuz), o sistema de ficheiros RAM provisório (initramfs) e as diretrizes do GRUB. A opção por não integrar o /boot no LVM mitiga falhas críticas no caso de o gestor de volumes lógicos não carregar atempadamente.
+- **Volume Lógico de Troca (swap - 4 GiB)**: Funciona como uma extensão da Memória de Acesso Aleatório (vRAM) no armazenamento persistente. Em cenários de exaustão de memória física, o kernel recorre a este volume para paginação (paging), transferindo blocos de memória inativos da RAM para o disco. O dimensionamento de 4 GB está alinhado com a RAM da máquina virtual, prevenindo a invocação prematura do processo OOM Killer (Out-Of-Memory Killer) sob picos de carga.
+- **Volume Lógico Raiz (/ - 20 GiB)**: O nó superior da árvore do sistema de ficheiros. Acomoda os binários essenciais do sistema operativo (/bin, /sbin), as bibliotecas partilhadas (/lib), as definições estruturais (/etc) e, vitalmente num servidor, a geração de logs (/var/log). A sua formatação em XFS garante a integridade transacional necessária para ambientes com elevada concorrência de operações de E/S.
