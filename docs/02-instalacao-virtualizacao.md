@@ -118,6 +118,16 @@ Após a correta parametrização da instância virtual garantindo a alocação e
 
 O processo de instalação é o alicerce sobre o qual a estabilidade do sistema é construída. Nesta fase, abordaremos a estruturação do armazenamento através de volumes lógicos, a seleção de sistemas de ficheiros otimizados para alta disponibilidade e a implementação de políticas deacesso e identidade. A configuração subsequente visa criar um ambiente que não seja apenas funcional, mas também escalável e resiliente, seguindo as melhores práticas de engenharia de sistemas Linux.
 
+
+
+<figure align="center">
+  <img src="../assets/img/anaconda.png" alt="Instalador Anaconda" width="800">
+  <figcaption><b>img 2:</b>Interface principal do instalador Anaconda no estado inicial, aguardando a definição dos parâmetros de configuração e arquitetura do sistema.</figcaption>
+</figure>
+
+A imagem acima ilustra o Resumo da Instalação (Installation Summary) do instalador Anaconda. Esta interface atua como o painel de controlo central e não-linear do provisionamento, onde o administrador deve orquestrar a convergência de diversas variáveis críticas — localização, software, rede e armazenamento — antes de consolidar a escrita de dados no disco persistente. É a partir desta consola que se definem as diretrizes estruturais que transformarão o hardware virtualizado num sistema operacional servidor resiliente e funcional.
+
+
 ### 7.1 Seleção de Software e Paradigma de Operação
 
 Na fase inicial do instalador Anaconda, o administrador de sistemas depara-se com a "Seleção de Software" (Software Selection), um passo crítico que define o perfil de carga e a superfície de ataque do servidor. O CentOS oferece diversos perfis, sendo os mais comuns:
