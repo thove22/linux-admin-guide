@@ -125,6 +125,7 @@ O processo de instalação é o alicerce sobre o qual a estabilidade do sistema 
   <figcaption><b>img 2:</b>Interface principal do instalador Anaconda no estado inicial, aguardando a definição dos parâmetros de configuração e arquitetura do sistema.</figcaption>
 </figure>
 
+
 A imagem acima ilustra o Resumo da Instalação (Installation Summary) do instalador Anaconda. Esta interface atua como o painel de controlo central e não-linear do provisionamento, onde o administrador deve orquestrar a convergência de diversas variáveis críticas — localização, software, rede e armazenamento — antes de consolidar a escrita de dados no disco persistente. É a partir desta consola que se definem as diretrizes estruturais que transformarão o hardware virtualizado num sistema operacional servidor resiliente e funcional.
 
 
