@@ -115,3 +115,41 @@ Na Máquina Local (Gestão), execute:
 O parâmetro -c 4 instrui o sistema a enviar exatamente quatro pacotes. Uma resposta bem-sucedida (indicando 0% de perda de pacotes) confirma que a rota de rede entre a estação de gestão e o servidor está funcional e pronta para estabelecer o túnel TCP necessário para o SSH.
 
 
+#### Sessões de Terminal Remoto com ssh
+
+Suponha que a conta de utilizador no Servidor Alvo foi batizada como admin_sys. Para iniciar a sessão remota a partir da sua máquina de gestão local, utiliza-se a ferramenta cliente ssh, combinando o nome de utilizador e o endereço IP do destino. A sintaxe moderna e mais comum utiliza o formato utilizador@host:
+
+```bash
+$ ssh admin_sys@192.168.122.50
+The authenticity of host '192.168.122.50 (192.168.122.50)' can't be established.
+ED25519 key fingerprint is SHA256:...
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+admin_sys@192.168.122.50's password: ******
+Last login: Mon May 25 10:15:30 2026 from 192.168.122.10
+servidor>
+
+```
+
+Ao primeiro contacto, o cliente SSH alerta que a autenticidade do servidor não é conhecida e apresenta a sua impressão digital (fingerprint). Ao aceitar (yes), estabelece-se um canal seguro e as comunicações passam a ser integralmente cifradas. De seguida, o cliente solicita a palavra-passe, que já transita pela rede de forma criptografada.
+Uma vez autenticado, o servidor autoriza o acesso, alterando o prompt para o contexto da máquina remota. A partir deste momento, todos os comandos digitados localmente são executados no servidor de forma transparente, protegidos contra interceção.
+
+
+#### Transferência de Ficheiros com scp
+
+Após a consolidação da conectividade interativa, a etapa subsequente consiste na movimentação de dados entre os nós da rede. O utilitário scp (Secure Copy) é a ferramenta padrão para este fim, substituindo métodos legados e vulneráveis, como o FTP. O scp utiliza o protocolo SSH para assegurar que a integridade e a confidencialidade dos arquivos sejam preservadas durante o trânsito.
+
+Para fins de demonstração, deve-se inicialmente gerar um artefato técnico na Estação de Gestão (Local). O exemplo abaixo ilustra a criação de um arquivo de configuração simplificado:
+
+```bash
+    $ echo "Parâmetros de configuração do sistema" > config_teste.txt
+```
+
+A estrutura lógica do comando scp é análoga à do comando cp (copy) nativo do Unix, seguindo a sintaxe: scp [opções] [origem] [destino]. Paratransferir o arquivo config_teste.txt para o diretório de usuário no Servidor Alvo, executa-se:
+
+```bash
+    $ scp config_teste.txt admin_sys@192.168.122.50:~/
+```
+
+À semelhança do ssh, o scp invoca a solicitação da palavra-passe remota. Uma vez verificada a credencial pelo daemon SSH no servidor, o cliente copia o ficheiro local através da rede, apresentando uma barra de progresso. O processo garante que o ficheiro é automaticamente cifradoao abandonar a máquina local e decifrado no momento em que é escrito no disco do servidor remoto.
+
+A versatilidade desta ferramenta permite ainda omitir definições de caminho se pretendermos utilizar diretivas padrão (como ~/ para o diretório base do utilizador) ou até mesmo descarregar ficheiros do servidor para a máquina local invertendo a ordem dos argumentos na sintaxe.
