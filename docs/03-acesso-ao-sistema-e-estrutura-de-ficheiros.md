@@ -45,6 +45,16 @@ Em certas ocasiões, um administrador necessita de executar não apenas um coman
 - **sudo su**: Esta combinação utiliza o poder do sudo para executar o comando su. Na prática, o administrador introduz a sua própria senha, e osistema abre uma consola permanente de root. Embora evite a necessidade de partilhar a senha do superutilizador, possui uma falha de auditoria: o sudo apenas regista que o utilizador iniciou o su. Todos os comandos destrutivos executados dentro dessa nova consola não ficam registados em nome do administrador original.
 
 - **A Boa Prática (sudo -i)**: A abordagem tecnicamente correta para obter uma sessão interativa de root é o comando sudo -i (ou sudo --login). Este comando simula um login limpo e completo com o perfil do superutilizador, carregando as suas variáveis de ambiente, mas fá-lo através dos mecanismos nativos do sudo, mantendo uma melhor integridade do sistema.
+
+### Gestão de Credenciais e Palavras-passe (passwd)
+
+Sendo o acesso validado mediante credenciais, a gestão destas é uma operação basilar. O comando passwd é o mecanismo utilizado para definir ou alterar senhas de acesso.
+
+- Alteração Própria: Qualquer utilizador pode executar passwd no terminal para alterar a sua própria senha. O sistema exigirá a senha atual antes de permitir a definição da nova.
+
+- Alteração Administrativa: Quando invocado com privilégios administrativos (ex: sudo passwd estudante), o administrador pode redefinir a senha de qualquer outro utilizador no sistema, dispensando a necessidade de conhecer a senha atual do mesmo. Esta funcionalidade é crucial para a recuperação de contas ou na rotatividade de credenciais de equipa.
+
+Uma senha administrativa robusta não deve ser baseada apenas na complexidade visual, mas principalmente na sua extensão (frequentemente implementada através de "passphrases" — frases-senha longas), minimizando a suscetibilidade a ataques de força bruta no ambiente de servidor.
 ## Conetividade e Acesso Remoto
 
 ### Fundamentação Teórica do Protocolo SSH (Secure Shell) 
