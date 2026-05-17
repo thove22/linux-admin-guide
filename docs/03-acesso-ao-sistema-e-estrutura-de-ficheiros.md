@@ -44,7 +44,7 @@ O sudo é o padrão moderno da indústria. Permite que um utilizador comum execu
 Em certas ocasiões, um administrador necessita de executar não apenas um comando, mas uma longa sequência de tarefas administrativas, tornando moroso digitar sudo antes de cada linha. É aqui que surge a confusão com as transições de shell:
 - **sudo su**: Esta combinação utiliza o poder do sudo para executar o comando su. Na prática, o administrador introduz a sua própria senha, e osistema abre uma consola permanente de root. Embora evite a necessidade de partilhar a senha do superutilizador, possui uma falha de auditoria: o sudo apenas regista que o utilizador iniciou o su. Todos os comandos destrutivos executados dentro dessa nova consola não ficam registados em nome do administrador original.
 
-- **A Boa Prática (sudo -i)**: A abordagem tecnicamente correta para obter uma sessão interativa de root é o comando sudo -i (ou sudo --login). Este comando simula um login limpo e completo com o perfil do superutilizador, carregando as suas variáveis de ambiente, mas fá-lo através dos mecanismos nativos do sudo, mantendo uma melhor integridade do sistema.
+- **Boa Prática (sudo -i)**: A abordagem tecnicamente correta para obter uma sessão interativa de root é o comando sudo -i (ou sudo --login). Este comando simula um login limpo e completo com o perfil do superutilizador, carregando as suas variáveis de ambiente, mas fá-lo através dos mecanismos nativos do sudo, mantendo uma melhor integridade do sistema.
 
 ### Gestão de Credenciais e Palavras-passe (passwd)
 
@@ -55,6 +55,20 @@ Sendo o acesso validado mediante credenciais, a gestão destas é uma operação
 - Alteração Administrativa: Quando invocado com privilégios administrativos (ex: sudo passwd estudante), o administrador pode redefinir a senha de qualquer outro utilizador no sistema, dispensando a necessidade de conhecer a senha atual do mesmo. Esta funcionalidade é crucial para a recuperação de contas ou na rotatividade de credenciais de equipa.
 
 Uma senha administrativa robusta não deve ser baseada apenas na complexidade visual, mas principalmente na sua extensão (frequentemente implementada através de "passphrases" — frases-senha longas), minimizando a suscetibilidade a ataques de força bruta no ambiente de servidor.
+
+
+## O Sistema de Ficheiros: Estrutura e Organização
+
+A utilidade de um sistema operativo mede-se, em grande parte, pela eficiência com que gere e disponibiliza o acesso aos dados e aos recursos físicos da máquina. Em sistemas Linux e UNIX, o sistema de ficheiros transcende a mera função de armazenamento em disco; ele atua como o mecanismo central de organização. Compreende quatro componentes lógicos fundamentais: um espaço de nomes (namespace) hierárquico, uma interface de programação (API) para manipulação de objetos, um modelo de segurança e, por fim, a implementação de software que interliga este modelo abstrato ao hardware subjacente.
+
+### A Filosofia "Tudo é um Ficheiro"
+
+A premissa arquitetural mais célebre do UNIX — e por herança, do Linux — dita que "tudo é um ficheiro". Embora seja uma ligeira simplificação, esta máxima é a chave para a elegância do sistema.
+
+No seu nível mais rudimentar, um ficheiro para o kernel é apenas uma sequência bidimensional de bytes. O sistema operativo não impõe qualquer estrutura rígida ou significado a estes dados; a interpretação do conteúdo é estritamente delegada aos programas que os leem.
+
+O poder desta filosofia reside na sua universalidade. O conceito de ficheiro é estendido para mapear quase todos os recursos do sistema. Discos rígidos, terminais de linha de comandos, adaptadores de rede, processos em execução e até canais de comunicação entre processos (pipes esockets) são todos representados e acedidos como se fossem ficheiros de texto comuns. Isto significa que as mesmas ferramentas padronizadas usadas para ler ou escrever num documento de texto podem ser empregues para enviar dados para um dispositivo físico ou ler métricas do processador, simplificando drasticamente a administração e a programação no sistema.
+
 ## Conetividade e Acesso Remoto
 
 ### Fundamentação Teórica do Protocolo SSH (Secure Shell) 
