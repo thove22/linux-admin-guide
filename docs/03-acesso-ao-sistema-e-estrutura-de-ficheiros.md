@@ -21,7 +21,30 @@ Tecnicamente, a característica que define o root não é o nome de utilizador, 
 
 Historicamente, os administradores iniciavam sessão diretamente na conta root. No entanto, em infraestruturas modernas, esta prática é considerada um erro crítico de segurança. Operar permanentemente como root significa que qualquer erro de digitação pode destruir o sistema de forma irreversível. Além disso, se uma equipa de administradores partilhar a senha de root, perde-se totalmente a capacidade de auditoria: se ocorrer uma falha às 03:00 da manhã, os registos do sistema (logs) mostrarão apenas que o "root" executou a ação, impossibilitando a identificação do operador real.
 
+### Delegação de Poderes e Transição de Identidade (su vs. sudo)
 
+Para mitigar os riscos associados ao uso direto da conta root, os sistemas Linux implementaram ferramentas que permitem a delegação controlada de poderes administrativos. A distinção técnica e o caso de uso de cada uma são fundamentais.
+
+#### O utilitário su (Substitute User):
+
+O comando su permite a um utilizador alterar temporariamente a sua identidade no terminal para a de outro utilizador (por omissão, o root).
+
+- **Mecanismo**: Ao executar su, o sistema solicita a palavra-passe do utilizador de destino (a senha do próprio root).
+- **Problema**: Exige que a senha de root seja do conhecimento de vários administradores, mantendo a vulnerabilidade de partilha de credenciais e a ausência de um registo detalhado dos comandos executados após a transição.
+
+#### O utilitário sudo (Superuser DO):
+
+O sudo é o padrão moderno da indústria. Permite que um utilizador comum execute comandos específicos como se fosse o superutilizador.
+
+- **Mecanismo**: Ao executar sudo [comando], o sistema solicita a palavra-passe do próprio utilizador que está a executar a ação (não a do root)
+- **Vantagens**: O sistema verifica no ficheiro /etc/sudoers se esse utilizador tem autorização para executar aquela tarefa. Adicionalmente, o sudo gera um registo rigoroso (enviado para o syslog), documentando quem executou o comando, a partir de onde, e a que horas, garantindo rastreabilidade total.
+
+#### A distinção estrutural: sudo vs. sudo su
+
+Em certas ocasiões, um administrador necessita de executar não apenas um comando, mas uma longa sequência de tarefas administrativas, tornando moroso digitar sudo antes de cada linha. É aqui que surge a confusão com as transições de shell:
+- **sudo su**: Esta combinação utiliza o poder do sudo para executar o comando su. Na prática, o administrador introduz a sua própria senha, e osistema abre uma consola permanente de root. Embora evite a necessidade de partilhar a senha do superutilizador, possui uma falha de auditoria: o sudo apenas regista que o utilizador iniciou o su. Todos os comandos destrutivos executados dentro dessa nova consola não ficam registados em nome do administrador original.
+
+- **A Boa Prática (sudo -i)**: A abordagem tecnicamente correta para obter uma sessão interativa de root é o comando sudo -i (ou sudo --login). Este comando simula um login limpo e completo com o perfil do superutilizador, carregando as suas variáveis de ambiente, mas fá-lo através dos mecanismos nativos do sudo, mantendo uma melhor integridade do sistema.
 ## Conetividade e Acesso Remoto
 
 ### Fundamentação Teórica do Protocolo SSH (Secure Shell) 
