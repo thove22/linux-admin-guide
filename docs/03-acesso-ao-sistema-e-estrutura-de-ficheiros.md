@@ -69,6 +69,40 @@ No seu nível mais rudimentar, um ficheiro para o kernel é apenas uma sequênci
 
 O poder desta filosofia reside na sua universalidade. O conceito de ficheiro é estendido para mapear quase todos os recursos do sistema. Discos rígidos, terminais de linha de comandos, adaptadores de rede, processos em execução e até canais de comunicação entre processos (pipes esockets) são todos representados e acedidos como se fossem ficheiros de texto comuns. Isto significa que as mesmas ferramentas padronizadas usadas para ler ou escrever num documento de texto podem ser empregues para enviar dados para um dispositivo físico ou ler métricas do processador, simplificando drasticamente a administração e a programação no sistema.
 
+### A Árvore de Diretórios e a Norma FHS
+
+O sistema de ficheiros é apresentado como uma hierarquia unificada, rigorosamente singular, que tem início num diretório de topo designado por raiz (representado pelo caractere / ou root directory). Em oposição a outros sistemas operativos que mantêm espaços de nomes segmentados por partições de disco (ex: C:\, D:\), o Linux anexa, ou "monta" (mounts), todos os sistemas de ficheiros e dispositivos em pastas vazias desta árvore única.
+
+Para garantir a compatibilidade e a previsibilidade, as distribuições Linux aderem ao FHS (Filesystem Hierarchy Standard). Esta norma estabelece o propósito de cada subdiretório.
+Abaixo, detalha-se a função dos diretórios padrão presentes em ambientes Linux:
+
+- **/bin**: Contém os comandos nucleares do sistema operativo necessários para todos os utilizadores (ex: ls, cp, ping).
+
+- **/boot**: Aloja o kernel do sistema operativo e os ficheiros estáticos cruciais para o processo de arranque (ex: carregador de arranque GRUB).
+
+- **/dev**: Diretório de dispositivos (device nodes). Contém ficheiros especiais que representam o hardware, como discos, impressoras e pseudo-terminais.
+
+- **/etc**: O centro nervoso da configuração do sistema. Contém exclusivamente ficheiros de configuração estáticos e scripts de inicialização globais. É aqui, por exemplo, que reside o diretório /etc/systemd, que aloja as configurações dos serviços geridos pelo daemon systemd.
+
+- **/home**: A base de operações para os utilizadores do sistema. Contém os diretórios de trabalho pessoais (home directories), onde residem as configurações locais e os dados de cada utilizador.
+
+- **/lib**: Bibliotecas partilhadas essenciais para os binários localizados em /bin e /sbin, e módulos do kernel. É também neste nível (em /lib/systemd) que residem as unidades de serviço padrão e a infraestrutura executável do systemd.
+
+- **/media**: Pontos de montagem gerados automaticamente para sistemas de ficheiros em suportes removíveis (como drives USB ou CD-ROMs).
+
+- **/mnt**: Pontos de montagem temporários, habitualmente utilizados pelo administrador do sistema para montar manualmente partições ou partilhas de rede provisórias.
+
+- **/opt**: Diretório reservado para a instalação de pacotes de software opcionais ou de terceiros (aplicações monolíticas que não distribuem os seus ficheiros pela hierarquia padrão).
+
+- **/proc**: Um sistema de ficheiros virtual em memória que expõe informações dinâmicas sobre os processos em execução e atua como uma interface para os parâmetros do kernel.
+
+- **/root**: O diretório pessoal exclusivo do superutilizador (root). Por razões de segurança e integridade, não reside em /home.
+
+- **/sbin**: Comandos e utilitários vitais para a operabilidade do sistema e tarefas de administração. Geralmente, requerem privilégios de superutilizador (ex: ferramentas de formatação ou configuração de rede).
+
+- **/tmp**: Diretório para a criação de ficheiros temporários por aplicações ou utilizadores. O seu conteúdo é frequentemente expurgado durante o reinício do sistema.
+
+
 ## Conetividade e Acesso Remoto
 
 ### Fundamentação Teórica do Protocolo SSH (Secure Shell) 
