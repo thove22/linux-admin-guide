@@ -102,6 +102,32 @@ Abaixo, detalha-se a função dos diretórios padrão presentes em ambientes Lin
 
 - **/tmp**: Diretório para a criação de ficheiros temporários por aplicações ou utilizadores. O seu conteúdo é frequentemente expurgado durante o reinício do sistema.
 
+#### A Hierarquia Secundária e Dados Variáveis:
+
+Para além dos diretórios base na raiz, o sistema delega grande parte do software e dos dados operacionais a dois diretórios de elevada importância:
+
+- **/usr**: Representa uma hierarquia secundária, de leitura obrigatória, para dados de sistema partilháveis.
+
+    - **/usr/bin** e **/usr/sbin** : Maioria dos binários e comandos não essenciais para o arranque.
+
+    - **/usr/include**: Ficheiros de cabeçalho (headers) para a compilação de programas em C/C++.
+
+    - **/usr/lib** (e /usr/lib64): Bibliotecas e ficheiros de suporte a aplicações em espaço de utilizador.
+
+    - **/usr/local**: Destinado a software compilado e instalado localmente pelo administrador, preservando-o de atualizações do sistema operativo.
+
+    - **/usr/share**: Dados independentes da arquitetura de hardware, como manuais (man pages em /usr/share/man).
+
+    - **/usr/src**: Código-fonte para software ou pacotes do kernel.
+
+- **/var**: Destinado a ficheiros cujos tamanhos flutuam de forma dinâmica durante a operação do sistema. Colocar /var numa partição separada é uma prática comum para evitar que o crescimento de ficheiros esgote o espaço crítico do sistema.
+
+    - **/var/log** (e historicamente /var/adm): Os registos do sistema (logs), fundamentais para a auditoria e resolução de problemas.
+
+    - **/var/spool**: Filas de processamento para tarefas pendentes, como trabalhos de impressão ou correio eletrónico.
+
+    - **/var/tmp**: Ficheiros temporários que, ao contrário do diretório /tmp principal, devem ser preservados após a reinicialização do sistema.
+
 
 ## Conetividade e Acesso Remoto
 
