@@ -1,5 +1,27 @@
 # Acesso ao Sistema e Estrutura de Ficheiros
 
+
+## Controlo de Acesso e Arquitetura de Privilégios
+
+A segurança e a integridade de um sistema operativo Linux assentam na premissa de que nem todos os utilizadores possuem o mesmo nível de autoridade. Num ambiente de servidor, o controlo de acesso atua como o mecanismo central que avalia cada ação (como editar um ficheiro, reiniciar um serviço ou alterar configurações de rede) e emite um veredito sobre a sua permissibilidade. Compreender a hierarquia destas permissões é o primeiro passo crítico na administração de sistemas.
+
+### O Superutilizador (root) e a Filosofia de Privilégios
+Embora as distribuições modernas possuam múltiplos serviços de controlo, a base do modelo tradicional UNIX permanece inalterada: o sistema égovernado por uma conta administrativa omnipotente designada por root, também conhecida como o superutilizador.
+
+Tecnicamente, a característica que define o root não é o nome de utilizador, mas sim o seu Identificador de Utilizador (UID) com o valor 0. Para o kernel (núcleo) do Linux, qualquer processo que opere com o UID 0 possui autoridade absoluta. 
+
+#### Capacidades do Superutilizador:
+
+- Pode contornar todas as restrições de leitura, escrita e execução do sistema de ficheiros.
+- Pode alterar a titularidade de processos e ficheiros.
+- Pode abrir portas de rede privilegiadas (portas abaixo da 1024, cruciais para serviços web e de email).
+- Tem permissão exclusiva para invocar chamadas de sistema sensíveis, como a alteração do relógio do sistema ou a configuração de interfaces de rede.
+
+##### Os Riscos da Operação Direta:
+
+Historicamente, os administradores iniciavam sessão diretamente na conta root. No entanto, em infraestruturas modernas, esta prática é considerada um erro crítico de segurança. Operar permanentemente como root significa que qualquer erro de digitação pode destruir o sistema de forma irreversível. Além disso, se uma equipa de administradores partilhar a senha de root, perde-se totalmente a capacidade de auditoria: se ocorrer uma falha às 03:00 da manhã, os registos do sistema (logs) mostrarão apenas que o "root" executou a ação, impossibilitando a identificação do operador real.
+
+
 ## Conetividade e Acesso Remoto
 
 ### Fundamentação Teórica do Protocolo SSH (Secure Shell) 
@@ -105,9 +127,9 @@ Historicamente pertencente ao pacote net-tools, o ifconfig foi o padrão durante
 Nota: Para os exemplos subsequentes, assumiremos que o comando acima revelou que o Servidor Alvo possui o endereço IP 192.168.122.50 .
 
 ##### Validação de Conectividade com ping
-Conhecido o endereço de destino, o passo lógico seguinte na engenharia de redes é validar a alcançabilidade do nó remoto. Para tal, recorre-se ao comando ping, que utiliza pacotes ICMP (Internet Control Message Protocol) de Echo Request e aguarda por um Echo Reply.
+A partir da Estação de Gestão (Local), a verificação da conectividade é efetuada mediante o seguinte comandoConhecido o endereço de destino, o passo lógico seguinte na engenharia de redes é validar a alcançabilidade do nó remoto. Para tal, recorre-se ao comando ping, que utiliza pacotes ICMP (Internet Control Message Protocol) de Echo Request e aguarda por um Echo Reply.
 
-Na Máquina Local (Gestão), execute:
+A partir da Estação de Gestão (Local), a verificação da conectividade é efetuada mediante o seguinte comando:
 
 ```bash
  $ ping -c 4 192.168.122.50
