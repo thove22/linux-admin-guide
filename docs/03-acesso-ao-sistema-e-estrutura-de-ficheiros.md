@@ -128,6 +128,45 @@ Para além dos diretórios base na raiz, o sistema delega grande parte do softwa
 
     - **/var/tmp**: Ficheiros temporários que, ao contrário do diretório /tmp principal, devem ser preservados após a reinicialização do sistema.
 
+### Tipologia de Ficheiros
+
+A flexibilidade do modelo de armazenamento do Linux baseia-se na consolidação de sete tipos distintos de ficheiros. Independentemente das inovações ou abstrações introduzidas no espaço de nomes do sistema (como a exposição de estruturas do núcleo em /proc), o kernel mascara estasentidades para que operem sob uma destas sete categorias fundamentais.
+
+Para determinar a tipologia de um ativo existente no disco, utiliza-se o utilitário de listagem com a diretiva de detalhe e inspeção de diretórios:
+
+```bash
+    $ ls -ld [caminho]
+```
+
+O primeiro caractere da string de permissões gerada no terminal codifica de forma inequívoca a natureza do ficheiro.
+
+#### A. Ficheiros Regulares (Símbolo: -)
+
+Constituem a categoria mais comum no sistema, consistindo puramente numa sequência linear de bytes sobre a qual o sistema de ficheiros não impõe qualquer estrutura lógica interna. Esta categoria engloba documentos de texto plano, scripts, ficheiros de configuração, executáveis binários e bibliotecas partilhadas. O sistema permite tanto o acesso sequencial como o acesso aleatório aos dados contidos nestes ficheiros
+
+#### B. Diretórios (Símbolo: d)
+
+Um diretório é um ficheiro especial que atua como um contentor, armazenando referências nominativas (ligações ou links) para outros ficheiros ou subdiretórios. A criação é efetuada via mkdir e a remoção requer o comando rmdir (caso esteja vazio) ou rm -r (para remoção recursiva de estruturas não vazias).
+
+Existem sempre duas entradas nativas em qualquer diretório: o ponto único (.), que referencia o próprio diretório, e os dois pontos (..), que referenciam o diretório pai. Na raiz do sistema (/), devido à inexistência de um nível superior, ambos os caminhos apontam para o próprio nó inicial.
+
+#### C. Ficheiros de Dispositivo de Caractere (Símbolo: c)
+
+Estes ficheiros servem como pontos de encontro (rendezvous) para a comunicação direta entre os programas em espaço de utilizador e os controladores de hardware (drivers) do kernel. Os dispositivos de caractere gerem o fluxo de entrada e saída (I/O) de forma linear e serial, caractere a caractere, delegando o encapsulamento e o varrimento de memória (buffering) ao próprio controlador. Exemplos típicos incluem terminais virtuais (/dev/ttyX) e portas série.
+
+#### D. Ficheiros de Dispositivo de Bloco (Símbolo: b)
+
+Semelhantes aos dispositivos de caractere, estabelecem a ponte com o hardware, mas são orientados à movimentação de dados em blocos de tamanho fixo. Neste modelo, os controladores exigem que o kernel execute e gira o buffering da informação em memória antes da escrita ou leitura física. As partições de discos rígidos e unidades de armazenamento (ex: /dev/sda1) são classificadas sob esta tipologia.
+
+#### E. Links Simbólicos (Símbolo: l)
+
+Um link simbólico (ou soft link) é um ficheiro distinto que contém, como única informação, uma string de texto representando o caminho (absoluto ou relativo) para outro ficheiro ou diretório alvo. Ao encontrar um link simbólico, o kernel redireciona a operação para o caminho de destino especificado. Por serem referências textuais, podem apontar para alvos localizados noutros sistemas de ficheiros ou mesmo para caminhos inexistentes (broken links).
+A sua criação é feita com o comando: 
+
+```bash
+    ln -s
+```
+
 
 ## Conetividade e Acesso Remoto
 
