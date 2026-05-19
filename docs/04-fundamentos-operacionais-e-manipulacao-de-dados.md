@@ -14,4 +14,23 @@ Quando uma palavra é introduzida no terminal, o interpretador (o shell, como o 
 
 - **Aliases (Atalhos)**: São substituições textuais definidas pelo utilizador ou pelo sistema. Atuam como "macros", onde uma palavra simples é substituída por uma cadeia de comandos mais complexa antes da execução real.
 
+## Avaliação e Localização Prática (type e which)
 
+Dado que diferentes tipos de comandos respondem de formas distintas, é necessário analisar como o sistema os interpreta antes de os invocar.
+
+### A. Análise de Interpretação com o utilitário type
+O comando **type** fundamenta-se na necessidade de revelar a tipologia de uma instrução. Ele mostra exatamente qual das quatro categorias referidas acima será acionada pelo shell.
+
+```bash
+    # Investigando um comando de navegação:
+    $ type cd
+    cd is a shell builtin
+
+    # Investigando um utilitário de cópia:
+    $ type cp
+    cp is /bin/cp
+
+    # Investigando o comando de listagem:
+    $ type ls
+    ls is aliased to `ls --color=auto'
+```
