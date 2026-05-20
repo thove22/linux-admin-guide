@@ -271,3 +271,26 @@ Num contexto de administração do sistema, é comum aceder ao diretório de log
     alias verlogs='cd /var/log; ls -lh; less syslog; cd -'
 ```
 Neste exemplo, o alias entra no diretório dos logs, mostra os ficheiros com detalhes, abre o ficheiro syslog para análise e depois regressa ao diretório anterior. Este tipo de alias é útil porque junta numa única instrução várias operações típicas de suporte e manutenção do sistema.
+
+
+## Identidade, Posse e Segurança no Sistema de Ficheiros
+
+Os sistemas operativos baseados na tradição UNIX diferenciam-se historicamente de outras arquiteturas pioneiras, como o MS-DOS, por terem sido concebidos nativamente não apenas como sistemas multitarefa, mas essencialmente como ambientes multilizador (multiuser). Esta característica estrutural implica que múltiplos utilizadores podem interagir com o sistema e executar processos em simultâneo na mesma máquina. Mesmo num cenário computacional contemporâneo onde existe apenas um monitor e um teclado físicos, o acesso concorrente realiza-se através de conexões de rede encriptadas via SSH (Secure Shell) ou pela execução remota de aplicações gráficas.
+
+Para viabilizar esta coexistência sem que as ações de um utilizador provoquem a instabilidade do sistema ou interfiram de forma indevida nosdados de terceiros, a arquitetura de segurança exige um modelo rigoroso de isolamento e controlo de acessos.
+
+Para fundamentar empiricamente este mecanismo de proteção, analisa-se o comportamento do terminal ao tentar inspecionar o ficheiro **/etc/shadow**, responsável pelo armazenamento das palavras-passe cifradas do sistema:
+
+```bash
+    $ file /etc/shadow
+    /etc/shadow: regular file, no read permission
+
+    $ less /etc/shadow
+    /etc/shadow: Permission denied
+```
+A mensagem de erro "Permission denied" (Permissão negada) não constitui uma falha do utilitário de leitura, mas sim uma imposição deliberada do modelo de segurança. Sendo a instrução submetida por uma conta de utilizador comum, o sistema interseta a chamada e bloqueia o acesso, dado que o utilizador atual não detém os privilégios de segurança necessários sobre aquele recurso específico.
+
+
+### Proprietários, Membros de Grupos e Terceiros
+
+
