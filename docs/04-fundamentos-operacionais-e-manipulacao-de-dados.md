@@ -301,6 +301,12 @@ No modelo de segurança do ecossistema Linux, a atribuição de permissões asse
 
 3. **Todos os Outros (Everybody Else / World)**: Define o nível de acesso concedido a qualquer outra identidade autenticada no sistema que não seja o proprietário nem pertença ao grupo associado ao ficheiro.
 
+Cada um desses grupos pode ter combinações de:
+
+- r — leitura;
+- w — escrita;
+- x — execução.
+
 Para mapear e auditar os parâmetros de identidade da sessão em execução, utiliza-se o comando **id**.
 
 ```bash
@@ -317,3 +323,22 @@ A análise analítica da saída do comando revela como o interpretador traduz os
 - Groups: A listagem sequencial de todos os grupos secundários aos quais o utilizador está associado, permitindo-lhe interagir com dispositivos específicos ou herdar permissões administrativas.
 
 Estes dados identitários residem em ficheiros de texto estruturados dentro da árvore do sistema. As contas estão mapeadas em /etc/passwd, a composição dos grupos em /etc/group e os parâmetros de segurança das credenciais em /etc/shadow.
+
+### O Modelo de Permissões: Leitura, Escrita e Execução
+
+Os direitos de acesso e modificação sobre qualquer elemento do sistema de ficheiros são quantificados em três operações elementares: leitura(read), escrita (write) e execução (execute). Ao invocar uma listagem longa através do comando ls -l, o terminal expõe os metadados e os atributos de segurança do recurso:
+
+```bash
+    $ touch teste.txt
+    $ ls -l teste.txt
+    -rw-rw-r-- 1 me me 0 2018-03-06 14:52 teste.txt
+```
+Para clarificar a taxonomia e o comportamento do sistema perante os diferentes tipos de recursos e permissões mapeados pelas tabelas oficiais de referência, estruturam-se os seguintes dados de suporte:
+
+
+| Atributo | Ficheiros | Diretórios |
+|----------|-----------|------------|
+| `r` | Permite abrir e ler um ficheiro. | Permite listar o conteúdo de um diretório, desde que o atributo de execução (`x`) também esteja definido. |
+| `w` | Permite escrever num ficheiro ou truncá-lo; no entanto, este atributo não permite renomear ou apagar ficheiros. A possibilidade de apagar ou renomear ficheiros é determinada pelos atributos do diretório. | Permite criar, apagar e renomear ficheiros dentro de um diretório, desde que o atributo de execução (`x`) também esteja definido. |
+| `x` | Permite que um ficheiro seja tratado como um programa e executado. Ficheiros de programação escritos em linguagens de script também precisam de estar legíveis para serem executados. | Permite entrar num diretório, por exemplo: `cd directory`. |
+
