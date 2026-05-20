@@ -341,6 +341,7 @@ Para clarificar a taxonomia e o comportamento do sistema perante os diferentes t
 | `r` | Permite abrir e ler um ficheiro. | Permite listar o conteúdo de um diretório, desde que o atributo de execução (`x`) também esteja definido. |
 | `w` | Permite escrever num ficheiro ou truncá-lo; no entanto, este atributo não permite renomear ou apagar ficheiros. A possibilidade de apagar ou renomear ficheiros é determinada pelos atributos do diretório. | Permite criar, apagar e renomear ficheiros dentro de um diretório, desde que o atributo de execução (`x`) também esteja definido. |
 | `x` | Permite que um ficheiro seja tratado como um programa e executado. Ficheiros de programação escritos em linguagens de script também precisam de estar legíveis para serem executados. | Permite entrar num diretório, por exemplo: `cd directory`. |
+
 Tabela 1 : Efeito que os atributos de modo r, w e x têm quando definidos em ficheiros e diretórios.
 
 
@@ -354,5 +355,6 @@ Tabela 1 : Efeito que os atributos de modo r, w e x têm quando definidos em fic
 | `lrwxrwxrwx` | Um link simbólico. Todos os links simbólicos têm permissões "fictícias". As permissões reais são as do ficheiro para o qual o link simbólico aponta. |
 | `drwxrwx---` | Um diretório. O dono e os membros do grupo associado podem entrar no diretório e criar, renomear e remover ficheiros dentro dele. |
 | `drwxr-x---` | Um diretório. O dono pode entrar no diretório e criar, renomear e eliminar ficheiros. Os membros do grupo do dono podem entrar no diretório, mas não podem criar, eliminar ou renomear ficheiros. |
+
 Tabela 2: Exemplos de Atributos de Permissão
 
