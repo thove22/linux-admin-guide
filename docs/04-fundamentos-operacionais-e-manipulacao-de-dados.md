@@ -293,4 +293,27 @@ A mensagem de erro "Permission denied" (Permissão negada) não constitui uma fa
 
 ### Proprietários, Membros de Grupos e Terceiros
 
+No modelo de segurança do ecossistema Linux, a atribuição de permissões assenta em três pilares relacionais de identidade:
 
+1. **Proprietário (Owner)**: O utilizador que cria o ficheiro ou diretório assume a sua posse automática e detém o controlo inicial sobre a concessão de direitos de acesso.
+
+2. **Membros do Grupo (Group Members)**: Um conjunto delimitado de utilizadores partilha privilégios comuns de acesso sobre determinados recursos, facilitando o trabalho colaborativo entre equipas.
+
+3. **Todos os Outros (Everybody Else / World)**: Define o nível de acesso concedido a qualquer outra identidade autenticada no sistema que não seja o proprietário nem pertença ao grupo associado ao ficheiro.
+
+Para mapear e auditar os parâmetros de identidade da sessão em execução, utiliza-se o comando **id**.
+
+```bash
+    $ id
+    uid=1000(me) gid=1000(me) groups=1000(me),4(adm),24(cdrom),27(sudo),46(plugdev)
+```
+
+A análise analítica da saída do comando revela como o interpretador traduz os nomes textuais legíveis por humanos em identificadores numéricos processados pelo núcleo (kernel):
+
+- UID (User ID): O identificador numérico do utilizador atual. O superutilizador (root) assume invariavelmente o valor 0. Para utilizadores comuns, a numeração inicia-se tipicamente em 500 (em distribuições como Fedora) ou em 1000 (em sistemas baseados em Debian/Ubuntu).
+
+- GID (Group ID): O identificador do grupo principal da conta. A engenharia moderna do Linux adota a abordagem de criar um grupo exclusivo e unitário com o mesmo nome do utilizador para simplificar a alocação de acessos.
+
+- Groups: A listagem sequencial de todos os grupos secundários aos quais o utilizador está associado, permitindo-lhe interagir com dispositivos específicos ou herdar permissões administrativas.
+
+Estes dados identitários residem em ficheiros de texto estruturados dentro da árvore do sistema. As contas estão mapeadas em /etc/passwd, a composição dos grupos em /etc/group e os parâmetros de segurança das credenciais em /etc/shadow.
