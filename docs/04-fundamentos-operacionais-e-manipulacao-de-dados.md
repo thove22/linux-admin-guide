@@ -476,4 +476,26 @@ A representação das permissões na sua forma tecnicamente mais precisa inclui 
 
 - Apresentação no ls: Visualiza-se um t na zona de execução do mundo (ex: drwxrwxrwt).
 
+### chown: Alteração de Proprietário e Grupo
 
+Enquanto o comando chmod permite a um proprietário gerir as permissões de acesso aos seus próprios ficheiros, o comando chown (change owner)é utilizado para transferir a própria titularidade e a alocação de grupo de um ficheiro ou diretório.
+
+É crucial notar que a utilização do chown exige estritamente privilégios de superutilizador (root ou através do sudo). O sistema operativo impõe esta restrição para evitar que utilizadores comuns burlem as quotas de disco (transferindo a posse de ficheiros pesados para outros utilizadores) ou criem falhas de segurança.
+
+##### Sintaxe de Invocação:
+
+```bash
+    chown [proprietário][:[grupo]] ficheiro...
+```
+
+O comportamento do comando chown é altamente flexível e depende da forma como o primeiro argumento é formatado. A presença ou ausência do caractere de dois-pontos (:) dita se a alteração afeta o proprietário, o grupo, ou ambos em simultâneo.
+
+
+| Argumento Formatado | Resultado Operacional |
+|---------------------|-----------------------|
+| `carlos`            | Transfere a propriedade do ficheiro estritamente para o utilizador *carlos*. O grupo original permanece inalterado. |
+| `carlos:developers` | Altera simultaneamente a propriedade do ficheiro para o utilizador *carlos* e a propriedade do grupo para *developers*. |
+| `:suporte`          | Altera unicamente a propriedade do grupo para *suporte*. A propriedade do utilizador permanece inalterada. |
+| `carlos:`           | Transfere a propriedade do ficheiro para o utilizador *carlos* e altera automaticamente o grupo do ficheiro para o grupo principal de login associado ao utilizador *carlos*. |
+
+Tabela 4: Exemplos de Argumentos e Comportamento do chown
