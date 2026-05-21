@@ -399,3 +399,27 @@ Ao utilizar três dígitos octais sequenciais, é possível definir simultaneame
 ```
 Neste cenário prático, ao passar o argumento 600, instruímos o sistema a conceder permissões de leitura e escrita (6) ao proprietário, removendo simultaneamente todos os acessos (0 e 0) para o grupo e para o resto do mundo.
 
+#### Representação Simbólica
+
+A notação simbólica divide a configuração em três componentes lógicos: quem será afetado, qual operação será executada, e que permissão será aplicada. Esta abordagem é particularmente vantajosa quando o objetivo é alterar um único atributo sem interferir com os restantes.
+
+1. **Quem é afetado**: Utilizam-se as letras u (proprietário/user), g (grupo), o (outros/world) e a (todos/all). Se nenhuma letra for especificada, o sistema assume a por defeito.
+
+2. **A Operação**: Utiliza-se + para adicionar uma permissão, - para a remover, e = para forçar que apenas as permissões especificadas sejam aplicadas (removendo todas as outras).
+
+3. **A Permissão**: Utilizam-se os tradicionais caracteres r, w e x.
+
+
+| Notação       | Significado                                                                 |
+|---------------|-----------------------------------------------------------------------------|
+| `u+x`         | Adiciona permissão de execução para o dono (owner).                         |
+| `u-x`         | Remove a permissão de execução do dono.                                     |
+| `+x`          | Adiciona permissão de execução para o dono, grupo e outros (world). Equivalente a `a+x`. |
+| `o-rw`        | Remove as permissões de leitura e escrita para qualquer pessoa que não seja o dono ou o grupo dono. |
+| `go=rw`       | Define que o grupo dono e os outros (qualquer pessoa além do dono) tenham permissões de leitura e escrita. Se o grupo ou os outros tinham permissão de execução anteriormente, ela é removida. |
+| `u+x, go=rx`  | Adiciona permissão de execução para o dono e define as permissões do grupo e dos outros para leitura e execução. Múltiplas especificações podem ser separadas por vírgulas. |
+
+
+Tabela 4: Exemplos de Notação Simbólica do chmod
+
+Embora o comando chmod possua a opção --recursive para alterar toda uma árvore de diretórios, a sua utilização exige extrema cautela, dado que raramente é desejável que ficheiros regulares e diretórios partilhem exatamente a mesma estrutura de permissões (especialmente a permissão de execução).
