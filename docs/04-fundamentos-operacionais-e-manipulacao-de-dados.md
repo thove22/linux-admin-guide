@@ -704,3 +704,165 @@ Isto é extremamente útil para guardar o estado completo dos dados antes de apl
 ```
 Neste cenário, a listagem completa dos binários é preservada no ficheiro **inventario_completo.txt**, enquanto o terminal exibe apenas os resultados finais filtrados pelo comando **grep**.
 
+
+## Gestão de Espaço, Arquivamento e Cópias de Segurança (Backups)
+
+Uma das responsabilidades primárias na administração de sistemas UNIX, é a garantia da integridade e segurança dos dados. Este objetivo é frequentemente alcançado através da execução metódica de cópias de segurança (backups). Contudo, a movimentação de vastos volumes de dados entre dispositivos ou redes exige uma gestão rigorosa do espaço de armazenamento e da largura de banda, o que nos introduz aos conceitos de compressão e arquivamento de ficheiros.
+
+### Fundamentos Matemáticos da Compressão de Dados
+
+A compressão de dados baseia-se num princípio fundamental: a eliminação de redundância. Na sua essência, um algoritmo de compressão analisa um conjunto de dados e substitui padrões repetitivos por representações matemáticas mais curtas.
+
+Considere um exemplo teórico: uma imagem digital estritamente preta com as dimensões de 100 por 100 píxeis. Assumindo uma profundidade de cor de 24 bits (3 bytes por píxel), a imagem ocuparia fisicamente 30.000 bytes de armazenamento (100 x 100 x 3).
+Dado que a imagem é de uma cor uniforme, a informação é inteiramente redundante. Um algoritmo elementar, como o Run-Length Encoding (RLE), em vez de armazenar 30.000 zeros, codificaria o ficheiro com a instrução lógica: "existem 10.000 píxeis da cor zero".
+
+No paradigma informático, os algoritmos de compressão dividem-se em duas categorias arquitetónicas:
+
+- **Compressão com Perdas (Lossy)**: Descarta ativamente dados não essenciais para maximizar a taxa de compressão. O ficheiro restaurado é uma aproximação do original (ex: JPEG, MP3).
+
+- **Compressão sem Perdas (Lossless)**: Preserva a integridade matemática exata dos dados originais. Após a descompressão, o ficheiro resultante é uma réplica bit-a-bit do original. 
+
+Nos sistemas UNIX, ao lidarmos com ficheiros de sistema, bases de dados ou código-fonte, a tolerância à perda de dados é nula. Por conseguinte, utilizaremos exclusivamente ferramentas de compressão lossless.
+
+### Ferramentas de Compressão: gzip e bzip2
+
+Em sistemas UNIX, o paradigma de compressão atua, por norma, ao nível do ficheiro individual. As ferramentas processam um ficheiro, comprimem o seu conteúdo e substituem o ficheiro original pela sua variante comprimida.
+
+1. **O Utilitário gzip**
+
+O gzip (GNU zip) é o standard  para compressão em Linux.utiliza o algoritmo de compressão DEFLATE (uma combinação de LZ77 e codificação de Huffman). É amplamente adotado devido ao seu equilíbrio ideal entre velocidade de processamento e taxa de redução de dados. 
+Quando invocado, substitui o ficheiro original por uma versão com a extensão .gz, preservando rigorosamente as permissões e o timestamp (data de modificação) originais.
+
+Considere a criação de um ficheiro de texto bruto foo.txt gerado a partir da listagem detalhada do diretório /etc:
+
+```bash
+    $ ls -l /etc > foo.txt
+    $ ls -l foo.*
+    -rw-r--r-- 1 user user  15738 2026-05-21 07:15 foo.txt
+```
+Ao aplicar o comando gzip sobre o alvo, o ficheiro original é removido e substituído pela sua variante comprimida com a extensão .gz:
+
+```bash
+    $ gzip foo.txt
+    $ ls -l foo.*
+    -rw-r--r-- 1 user user 3230 2026-05-21 07:15 foo.txt.gz
+```
+Observa-se que o tamanho foi reduzido para aproximadamente um quinto do volume original ($15\,738 \text{ bytes} \rightarrow 3\,230 \text{ bytes}$), mantendo inalterados os metadados críticos do ficheiro: as permissões de acesso e o timestamp cronológico de modificação.
+
+Para reverter o processo, utiliza-se o comando correspondente gunzip (ou gzip -d). Adicionalmente, o ecossistema GNU fornece ferramentas de leitura em tempo real para ficheiros comprimidos, como o zcat e o zless, que permitem inspecionar o conteúdo de um .gz sem necessidade de o descomprimir para o disco:
+
+```bash
+    $ zcat configuracoes.txt.gz | less
+```
+2. **O Utilitário bzip2**
+O utilitário bzip2, desenvolvido por Julian Seward, emprega o algoritmo de ordenação por blocos de Burrows-Wheeler. A sua principal vantagem reside na capacidade de alcançar rácios de compressão significativamente superiores aos do gzip. Contudo, esta eficiência matemática traduz-se num custo computacional elevado, resultando em maior latência de processamento e maior consumo de CPU.
+
+O comportamento operacional do bzip2 espelha o do gzip, gerando ficheiros com a extensão .bz2:
+
+```bash
+    $ bzip2 foo.txt
+    $ ls -l foo.txt.bz2
+    -rw-r--r-- 1 user user 2792 2026-05-21 07:15 foo.txt.bz2
+```
+
+análise comparativa revela que o bzip2 comprimiu o mesmo conjunto de dados de $15\,738 \text{ bytes}$ para apenas $2\,792 \text{ bytes}$ (uma redução superior à do gzip). A descompressão é delegada ao comando bunzip2. O pacote disponibiliza ainda ferramentas como o bzcat (para ecoar o conteúdo do ficheiro diretamente no standard output) e o bzip2recover, projetado especificamente para tentar a reconstrução e extração de dados de ficheiros .bz2 que sofreram corrupção física ou lógica.
+
+### Diferença entre Arquivamento e Compressão
+
+No ecossistema UNIX/Linux, é importante distinguir dois conceitos que muitas vezes aparecem juntos: arquivamento e compressão. Embora sejam frequentemente utilizados em sequência, tratam-se de operações diferentes.
+
+##### Arquivamento (Archiving)
+
+Arquivamento é o processo de reunir vários ficheiros e diretórios num único ficheiro contentor, preservando a estrutura original, os nomes, permissões, proprietários e datas. Nesta etapa, os dados não são reduzidos nem alterados; eles apenas são agrupados.
+O objetivo principal do arquivamento é facilitar:
+- transporte de múltiplos ficheiros;
+- backups;
+- preservação da estrutura de diretórios.
+No Linux, esta função é normalmente realizada pelo comando tar.
+
+##### Compressão
+
+Compressão é o processo de reduzir o tamanho dos dados através de algoritmos matemáticos. Diferente do arquivamento, a compressão trabalha sobre um fluxo de dados e tenta eliminar redundâncias para economizar espaço.
+
+Estas duas operações são estritamente desacopladas. Programas de compressão como gzip ou bzip2 não possuem a capacidade arquitetónica de agrupar múltiplos ficheiros ou pastas; eles comprimem fluxos de dados lineares. Por conseguinte, para salvaguardar uma estrutura complexa de diretórios, o administrador executa primeiro o arquivamento da árvore de diretórios para gerar um ficheiro unificado, aplicando a compressão sobre o arquivo resultante numa etapa subsequente.
+
+#### O Utilitário tar (Tape Archive)
+
+O utilitário tar constitui a ferramenta canónica e standard da indústria para o arquivamento de dados em sistemas UNIX-like. Criado originalmente para a gravação sequencial de dados em fitas magnéticas (Tape Archives), o tar evoluiu para manipular qualquer dispositivo de armazenamento moderno ou fluxos virtuais.
+
+##### Sintaxe Geral e Modos de Operação
+
+A estrutura sintática do tar obedece ao seguinte modelo:
+
+```bash
+    tar modo[opções] caminho_do_alvo...
+```
+
+Ao contrário das convenções POSIX tradicionais, o argumento de modo (que dita a operação estrutural primária) deve obrigatoriamente preceder qualquer outra opção e prescinde do hífen inicial (-) nas suas formas legadas de compatibilidade BSD.
+
+
+| Modo | Descrição Técnica |
+|------|-------------------|
+| `c` (Create) | Instancia a criação de um novo ficheiro de arquivo a partir de uma lista de alvos. |
+| `x` (Extract) | Desativa o encapsulamento, extraindo o conteúdo de um arquivo para o disco. |
+| `t` (List) | Analisa o arquivo de forma não destrutiva, listando os metadados e caminhos contidos. |
+| `r` (Append) | Adiciona de forma incremental novos caminhos diretamente ao final de um arquivo existente. |
+
+
+Tabela 5 : Modos de Funcionamento do Comando `tar`
+
+#### Demonstração Prática: Operações Fundamentais do tar
+
+ara ilustrar a utilidade primária do utilitário tar — o arquivamento estrito e a restauração de dados — vamos focar-nos nas operações mais essenciais do dia a dia. Consideremos um cenário basilar: possui um diretório de trabalho denominado projeto_web, que contém os ficheiros de código e a documentação de uma aplicação, e necessita de consolidar esta estrutura para efeitos de partilha ou cópia de segurança.
+
+1. Criação de um Arquivo Simples
+
+Para aglomerar toda a árvore de diretórios do projeto_web num único ficheiro unificado denominado backup_projeto.tar, invoca-se o comando agrupando os parâmetros c (criação), v (verbosidade, para listar no ecrã os ficheiros à medida que são processados) e f (especificação do ficheiro de destino):
+
+```bash
+    $ tar cvf backup_projeto.tar projeto_web/
+```
+O argumento f deve ser sempre o último da cadeia de opções, pois exige que o nome do ficheiro resultante (backup_projeto.tar) seja posicionado imediatamente a seguir. O tar irá empacotar o diretório projeto_web na sua totalidade, preservando a sua organização interna.
+
+2. Inspeção do Conteúdo do Arquivo
+
+Para auditar a estrutura interna do ficheiro .tar que acabou de ser gerado, sem efetuar a sua descompactação para o disco, substitui-se o modo de criação (c) pelo modo de listagem (t):
+
+```bash
+    $ tar tvf backup_projeto.tar
+```
+Este comando exibirá no terminal os metadados e os caminhos exatos de todos os ficheiros retidos dentro do arquivo.
+
+3. Extração (Desarquivamento)
+Para simular a restauração dos dados (por exemplo, após transferir o arquivo para uma nova máquina ou diretório), utiliza-se o modo de extração x:
+
+```bash
+    $ tar xvf backup_projeto.tar
+```
+O utilitário irá extrair o conteúdo de forma sequencial, reconstruindo o diretório projeto_web exato no local onde o comando for executado.
+
+#### Arquivamento e Compressão Simultânea (.tar.gz)
+
+Na prática real de administração de sistemas, raramente se criam arquivos sem aplicar compressão simultânea, visando a otimização drástica do espaço físico em disco. O GNU tar simplifica este processo ao integrar nativamente compressores como o gzip.
+
+1. Criação de um Arquivo Comprimido
+
+Para instruir o tar a agrupar os ficheiros e passar o resultado final imediatamente pelo algoritmo de compressão gzip, adiciona-se o parâmetro z. O ficheiro resultante adotará, por convenção técnica, a extensão dupla .tar.gz (ou a sua abreviatura .tgz):
+
+```bash
+    $ tar czvf backup_projeto.tar.gz projeto_web/
+```
+Nesta operação, o tar consolida o diretório, o gzip reduz o seu tamanho físico em tempo real, e o resultado é guardado no disco num único passo eficiente.
+
+2. Extração de um Arquivo Comprimido
+
+De forma simétrica, a extração de um arquivo .tar.gz requer que o tar desfaça primeiro a compressão matemática antes de reconstruir a árvore de diretórios. Isto é efetuado mantendo a opção z em conjunto com a diretiva de extração x:
+
+```bash
+    $ tar xzvf backup_projeto.tar.gz
+```
+
+
+
+
+
