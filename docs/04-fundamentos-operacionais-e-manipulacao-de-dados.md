@@ -358,3 +358,44 @@ Tabela 1 : Efeito que os atributos de modo r, w e x têm quando definidos em fic
 
 Tabela 2: Exemplos de Atributos de Permissão
 
+### chmod: Alteração do Modo de Ficheiro
+
+
+Para modificar o modo (ou seja, as permissões) de um ficheiro ou diretório, o sistema disponibiliza o comando chmod (change mode). É imperativo notar que, por questões rigorosas de segurança, apenas o proprietário do ficheiro ou o superutilizador (root) têm autoridade para alterar estas propriedades.
+
+O utilitário chmod suporta duas metodologias distintas para especificar as alterações de permissões: 
+- a representação numérica (octal)
+- representação simbólica.
+#### Representação Numérica (Octal)
+
+A notação numérica utiliza o sistema de base 8 (octal) para definir o padrão de permissões desejado. Para compreender o uso do sistema octal, é necessário analisar a forma como os computadores processam dados. Enquanto os humanos utilizam um sistema de base 10, a arquitetura computacional opera em binário (base 2), lidando apenas com zeros (0) e uns (1).
+
+O sistema octal (que utiliza os dígitos de 0 a 7) revela-se extremamente útil na computação por uma razão de conveniência humana: cada dígito octal representa exatamente três dígitos binários (bits). Uma vez que as permissões de leitura, escrita e execução também são agrupadas em blocos de três (rwx), o mapeamento entre o estado dos bits e a numeração octal é perfeito.
+
+A tabela abaixo demonstra a conversão direta entre binário, octal e o modo resultante do ficheiro:
+
+| Octal | Binário | Modo de ficheiro |
+|-------|---------|------------------|
+| 0     | 000     | ---              |
+| 1     | 001     | --x              |
+| 2     | 010     | -w-              |
+| 3     | 011     | -wx              |
+| 4     | 100     | r--              |
+| 5     | 101     | r-x              |
+| 6     | 110     | rw-              |
+| 7     | 111     | rwx              |
+
+Tabela 3: Modos de Ficheiro em Binário e Octal
+
+Ao utilizar três dígitos octais sequenciais, é possível definir simultaneamente os modos do proprietário, do grupo e de terceiros.
+
+```bash
+    $ ls -l teste.txt
+    -rw-rw-r-- 1 me me 0 2018-03-06 14:52 teste.txt
+
+    $ chmod 600 teste.txt
+    $ ls -l teste.txt
+    -rw------- 1 me me 0 2018-03-06 14:52 teste.txt
+```
+Neste cenário prático, ao passar o argumento 600, instruímos o sistema a conceder permissões de leitura e escrita (6) ao proprietário, removendo simultaneamente todos os acessos (0 e 0) para o grupo e para o resto do mundo.
+
