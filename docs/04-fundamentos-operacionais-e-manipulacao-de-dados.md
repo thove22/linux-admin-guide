@@ -423,3 +423,57 @@ A notação simbólica divide a configuração em três componentes lógicos: qu
 Tabela 4: Exemplos de Notação Simbólica do chmod
 
 Embora o comando chmod possua a opção --recursive para alterar toda uma árvore de diretórios, a sua utilização exige extrema cautela, dado que raramente é desejável que ficheiros regulares e diretórios partilhem exatamente a mesma estrutura de permissões (especialmente a permissão de execução).
+
+### umask: Configuração de Permissões Padrão
+
+Sempre que um novo recurso é criado no sistema, este não nasce "vazio" de permissões. O comando umask controla o conjunto padrão de privilégios atribuídos a um ficheiro no exato momento da sua génese. O utilitário funciona através de uma máscara (expressa em notação octal) que define quais os bits de permissão que devem ser removidos ou "mascarados" do modo base.
+
+Para auditar e testar a máscara em vigor:
+
+```bash
+    $ umask
+    0002
+
+    $ ls -l teste.txt
+    -rw-rw-r-- 1 me me 0 2018-03-06 14:53 teste.txt
+```
+
+Neste caso, a máscara devolvida é 0002 (embora 0022 seja o padrão mais comum em muitas distribuições). Como resultado, o proprietário e o grupo obtêm leitura e escrita, enquanto os restantes utilizadores ficam limitados à leitura, dado que a permissão de escrita do mundo foi bloqueada pela máscara.
+
+#### Fundamentação Analítica da Máscara:
+Para compreender o mecanismo de filtragem, devemos observar o processo na sua forma binária. Sempre que um bit 1 aparece na máscara, o atributo correspondente no ficheiro é anulado (desativado).
+
+Analisando o impacto de uma máscara 0022:
+
+```bash
+    Modo Original (Base):  --- rw- rw- rw-
+    Máscara (0022):        000 000 010 010
+    --------------------------------------
+    Resultado Final:       --- rw- r-- r--
+```
+
+Onde surge um bit 1 na máscara (no local referente à escrita do grupo e do mundo), a permissão correspondente é suprimida do resultado final, garantindo uma política de criação de ficheiros mais segura por omissão.
+
+#### Permissões Especiais do Sistema
+
+A representação das permissões na sua forma tecnicamente mais precisa inclui não três, mas quatro dígitos octais. O dígito inicial (à esquerda) é reservado para configurações avançadas de controlo de processos e gestão de diretórios partilhados.
+
+1. **Atributo setuid (Octal 4000)**: Quando aplicado a um ficheiro executável, força o programa a correr utilizando o ID efetivo do proprietário do ficheiro, e não o ID do utilizador que o iniciou. Se um binário pertencer ao root e tiver o setuid ativo, um utilizador comum conseguirá executá-lo com privilégios de superutilizador, acedendo a zonas restritas. Devido ao elevado risco de segurança, a presença deste atributo no sistema deve ser rigorosamente minimizada.
+
+- Sintaxe Simbólica: chmod u+s programa
+
+- Apresentação no ls: Visualiza-se um s minúsculo na zona de execução do proprietário (ex: -rwsr-xr-x).
+
+2. **Atributo setgid (Octal 2000)**: Muda o grupo efetivo durante a execução. O seu uso mais valioso ocorre em diretórios. Quando um diretório possui o bit setgid, todos os novos ficheiros lá criados herdarão automaticamente a propriedade do grupo do próprio diretório, ignorando o grupo principal de quem os criou. Esta configuração é fundamental para pastas partilhadas por equipas de trabalho.
+
+- Sintaxe Simbólica: chmod g+s diretorio
+
+- Apresentação no ls: Visualiza-se um s minúsculo na zona de execução do grupo (ex: drwxrwsr-x).
+
+3. **Atributo sticky bit (Octal 1000)**: Herança das primeiras arquiteturas UNIX (onde impedia a troca de ficheiros na memória swap), no Linux contemporâneo este atributo afeta estritamente os diretórios. Uma vez aplicado, atua como uma trava de proteção: impede que utilizadores apaguem ou renomeiem ficheiros que não lhes pertencem, mesmo que o diretório lhes conceda permissão de escrita geral. É transversalmente utilizado na pasta temporária /tmp.
+
+- Sintaxe Simbólica: chmod +t diretorio
+
+- Apresentação no ls: Visualiza-se um t na zona de execução do mundo (ex: drwxrwxrwt).
+
+
