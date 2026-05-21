@@ -590,3 +590,44 @@ Caso seja necessário capturar tanto a saída padrão como os erros num único f
 O comando cat (de concatenate) lê ficheiros sequencialmente e escreve-os no standard output. Embora seja frequentemente usado para visualizar ficheiros curtos, a sua relação com o standard input é reveladora.
 
 Se invocar o cat sem lhe passar qualquer ficheiro como argumento, ele entra em modo de espera, lendo a partir do standard input (o teclado):
+
+```bash
+    $ cat
+    O sistema está a aguardar a minha introdução de texto.
+    O sistema está a aguardar a minha introdução de texto.
+```
+
+Após introduzir uma linha e pressionar Enter, o cat ecoa a linha no ecrã. Pressionando Ctrl+D, sinalizamos o Fim do Ficheiro (End of File - EOF).
+
+Combinando este comportamento com o redirecionamento de saída, podemos criar pequenos ficheiros de texto diretamente do terminal:
+
+```bash
+    $ cat > lembrete.txt
+    Atualizar as configurações de rede do servidor.
+    [Ctrl+D]
+```
+
+### O Fluxo: Pipelines (|) e a Bifurcação (tee)
+A arquitetura de Pipelines (condutas ou tubagens) é o mecanismo que confere à linha de comandos a sua formidável modularidade. Utilizando o operador pipe (|), o sistema operativo liga diretamente o standard output de um comando ao standard input do comando seguinte na cadeia.
+
+```bash
+    Sintaxe lógica: comando1 | comando2 | comando3
+```
+
+Por exemplo, se a listagem de um diretório for demasiado extensa para o ecrã, podemos canalizar essa saída para o utilitário less, permitindo uma paginação interativa:
+
+```bash
+    $ ls -l /etc | less
+```
+### Clonagem de Fluxos com o utilitário tee:
+
+Durante a passagem de dados por uma pipeline complexa, pode ser necessário guardar uma cópia dos dados numa fase intermédia do processamento. O comando tee atua como uma junção em "T" numa tubagem: lê os dados do standard input e grava-os simultaneamente num ficheiro e no standard output para que o fluxo prossiga.
+
+```bash
+    $ ls /usr/bin | tee inventario_base.txt | grep ssh
+```
+
+este cenário, a listagem completa dos binários é preservada no ficheiro **inventario_base.txt**, enquanto o terminal exibe apenas os resultados finais filtrados pelo comando **grep**.
+
+### Ferramentas Essenciais de Processamento e Filtragem
+
