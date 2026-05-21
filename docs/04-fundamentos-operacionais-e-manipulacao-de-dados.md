@@ -862,6 +862,26 @@ De forma simétrica, a extração de um arquivo .tar.gz requer que o tar desfaç
     $ tar xzvf backup_projeto.tar.gz
 ```
 
+### O Utilitário zip e a Interoperabilidade cross-platform
+
+Diferenciando-se categoricamente do modelo conceitual e desacoplado do UNIX, o utilitário zip foi concebido como uma ferramenta híbrida: ele executa simultaneamente o arquivamento e a compressão num único passo operacional. Este comportamento e formato de ficheiro constituem o padrão nativo e dominante em sistemas Microsoft Windows.
+
+A sua sintaxe básica exige a passagem do ficheiro destino seguida dos alvos:
+
+```bash
+    zip opções ficheiro_saida.zip alvo...
+```
+Ao contrário do tar, se o administrador apontar o zip para um diretório sem especificar explicitamente o modificador de recursividade estrutural (-r), o utilitário irá capturar exclusivamente o contentor de metadados do diretório, omitindo todos os ficheiros e subpastas hierárquicas subjacentes:
+
+```bash
+    $ zip -r playground.zip playground
+```
+
+A descompactação é efetuada por uma ferramenta simétrica dedicada denominada unzip:
+
+```bash
+    $ unzip ../playground.zip
+```
 
 
 
