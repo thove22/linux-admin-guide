@@ -619,35 +619,88 @@ Por exemplo, se a listagem de um diretório for demasiado extensa para o ecrã, 
 ```bash
     $ ls -l /etc | less
 ```
-### Clonagem de Fluxos com o utilitário tee:
-
-Durante a passagem de dados por uma pipeline complexa, pode ser necessário guardar uma cópia dos dados numa fase intermédia do processamento. O comando tee atua como uma junção em "T" numa tubagem: lê os dados do standard input e grava-os simultaneamente num ficheiro e no standard output para que o fluxo prossiga.
-
-```bash
-    $ ls /usr/bin | tee inventario_base.txt | grep ssh
-```
-
-este cenário, a listagem completa dos binários é preservada no ficheiro **inventario_base.txt**, enquanto o terminal exibe apenas os resultados finais filtrados pelo comando **grep**.
-
 ### Ferramentas Essenciais de Processamento e Filtragem
 
 No contexto das pipelines, os comandos que recebem dados, os modificam estruturalmente e os emitem novamente são denominados filtros. A combinação estratégica destes filtros permite análises de dados sofisticadas.
 
-1. grep (Pesquisa de Padrões)
-
-Analisa o fluxo de texto e imprime estritamente as linhas que correspondem a um padrão definido.
-- - -i: Ignora a distinção entre maiúsculas e minúsculas (case-insensitive).
-
-- - -v: Inverte a lógica, exibindo apenas as linhas que não contêm o padrão.
-
-2. sort e uniq (Ordenação e Deduplicação)
+1. **sort e uniq (Ordenação e Deduplicação)**
 
 O sort organiza as linhas de texto (alfabética ou numericamente). O uniq é frequentemente acoplado de imediato ao sort para remover linhas adjacentes repetidas.
+O uniq apenas consegue detetar duplicados se as linhas forem estritamente adjacentes (consecutivas). É por isso que os dados devem passar sempre pelo sort antes de chegarem ao uniq.
+
+```bash
+    $ ls /bin /usr/bin | sort | uniq | less
+```
+Se executarmos apenas ls /bin /usr/bin, o comando ls irá gerar duas listas separadas (uma para cada diretório). Ao introduzirmos o sort na pipeline, forçamos a consolidação destes dados numa única lista ordenada.
 
 - - Para visualizar apenas as linhas duplicadas em vez de as remover, utiliza-se a opção -d:
 
 ```bash
     $ ls /bin /usr/bin | sort | uniq -d | less
 ```
+2. **wc: Contagem Estatística (Word Count)**
 
+O comando wc é utilizado para extrair métricas de ficheiros ou fluxos de dados. Se o executarmos diretamente sobre um ficheiro, ele devolverá três valores: o número de linhas, de palavras e de bytes.
+
+```bash
+    $ wc listagem.txt
+    7902 64566 503634 listagem.txt
+```
+Em pipelines, o wc é quase exclusivamente utilizado com a opção -l (lines), que restringe a saída à contagem de linhas. Isto transforma-o numa ferramenta de contagem de resultados. Para sabermos o número exato de programas únicos instalados nos nossos diretórios binários:
+
+```bash
+    $ ls /bin /usr/bin | sort | uniq | wc -l
+    2728
+```
+3. **grep (Pesquisa de Padrões)**
+
+O grep é uma das ferramentas de filtragem mais poderosas do Linux. O seu trabalho é percorrer um fluxo de texto e imprimir estritamente as linhas que contêm um determinado padrão ou palavra-chave.
+
+Suponhamos que, no meio dos milhares de binários do sistema, queremos encontrar apenas os programas relacionados com a compressão de ficheiros (que geralmente contêm a palavra "zip"):
+
+```bash
+    $ ls /bin /usr/bin | sort | uniq | grep zip
+    bunzip2
+    bzip2
+    gunzip
+    gzip
+    unzip
+    zip
+    zipcloak
+```
+##### Opções de Controlo do grep:
+
+- - -i: Ignora a distinção entre maiúsculas e minúsculas (case-insensitive).
+
+- - -v: Inverte a lógica, exibindo apenas as linhas que não contêm o padrão.
+
+4. **head e tail: Inspeção de Extremos de Ficheiros**
+
+Muitas vezes, a saída de um comando é massiva e o nosso interesse reside apenas numa amostra inicial ou final. Por omissão, o head imprime as primeiras 10 linhas de um fluxo, e o tail as últimas 10. Podemos alterar este valor com o parâmetro -n.
+
+```bash
+    $ ls -l /usr/bin | tail -n 5
+    znew
+    zonetab2pot.py
+    zonetab2pot.pyc
+    zonetab2pot.pyo
+    zsoelim
+```
+##### Monitorização em Tempo Real (tail -f):
+
+O utilitário tail possui uma funcionalidade singular e indispensável para a administração de sistemas: a opção -f (follow). Em vez de ler as últimas linhas e terminar a execução, o tail -f mantém o ficheiro aberto e monitoriza-o continuamente. Sempre que um processo do sistema escreve uma nova linha no ficheiro, o tail atualiza imediatamente o ecrã.
+
+```bash
+    $ sudo tail -f /var/log/syslog
+```
+5. **tee: Bifurcação do Fluxo**
+
+O tee lê os dados do standard input e clona esse fluxo: uma cópia é guardada num ficheiro, enquanto a outra cópia continua a fluir livremente para o standard output.
+
+Isto é extremamente útil para guardar o estado completo dos dados antes de aplicar um filtro destrutivo, como o grep.
+
+```bash
+    $ ls /usr/bin | tee inventario_completo.txt | grep zip
+```
+Neste cenário, a listagem completa dos binários é preservada no ficheiro **inventario_completo.txt**, enquanto o terminal exibe apenas os resultados finais filtrados pelo comando **grep**.
 
