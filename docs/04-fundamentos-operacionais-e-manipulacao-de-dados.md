@@ -532,3 +532,61 @@ Por exemplo, para alterar o grupo de um ficheiro para developers, pode utilizar-
     $ sudo chgrp developers meuficheiro.txt
 ```
 Contudo, dada a evolução do chown  que agora agrupa ambas as funções numa única ferramenta através da sintaxe com dois-pontos (:), a utilização do chgrp tornou-se largamente redundante nas operações diárias de administração de sistemas.
+
+## Manipulação de Dados e Redirecionamento de Fluxos (I/O)
+
+Na arquitetura de sistemas baseados em UNIX, vigora o princípio fundamental de que "tudo é um ficheiro". Esta abstração aplica-se não apenas aos dados armazenados no disco, mas também aos dispositivos de hardware e aos processos em execução.
+
+Quando um programa é executado, ele interage com o sistema através de três canais de comunicação padrão, tecnicamente denominados descritores de ficheiros (file descriptors):
+
+1. Standard Input (stdin) - Descritor 0: O canal pelo qual o programa recebe os dados de entrada. Por omissão, está acoplado ao teclado do utilizador.
+
+2. Standard Output (stdout) - Descritor 1: O canal utilizado pelo programa para emitir os seus resultados bem-sucedidos. Por omissão, está acoplado ao monitor (terminal).
+
+Standard Error (stderr) - Descritor 2: Um canal dedicado exclusivamente à emissão de mensagens de diagnóstico, estado ou erro. Também está, por omissão, acoplado ao monitor.
+
+3. O recurso de Redirecionamento de I/O permite ao utilizador intercetar estes canais e redefinir a sua origem ou destino, gravando resultados em ficheiros ou interligando programas de forma dinâmica.
+
+O recurso de Redirecionamento de I/O permite ao utilizador intercetar estes canais e redefinir a sua origem ou destino, gravando resultados em ficheiros ou interligando programas de forma dinâmica.
+
+### Redirecionamento de Saída (Stdout) e Erros (Stderr)
+
+Para capturar a saída padrão de um comando e armazená-la num ficheiro, utiliza-se o operador de redirecionamento >.
+
+```bash
+    $ ls -l /usr/bin > lista_binarios.txt
+```
+Ao inspecionar o ficheiro lista_binarios.txt, verificamos que este contém o resultado da listagem. Contudo, é vital notar um comportamento intrínseco do operador >: ele reescreve o ficheiro de destino a partir do início. Se o ficheiro já existir, o seu conteúdo prévio é truncado (apagado).
+
+Para contornar esta eliminação e anexar novos dados ao final de um ficheiro existente, utiliza-se o operador >>:
+
+```bash
+    $ ls -l /sbin >> lista_binarios.txt
+```
+
+#### Isolamento de Erros
+
+Se tentarmos listar um diretório inexistente e redirecionarmos a saída, deparamo-nos com uma peculiaridade:
+
+```bash
+    $ ls -l /diretorio_falso > saida.txt
+    ls: cannot access '/diretorio_falso': No such file or directory
+```
+O erro foi impresso no ecrã e o ficheiro saida.txt ficou vazio. Isto ocorre porque programas bem concebidos canalizam as suas falhas para o Standard Error (descritor 2). O operador > redireciona estritamente o Standard Output (descritor 1).
+
+Para redirecionar os erros, devemos referenciar explicitamente o descritor de ficheiro do stderr:
+
+```bash
+    $ ls -l /diretorio_falso 2> registo_erros.txt
+```
+
+Caso seja necessário capturar tanto a saída padrão como os erros num único ficheiro, as versões modernas da shell (como o bash) oferecem o operador combinado &>:
+```bash
+    $ ls -l /bin /diretorio_falso &> diagnostico_completo.txt
+```
+
+### Redirecionamento de Entrada e Visualização (cat)
+
+O comando cat (de concatenate) lê ficheiros sequencialmente e escreve-os no standard output. Embora seja frequentemente usado para visualizar ficheiros curtos, a sua relação com o standard input é reveladora.
+
+Se invocar o cat sem lhe passar qualquer ficheiro como argumento, ele entra em modo de espera, lendo a partir do standard input (o teclado):
