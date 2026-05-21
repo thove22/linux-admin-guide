@@ -631,3 +631,23 @@ este cenário, a listagem completa dos binários é preservada no ficheiro **inv
 
 ### Ferramentas Essenciais de Processamento e Filtragem
 
+No contexto das pipelines, os comandos que recebem dados, os modificam estruturalmente e os emitem novamente são denominados filtros. A combinação estratégica destes filtros permite análises de dados sofisticadas.
+
+1. grep (Pesquisa de Padrões)
+
+Analisa o fluxo de texto e imprime estritamente as linhas que correspondem a um padrão definido.
+- - -i: Ignora a distinção entre maiúsculas e minúsculas (case-insensitive).
+
+- - -v: Inverte a lógica, exibindo apenas as linhas que não contêm o padrão.
+
+2. sort e uniq (Ordenação e Deduplicação)
+
+O sort organiza as linhas de texto (alfabética ou numericamente). O uniq é frequentemente acoplado de imediato ao sort para remover linhas adjacentes repetidas.
+
+- - Para visualizar apenas as linhas duplicadas em vez de as remover, utiliza-se a opção -d:
+
+```bash
+    $ ls /bin /usr/bin | sort | uniq -d | less
+```
+
+
