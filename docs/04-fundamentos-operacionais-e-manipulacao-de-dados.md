@@ -499,3 +499,36 @@ O comportamento do comando chown é altamente flexível e depende da forma como 
 | `carlos:`           | Transfere a propriedade do ficheiro para o utilizador *carlos* e altera automaticamente o grupo do ficheiro para o grupo principal de login associado ao utilizador *carlos*. |
 
 Tabela 4: Exemplos de Argumentos e Comportamento do chown
+
+#### Cenário Prático de Transferência de Ficheiros
+
+Para ilustrar a utilidade do chown, suponhamos a existência de dois utilizadores no sistema: a Ana (que possui privilégios administrativos via sudo) e o Bruno (um utilizador comum). A Ana pretende copiar um ficheiro de configuração do seu diretório pessoal para o diretório do Bruno, para que este o possa editar.
+
+A primeira abordagem lógica seria efetuar uma cópia direta:
+
+```bash
+    [ana@linux ~]$ sudo cp meuficheiro.txt ~bruno
+    [sudo] password for ana:
+    [ana@linux ~]$ sudo ls -l ~bruno/meuficheiro.txt
+    -rw-r--r-- 1 root root 2048 2023-10-25 14:30 /home/bruno/meuficheiro.txt
+```
+Ao utilizar o sudo para ter permissão de escrita no diretório do Bruno, a Ana executou o comando cp como superutilizador. Consequentemente, o novo ficheiro copiado foi registado com o utilizador e o grupo root. O Bruno conseguirá ler o ficheiro, mas ser-lhe-á negada a permissão de o editar, pois não é o proprietário.
+
+Para retificar a situação e conceder o controlo total ao Bruno, a Ana invoca o **chown**:
+
+```bash
+    [ana@linux ~]$ sudo chown bruno: ~bruno/meuficheiro.txt
+    [ana@linux ~]$ sudo ls -l ~bruno/meuficheiro.txt
+    -rw-r--r-- 1 bruno bruno 2048 2023-10-25 14:30 /home/bruno/meuficheiro.txt
+```
+### chgrp: A Alternativa Legada para Grupos
+Nas versões mais antigas e arcaicas da tradição UNIX, o comando chown era estruturalmente limitado e servia única e exclusivamente para alterar a propriedade do utilizador. Para modificar a propriedade de grupo de um ficheiro, o sistema disponibilizava um utilitário isolado: o comando chgrp (change group).
+
+Atualmente, o chgrp continua presente em todas as distribuições Linux modernas para garantir a compatibilidade e cumprir as normas POSIX. O seu funcionamento é quase idêntico ao do chown, mas restrito ao escopo dos grupos.
+
+Por exemplo, para alterar o grupo de um ficheiro para developers, pode utilizar-se:
+
+```bash
+    $ sudo chgrp developers meuficheiro.txt
+```
+Contudo, dada a evolução do chown  que agora agrupa ambas as funções numa única ferramenta através da sintaxe com dois-pontos (:), a utilização do chgrp tornou-se largamente redundante nas operações diárias de administração de sistemas.
