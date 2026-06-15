@@ -3,7 +3,6 @@
 ## 1.1 O Editor vi 
  
 Aprender a linha de comandos do Linux tem algo em comum com aprender a tocar piano: não é uma coisa que se domina numa tarde. Exige prática,repetição e, acima de tudo, compreensão do instrumento. O editor `vi` (pronuncia-se *"vê-í"*) é um desses instrumentos fundamentais  parte do núcleo duro da tradição Unix. A sua interface é famosa por não ser amigável à primeira vista, mas quem observa um utilizador experiente aeditar ficheiros em `vi` assiste a algo próximo de virtuosismo: mãos que nunca abandonam o teclado, navegação fluida, edições cirúrgicas. Neste capítulo não nos tornamos virtuosos, mas saímos a saber tocar o equivalente às primeiras notas.
- 
 > **Nota:** Na maioria das distribuições Linux modernas, incluindo o CentOS, o `vi` invocado no terminal é na realidade o **Vim** (*Vi IMproved*), uma versão melhorada com funcionalidades adicionais como realce de sintaxe e desfazer multilevel. O comportamento base é idêntico ao `vi` original, por isso usaremos os dois termos de forma intercambiável ao longo desta secção.
 
 ---
@@ -60,4 +59,109 @@ A confusão inicial de quase todos os principiantes com `vi` vem exactamente daq
  
 ---
 
+### Criar e editar um ficheiro
+ 
+Vamos criar um ficheiro novo passando o nome desejado como argumento ao `vi`. Se o ficheiro não existir, o editor cria-o; se já existir, abre-o para edição.
+ 
+```bash
+$ vi servidor_notas.txt
+```
+ 
+O ecrã deverá mostrar algo como:
+ 
+> *(imagem: ecrã do vi com ficheiro vazio, linhas com ~ à esquerda)*
+ 
+As linhas com o símbolo `~` (til) à esquerda indicam linhas vazias — linhas que não existem no ficheiro. É a forma do `vi` mostrar que o documento está vazio.
+ 
+**Ainda não escreva nada.** O editor está em modo de comando.
+
+#### Entrar em modo de inserção
+ 
+Para começar a escrever texto, é necessário entrar no modo de inserção. O método mais directo é premir a tecla `i` (*insert*). Após o fazer, deverá aparecer na parte inferior do ecrã a indicação:
+ 
+```
+-- INSERT --
+```
+ 
+Agora sim, o editor aceita texto normal. Experimente escrever:
+ 
+```
+hostname: servidor-01
+ip: 192.168.1.10
+admin: carlos
+estado: producao
+```
+#### Regressar ao modo de comando
+ 
+Para voltar ao modo de comando (por exemplo, para guardar o ficheiro ou navegar), prima `Esc`. A indicação `-- INSERT --` desaparece da parte inferior do ecrã, confirmando que está novamente em modo de comando.
+ 
+#### Guardar o trabalho
+ 
+Guardar é feito através de um comando ex — uma linha de instrução activada pelo símbolo `:` em modo de comando. Para escrever (guardar) o ficheiro:
+ 
+```
+:w
+```
+ 
+O editor confirmará com uma mensagem na parte inferior do ecrã semelhante a:
+ 
+```
+"servidor_notas.txt" [New] 4L, 67C written
+```
+ 
+Onde `4L` indica 4 linhas escritas e `67C` indica 67 caracteres. Para guardar e sair numa única instrução:
+
+```
+:wq
+```
+ 
+Ou, em alternativa, usando o atalho equivalente em modo de comando:
+ 
+```
+ZZ
+```
+ 
+---
+ 
+### Navegar sem usar o rato
+ 
+Em modo de comando, o `vi` oferece um sistema completo de navegação por teclado. As setas de direcção funcionam, mas existe uma razão histórica — e prática — para aprender as teclas alternativas.
+
+Quando o `vi` foi criado, muitos terminais de vídeo não tinham teclas de seta. Os programadores que o desenvolveram mapearam a navegação nas teclas `h`, `j`, `k`, `l` — posicionadas sob a mão direita numa disposição QWERTY — de forma a nunca precisar de mover as mãos para navegar. Para quem passa horas num terminal, isto traduz-se em velocidade real.
+ 
+A tabela seguinte detalha as teclas de movimento disponíveis em modo de comando:
+ 
+| Tecla | Movimento |
+|-------|-----------|
+| `l` ou seta direita | Um caractere para a direita |
+| `h` ou seta esquerda | Um caractere para a esquerda |
+| `j` ou seta baixo | Uma linha para baixo |
+| `k` ou seta cima | Uma linha para cima |
+| `0` (zero) | Início da linha actual |
+| `^` | Primeiro caractere não-espaço da linha actual |
+| `$` | Fim da linha actual |
+| `w` | Início da próxima palavra (incluindo pontuação) |
+| `W` | Início da próxima palavra (ignorando pontuação) |
+| `b` | Início da palavra anterior (incluindo pontuação) |
+| `B` | Início da palavra anterior (ignorando pontuação) |
+| `Ctrl-F` ou `Page Down` | Avançar uma página |
+| `Ctrl-B` ou `Page Up` | Recuar uma página |
+| `G` | Última linha do ficheiro |
+| `nG` | Ir para a linha número `n` (ex: `5G` vai para a linha 5) |
+| `1G` | Primeira linha do ficheiro |
+
+#### Prefixo numérico: multiplicar comandos
+ 
+Uma das funcionalidades mais poderosas do `vi` é a possibilidade de prefixar qualquer comando de movimento com um número, multiplicando o seu efeito. Por exemplo:
+ 
+- `5j` move o cursor **cinco linhas** para baixo
+- `3w` avança **três palavras** para a frente
+- `10G` vai directamente para a **linha 10** do ficheiro
+Este mecanismo torna a navegação em ficheiros longos — como logs de sistema com milhares de linhas ou ficheiros de configuração extensos — substancialmente mais eficiente do que usar as setas repetidamente.
+ 
+---
+ 
+> **Sobre a nomenclatura:** a documentação oficial do Vim utiliza terminologia ligeiramente diferente da nomenclatura histórica do `vi`. O que aqui chamamos "modo de comando" é designado *normal mode* no Vim, e o que chamamos "comandos ex" (os que começam com `:`) são chamados *command mode*. Para os propósitos deste guia mantemos a nomenclatura mais intuitiva, mas é útil saber desta diferença caso consulte a documentação oficial.
+ `
+---
 
