@@ -27,8 +27,13 @@ $ vi
  
 Deverá aparecer um ecrã semelhante ao seguinte:
  
-> *(imagem: ecrã inicial do vi sem ficheiro aberto)*
- 
+
+<figure align="center">
+  <img src="../assets/img/vi_init.png" alt="Arquitetura SSH" width="800">
+  <figcaption><b>img 1:</b> Arquitetura cliente-servidor do SSH </figcaption>
+</figure>
+
+
 A primeira coisa a aprender  mesmo antes de escrever uma única letra é como **sair**. Esta é a brincadeira mais antiga da comunidade Linux: o número de pessoas que abriram o `vi` acidentalmente e não conseguiram sair é incalculável. Para sair, em modo de comando (que é o modo inicial, explicado a seguir), escreve-se:
  
 ```bash
@@ -69,7 +74,12 @@ $ vi servidor_notas.txt
  
 O ecrã deverá mostrar algo como:
  
-> *(imagem: ecrã do vi com ficheiro vazio, linhas com ~ à esquerda)*
+
+<figure align="center">
+  <img src="../assets/img/vi_empty.png" alt="Arquitetura SSH" width="800">
+  <figcaption><b>img 1:</b> Arquitetura cliente-servidor do SSH </figcaption>
+</figure>
+
  
 As linhas com o símbolo `~` (til) à esquerda indicam linhas vazias — linhas que não existem no ficheiro. É a forma do `vi` mostrar que o documento está vazio.
  

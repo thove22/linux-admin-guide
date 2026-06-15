@@ -164,7 +164,7 @@ Um link simbólico (ou soft link) é um ficheiro distinto que contém, como úni
 A sua criação é feita com o comando: 
 
 ```bash
-    ln -s
+    $ ln -s [caminho_do_alvo] [caminho_do_link]
 ```
 
 
