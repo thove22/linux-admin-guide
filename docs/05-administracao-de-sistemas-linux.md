@@ -29,8 +29,8 @@ Deverá aparecer um ecrã semelhante ao seguinte:
  
 
 <figure align="center">
-  <img src="../assets/img/vi_init.png" alt="Arquitetura SSH" width="800">
-  <figcaption><b>img 1:</b> Arquitetura cliente-servidor do SSH </figcaption>
+  <img src="../assets/img/vi_init.png" alt="Ecra Inicial do Vi" width="600">
+  <figcaption><b>img 1:</b> Ecra Inicial do Vi</figcaption>
 </figure>
 
 
@@ -76,12 +76,12 @@ O ecrã deverá mostrar algo como:
  
 
 <figure align="center">
-  <img src="../assets/img/vi_empty.png" alt="Arquitetura SSH" width="800">
-  <figcaption><b>img 1:</b> Arquitetura cliente-servidor do SSH </figcaption>
+  <img src="../assets/img/vi_empty.png" alt="Ecra inicial do Vi" width="600">
+  <figcaption><b>img 1:</b> ecra inicial do vi </figcaption>
 </figure>
 
  
-As linhas com o símbolo `~` (til) à esquerda indicam linhas vazias — linhas que não existem no ficheiro. É a forma do `vi` mostrar que o documento está vazio.
+As linhas com o símbolo `~` (til) à esquerda indicam linhas vazias  linhas que não existem no ficheiro. É a forma do `vi` mostrar que o documento está vazio.
  
 **Ainda não escreva nada.** O editor está em modo de comando.
 
@@ -107,7 +107,7 @@ Para voltar ao modo de comando (por exemplo, para guardar o ficheiro ou navegar)
  
 #### Guardar o trabalho
  
-Guardar é feito através de um comando ex — uma linha de instrução activada pelo símbolo `:` em modo de comando. Para escrever (guardar) o ficheiro:
+Guardar é feito através de um comando ex: uma linha de instrução activada pelo símbolo `:` em modo de comando. Para escrever (guardar) o ficheiro:
  
 ```
 :w
@@ -135,9 +135,9 @@ ZZ
  
 ### Navegar sem usar o rato
  
-Em modo de comando, o `vi` oferece um sistema completo de navegação por teclado. As setas de direcção funcionam, mas existe uma razão histórica — e prática — para aprender as teclas alternativas.
+Em modo de comando, o `vi` oferece um sistema completo de navegação por teclado. As setas de direcção funcionam, mas existe uma razão histórica  e prática  para aprender as teclas alternativas.
 
-Quando o `vi` foi criado, muitos terminais de vídeo não tinham teclas de seta. Os programadores que o desenvolveram mapearam a navegação nas teclas `h`, `j`, `k`, `l` — posicionadas sob a mão direita numa disposição QWERTY — de forma a nunca precisar de mover as mãos para navegar. Para quem passa horas num terminal, isto traduz-se em velocidade real.
+Quando o `vi` foi criado, muitos terminais de vídeo não tinham teclas de seta. Os programadores que o desenvolveram mapearam a navegação nas teclas `h`, `j`, `k`, `l`  posicionadas sob a mão direita numa disposição QWERTY  de forma a nunca precisar de mover as mãos para navegar. Para quem passa horas num terminal, isto traduz-se em velocidade real.
  
 A tabela seguinte detalha as teclas de movimento disponíveis em modo de comando:
  
@@ -167,7 +167,7 @@ Uma das funcionalidades mais poderosas do `vi` é a possibilidade de prefixar qu
 - `5j` move o cursor **cinco linhas** para baixo
 - `3w` avança **três palavras** para a frente
 - `10G` vai directamente para a **linha 10** do ficheiro
-Este mecanismo torna a navegação em ficheiros longos — como logs de sistema com milhares de linhas ou ficheiros de configuração extensos — substancialmente mais eficiente do que usar as setas repetidamente.
+Este mecanismo torna a navegação em ficheiros longos  como logs de sistema com milhares de linhas ou ficheiros de configuração extensos  substancialmente mais eficiente do que usar as setas repetidamente.
  
 ---
  
@@ -175,3 +175,91 @@ Este mecanismo torna a navegação em ficheiros longos — como logs de sistema 
  `
 ---
 
+### Edição de texto
+ 
+A maior parte do trabalho de edição resume-se a um conjunto reduzido de operações: inserir texto, apagar texto, e mover texto de um sítio para outro através de corte e colagem. O `vi` suporta todas estas operações, à sua maneira. Suporta também uma forma limitada de desfazer alterações: estando em modo de comando, a tecla `u` desfaz a última alteração efectuada. Este comando vai ser útil à medida que experimentamos os comandos que se seguem.
+ 
+#### Formas de entrar em modo de inserção
+ 
+Já conhecemos o comando `i` para inserir texto na posição actual do cursor. Mas o `vi` oferece outras formas de entrar em modo de inserção, cada uma adequada a uma situação diferente.
+ 
+Imagine que temos o nosso ficheiro `servidor_notas.txt` com o seguinte conteúdo:
+ 
+```
+hostname: servidor-01
+ip: 192.168.1.10
+admin: carlos
+estado: producao
+```
+ 
+Se quiséssemos acrescentar texto ao fim da primeira linha, o comando `i` não seria suficiente porque não nos deixa posicionar o cursor depois do último caractere da linha. Para isso existe o comando `a` (*append*). Ao mover o cursor para o fim da linha e premir `a`, o cursor avança um caractere além do fim da linha e o editor entra em modo de inserção, permitindo acrescentar texto a seguir.
+ 
+Mas como quase sempre queremos acrescentar texto ao fim de uma linha, o `vi` tem um atalho ainda mais directo: o comando `A` (maiúsculo). Independentemente de onde o cursor estiver na linha, `A` move-o imediatamente para o final e entra em modo de inserção. Por exemplo, posicionando o cursor no início da primeira linha e premindo `A`, podemos acrescentar informação directamente:
+ 
+```
+hostname: servidor-01 [actualizado]
+```
+ 
+Prima `Esc` para regressar ao modo de comando.
+
+#### Abrir uma linha nova
+ 
+Outra forma de inserir texto é "abrir" uma linha nova entre duas linhas existentes. O `vi` tem dois comandos para isso:
+ 
+| Comando | Abre uma linha |
+|---------|----------------|
+| `o` | Abaixo da linha actual |
+| `O` | Acima da linha actual |
+ 
+Por exemplo, com o cursor posicionado na segunda linha (`ip: 192.168.1.10`), premir `o` cria uma linha em branco imediatamente abaixo e entra em modo de inserção. Podemos então escrever:
+ 
+```
+gateway: 192.168.1.1
+```
+
+Prima `Esc` para sair do modo de inserção. Se quisermos desfazer esta adição, basta premir `u` em modo de comando.
+ 
+O comando `O` (maiúsculo) faz o mesmo mas abre a linha acima da posição actual do cursor.
+ 
+#### Apagar texto
+ 
+O `vi` oferece vários comandos para apagar texto, todos organizados em torno de dois caracteres base.
+ 
+O comando `x` apaga o caractere na posição actual do cursor. Pode ser precedido de um número para apagar vários caracteres de uma vez: `3x` apaga o caractere actual e os dois seguintes.
+ 
+O comando `d` é mais versátil. Combinado com qualquer comando de movimento, elimina o texto desde a posição actual até ao destino desse movimento. A tabela seguinte mostra os exemplos mais úteis:
+
+| Comando | O que apaga |
+|---------|-------------|
+| `x` | O caractere actual |
+| `3x` | O caractere actual e os dois seguintes |
+| `dd` | A linha actual completa |
+| `5dd` | A linha actual e as quatro seguintes |
+| `dW` | Da posição actual até ao início da próxima palavra |
+| `d$` | Da posição actual até ao fim da linha |
+| `d0` | Da posição actual até ao início da linha |
+| `d^` | Da posição actual até ao primeiro caractere não-espaço da linha |
+| `dG` | Da linha actual até ao fim do ficheiro |
+| `d20G` | Da linha actual até à vigésima linha do ficheiro |
+
+Note-se que o `vi` original suporta apenas um nível de desfazer. O Vim (que é o que está instalado no CentOS) suporta múltiplos níveis, o que permite desfazer uma sequência de alterações premindo `u` repetidamente.
+
+#### Cortar, copiar e colar
+ 
+O comando `d` não apaga apenas texto — corta-o. Cada vez que se usa `d`, o texto eliminado é copiado para um buffer interno (equivalente à área de transferência). O comando `p` cola o conteúdo desse buffer após o cursor, e `P` (maiúsculo) cola antes do cursor.
+ 
+O comando `y` (*yank*) copia texto sem o eliminar, usando a mesma lógica combinatória do `d`. A tabela seguinte resume os comandos de cópia disponíveis:
+
+
+| Comando | O que copia |
+|---------|-------------|
+| `yy` | A linha actual completa |
+| `5yy` | A linha actual e as quatro seguintes |
+| `yW` | Da posição actual até ao início da próxima palavra |
+| `y$` | Da posição actual até ao fim da linha |
+| `y0` | Da posição actual até ao início da linha |
+| `y^` | Da posição actual até ao primeiro caractere não-espaço da linha |
+| `yG` | Da linha actual até ao fim do ficheiro |
+| `y20G` | Da linha actual até à vigésima linha do ficheiro |
+
+Para experimentar: com o cursor na primeira linha do ficheiro, primir `yy` copia essa linha. Mover para a última linha com `G` e premir `p` cola a linha copiada imediatamente abaixo. Premir `P` colaria acima. O comando `u` desfaz a colagem.
