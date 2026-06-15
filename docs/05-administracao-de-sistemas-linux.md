@@ -263,3 +263,144 @@ O comando `y` (*yank*) copia texto sem o eliminar, usando a mesma lógica combin
 | `y20G` | Da linha actual até à vigésima linha do ficheiro |
 
 Para experimentar: com o cursor na primeira linha do ficheiro, primir `yy` copia essa linha. Mover para a última linha com `G` e premir `p` cola a linha copiada imediatamente abaixo. Premir `P` colaria acima. O comando `u` desfaz a colagem.
+
+### Pesquisa e substituição
+ 
+O `vi` permite mover o cursor para qualquer posição do ficheiro com base numa pesquisa, e também executar substituições automáticas em todo o documento ou numa gama de linhas.
+ 
+#### Pesquisar no ficheiro
+ 
+Para pesquisar uma palavra ou frase, estando em modo de comando, prima `/`. Aparece um `/` na parte inferior do ecrã. Escreva o termo a pesquisar e prima `Enter`. O cursor salta para a próxima ocorrência desse termo no ficheiro.
+ 
+```
+/estado
+```
+ 
+Para repetir a pesquisa e avançar para a ocorrência seguinte, prima `n`. O mecanismo é idêntico ao que usámos no programa `less` no Capítulo 3.
+ 
+O `vi` permite também pesquisas com expressões regulares, o que torna este mecanismo muito mais poderoso para padrões complexos. As expressões regulares são abordadas em profundidade num capítulo posterior.
+ 
+#### Substituição global
+ 
+Para substituir texto em todo o ficheiro ou numa gama de linhas, o `vi` usa um comando ex com a seguinte estrutura:
+ 
+```
+:%s/texto_antigo/texto_novo/g
+```
+ 
+Por exemplo, para substituir todas as ocorrências de `producao` por `producção` no ficheiro inteiro:
+ 
+```
+:%s/producao/producao/g
+```
+ 
+A tabela seguinte explica cada componente deste comando:
+ 
+| Elemento | Significado |
+|----------|-------------|
+| `:` | Inicia um comando ex |
+| `%` | Define o âmbito como todo o ficheiro (equivalente a `1,$`, ou seja, da primeira à última linha). Se omitido, a substituição aplica-se apenas à linha actual |
+| `s` | Especifica a operação de substituição (*substitution*) |
+| `/producao/producao/` | Define o padrão a procurar e o texto de substituição |
+| `g` | Aplica a substituição a todas as ocorrências em cada linha. Se omitido, substitui apenas a primeira ocorrência por linha |
+  
+É também possível pedir confirmação antes de cada substituição, acrescentando `c` no final:
+ 
+```
+:%s/producao/producao/gc
+```
+ 
+O editor para em cada ocorrência e apresenta a pergunta:
+ 
+```
+replace with producao (y/n/a/q/l/^E/^Y)?
+```
+ 
+As opções disponíveis são `y` para confirmar, `n` para saltar, `a` para substituir todas as restantes sem mais confirmação, `q` para cancelar a operação e `l` para substituir esta ocorrência e sair.
+ 
+### Editar múltiplos ficheiros
+ 
+É comum precisar de trabalhar em mais de um ficheiro ao mesmo tempo, seja para fazer alterações em vários ficheiros relacionados, seja para copiar conteúdo de um para outro. O `vi` permite abrir vários ficheiros numa única sessão, passando-os como argumentos no arranque:
+ 
+```bash
+$ vi servidor_notas.txt interfaces.txt
+```
+ 
+O editor abre com o primeiro ficheiro visível no ecrã. Para navegar entre os ficheiros abertos, usam-se os seguintes comandos ex:
+ 
+```
+:bn        (buffer next — avança para o ficheiro seguinte)
+:bp        (buffer previous — recua para o ficheiro anterior)
+```
+ 
+O `vi` impede a mudança de ficheiro se houver alterações não guardadas no ficheiro actual. Para forçar a mudança descartando as alterações, acrescenta-se `!`:
+ 
+```
+:bn!
+```
+ 
+Para ver a lista de todos os ficheiros abertos na sessão actual:
+ 
+```
+:buffers
+```
+ 
+O editor apresenta uma lista na parte inferior do ecrã com os índices de cada buffer:
+ 
+```
+  1 %a   "servidor_notas.txt"         line 1
+  2      "interfaces.txt"             line 0
+Press ENTER or type command to continue
+```
+ 
+Para saltar directamente para um buffer pelo seu número:
+ 
+```
+:buffer 2
+```
+ 
+#### Abrir um ficheiro adicional durante a sessão
+ 
+Não é necessário fechar a sessão para abrir um novo ficheiro. O comando `:e` (*edit*) seguido do nome do ficheiro adiciona-o à sessão actual:
+ 
+```
+:e logs_recentes.txt
+```
+ 
+O novo ficheiro fica disponível como um buffer adicional, acessível através dos mesmos comandos `:bn`, `:bp` e `:buffer`.
+ 
+#### Copiar conteúdo entre ficheiros
+ 
+Com múltiplos ficheiros abertos, é possível copiar texto de um para outro usando os mesmos comandos de yank e paste que já conhecemos. O processo é directo: copiar o texto no ficheiro de origem com `yy` ou outro comando `y`, mudar para o buffer de destino com `:buffer`, e colar com `p` ou `P`.
+ 
+#### Inserir o conteúdo completo de um ficheiro
+ 
+Para inserir todo o conteúdo de um ficheiro externo na posição actual do cursor, usa-se o comando `:r` (*read*):
+ 
+```
+:r outro_ficheiro.txt
+```
+ 
+O conteúdo do ficheiro especificado é inserido imediatamente abaixo da linha onde o cursor se encontra. Isto é útil para, por exemplo, inserir um template de configuração num ficheiro que estamos a construir.
+ 
+### Guardar o trabalho: resumo dos métodos
+ 
+Ao longo desta secção usámos `:w` para guardar, mas o `vi` oferece várias variantes que convém conhecer:
+ 
+| Comando | Acção |
+|---------|-------|
+| `:w` | Guarda o ficheiro sem sair |
+| `:wq` | Guarda e sai |
+| `ZZ` | Guarda e sai (atalho em modo de comando) |
+| `:q!` | Sai sem guardar, descartando alterações |
+| `:w nome_alternativo.txt` | Guarda uma cópia com outro nome (equivalente a "Guardar como") |
+ 
+O comando `:w` aceita um nome de ficheiro opcional. Isto permite guardar uma versão alternativa do ficheiro que está a ser editado sem abandonar o ficheiro original. Por exemplo, se estivemos a editar `servidor_notas.txt` e queremos guardar uma cópia de segurança antes de continuar:
+ 
+```
+:w servidor_notas_backup.txt
+```
+ 
+O ficheiro original continua aberto e activo na sessão. A cópia fica guardada em disco com o novo nome.
+ 
+
