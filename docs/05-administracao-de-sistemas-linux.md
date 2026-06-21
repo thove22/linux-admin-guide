@@ -1182,3 +1182,48 @@ Existe ainda um sub-estado de *sleeping* chamado **uninterruptible sleep** (indi
 Os processos **zombie** aparecem em listagens de `ps` com o estado `Z`. Se encontrar zombies persistentes, verifique os seus PPID para descobrir de onde vêm  o processo pai não está a fazer a chamada `wait` necessária para os limpar.
  
 ---
+
+### 3.3 Sinais: Comunicar com Processos
+ 
+Os sinais são pedidos de interrupção ao nível do processo. Existem cerca de trinta tipos definidos, e são utilizados de várias formas: como meio de comunicação entre processos, para terminar ou suspender processos quando são premidas certas teclas no terminal, para notificar um processo de uma condição importante como a morte de um filho, ou para indicar erros como divisão por zero.
+ 
+Quando um processo recebe um sinal, uma de duas coisas pode acontecer: se o processo tiver definido uma rotina de tratamento (*handler*) para aquele sinal, essa rotina é chamada; caso contrário, o kernel executa a acção por defeito, que varia consoante o sinal. Os programas podem também pedir que sinais sejam ignorados ou bloqueados.
+ 
+A tabela seguinte lista os sinais mais importantes para um administrador de sistemas:
+ 
+| Número | Nome | Descrição | Acção por defeito | Pode ser interceptado? | Pode ser bloqueado? |
+|--------|------|-----------|-------------------|----------------------|---------------------|
+| 1 | HUP | Hangup | Terminar | Sim | Sim |
+| 2 | INT | Interrupt | Terminar | Sim | Sim |
+| 3 | QUIT | Quit | Terminar | Sim | Sim |
+| 9 | KILL | Kill | Terminar | **Não** | **Não** |
+| 11 | SEGV | Segmentation fault | Terminar | Sim | Sim |
+| 15 | TERM | Software termination | Terminar | Sim | Sim |
+| 17 | STOP | Keyboard stop | Parar | **Não** | **Não** |
+| 18 | TSTP | Keyboard stop (soft) | Parar | Sim | Sim |
+| 19 | CONT | Continue after stop | Ignorar | Sim | Não |
+| — | WINCH | Window changed | Ignorar | Sim | Sim |
+| — | USR1 | User-defined #1 | Terminar | Sim | Sim |
+| — | USR2 | User-defined #2 | Terminar | Sim | Sim |
+ 
+ 
+Os sinais `KILL` e `STOP` são especiais: não podem ser interceptados, bloqueados ou ignorados. `KILL` destrói o processo ao nível do kernel, e `STOP` suspende a sua execução até que um sinal `CONT` seja recebido.
+ 
+É útil perceber as diferenças entre os sinais que parecem fazer a mesma coisa:
+ 
+`KILL` é executado directamente pelo kernel — o processo nunca chega sequer a receber este sinal. É garantidamente fatal (com a excepção rara de processos em *uninterruptible sleep*).
+ 
+`TERM` é um pedido educado para terminar. Espera-se que o processo faça limpeza do seu estado e saia. O processo pode ignorar este sinal se assim o quiser.
+ 
+`INT` é gerado pelo terminal quando se prime `Ctrl+C`. É um pedido para terminar a operação actual. Programas com linha de comando interactiva devem parar o que estão a fazer e aguardar novo input, em vez de simplesmente sair.
+ 
+`HUP` tem duas interpretações comuns. Para muitos daemons, é interpretado como um pedido de reset o daemon relê o seu ficheiro de configuração e reajusta-se sem reiniciar. Este é o método standard para aplicar alterações de configuração a serviços como o Nginx ou o SSH sem interromper as sessões activas.
+ 
+`TSTP` é uma versão "suave" do `STOP` gerada quando se prime `Ctrl+Z`. Ao contrário do `STOP`, pode ser interceptado  os programas que o apanham normalmente limpam o seu estado antes de se suspenderem.
+ 
+`USR1` e `USR2` não têm significado fixo. Cada programa pode usá-los como quiser. O Apache, por exemplo, usa `USR1` para sinalizar um reinício gracioso.
+ 
+---
+ 
+
+
