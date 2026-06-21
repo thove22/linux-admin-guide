@@ -1319,3 +1319,102 @@ O cabeçalho do `top` contém informação de estado do sistema que convém sabe
 | `1.0 sy` | 1.0% do CPU a ser usado por processos de sistema (kernel) |
 | `96.3 id` | 96.3% do CPU inactivo |
 | `0.5 wa` | 0.5% do CPU à espera de I/O |
+
+Por defeito, o `top` actualiza a cada 3 segundos e ordena os processos por consumo de CPU, o que coloca os processos mais exigentes no topo da lista. Dentro do `top`, algumas teclas úteis:
+ 
+| Tecla | Acção |
+|-------|-------|
+| `q` | Sair |
+| `k` | Eliminar um processo (pede o PID e o sinal) |
+| `r` | Alterar o nice value de um processo |
+| `M` | Ordenar por consumo de memória |
+| `P` | Ordenar por consumo de CPU (por defeito) |
+| `u` | Filtrar por utilizador |
+| `h` | Mostrar ajuda |
+
+#### kill: enviar sinais a processos
+ 
+O comando `kill` envia sinais a processos. Apesar do nome, não serve apenas para terminar processos — pode enviar qualquer sinal. A sintaxe é:
+ 
+```bash
+kill [-sinal] PID
+```
+ 
+Sem especificar o sinal, o `kill` envia `TERM` (15) por defeito, que é um pedido educado para o processo terminar:
+ 
+```bash
+$ kill 2103
+```
+ 
+Se o processo ignorar o `TERM` — o que pode acontecer com processos bloqueados ou mal comportados — usa-se o `KILL` (9), que não pode ser ignorado:
+ 
+```bash
+$ kill -9 2103
+# ou equivalentemente:
+$ kill -KILL 2103
+```
+ 
+> **Use `kill -9` apenas como último recurso.** O sinal `KILL` não dá ao processo oportunidade de limpar recursos, fechar ficheiros ou guardar estado. Pode resultar em ficheiros corrompidos ou locks não libertados. Tente sempre `TERM` primeiro e aguarde alguns segundos.
+ 
+Para enviar um sinal a todos os processos com um determinado nome, usa-se o `killall`:
+ 
+```bash
+# Reiniciar o nginx enviando HUP ao processo master
+$ sudo kill -HUP $(cat /var/run/nginx.pid)
+ 
+# Terminar todos os processos com o nome "python3"
+$ sudo killall python3
+```
+ 
+O `pkill` é uma alternativa mais flexível, permitindo seleccionar processos por nome, utilizador ou outros atributos:
+ 
+```bash
+# Terminar todos os processos do utilizador carlos
+$ sudo pkill -u carlos
+ 
+# Enviar HUP ao processo nginx pelo nome
+$ sudo pkill -HUP nginx
+```
+ 
+#### Controlo de jobs: foreground, background e suspensão
+ 
+Quando se executa um comando na shell, por defeito ele corre em **foreground**  a shell fica bloqueada à espera que o processo termine antes de devolver o prompt. Para processos de longa duração, isto pode ser inconveniente.
+ 
+Para lançar um processo directamente em **background**, acrescenta-se `&` no final do comando:
+ 
+```bash
+$ python3 relatorio_mensal.py &
+[1] 3847
+```
+ 
+A shell imprime o número do job `[1]` e o PID do processo `3847`, e o prompt regressa imediatamente. O processo continua a correr em segundo plano.
+ 
+Se um processo já estiver a correr em foreground e quisermos movê-lo para background sem o terminar, premimos `Ctrl+Z`:
+ 
+```bash
+$ python3 relatorio_mensal.py
+^Z
+[1]+  Stopped                 python3 relatorio_mensal.py
+```
+ 
+O processo foi suspenso (estado `T`). Para retomar a sua execução em background:
+ 
+```bash
+$ bg %1
+[1]+ python3 relatorio_mensal.py &
+```
+ 
+Para listar todos os jobs activos da sessão actual:
+ 
+```bash
+$ jobs
+[1]-  Running                 python3 relatorio_mensal.py &
+[2]+  Stopped                 vim /etc/nginx/nginx.conf
+```
+ 
+Para trazer um processo de background para foreground:
+ 
+```bash
+$ fg %1
+```
+
