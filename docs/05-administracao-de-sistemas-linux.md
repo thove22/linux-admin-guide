@@ -1046,3 +1046,87 @@ Note-se que o root consegue sempre enviar mensagens via `wall`, independentement
  
 ---
 
+ 
+### 2.5 Mecanismos de Autenticação: PAM
+ 
+O modelo de controlo de acesso UNIX tradicional responde à pergunta "o utilizador X tem permissão para fazer Y?", mas há uma pergunta anterior que precisa de ser respondida primeiro: "como é que sabemos que isto é realmente o utilizador X?". É esta questão que os mecanismos de autenticação endereçam.
+ 
+#### O problema da autenticação monolítica
+ 
+Durante décadas, a autenticação em sistemas UNIX era simples e rígida: quando um utilizador fazia login, o sistema comparava a senha fornecida com o hash armazenado em `/etc/shadow`. Se correspondesse, o acesso era concedido. Ponto.
+ 
+Este modelo funcionava num mundo de servidores isolados com utilizadores locais. Mas a realidade de infraestruturas modernas é diferente: servidores ligados a directórios LDAP centrais, autenticação com cartões inteligentes, autenticação de dois factores, políticas de senha diferentes para grupos diferentes. O modelo monolítico de "verificar contra `/etc/shadow`" não consegue acomodar esta diversidade sem modificar o código fonte de cada programa que autentica utilizadores.
+ 
+#### PAM: Pluggable Authentication Modules
+ 
+A solução adoptada pelo Linux foi o PAM  *Pluggable Authentication Modules*, ou Módulos de Autenticação Conectáveis. O PAM é uma camada de abstracção que separa a lógica de autenticação das aplicações que a precisam.
+ 
+A ideia central é simples: em vez de cada programa (login, SSH, sudo, etc.) implementar a sua própria lógica de verificação de credenciais, todos chamam o PAM. O PAM por sua vez consulta a sua própria configuração e chama os módulos específicos que o administrador definiu para aquele contexto.
+ 
+O resultado é que um administrador pode alterar radicalmente a política de autenticação do sistema — por exemplo, exigir autenticação de dois factores para logins SSH, mas manter senha simples para logins locais — sem tocar no código do SSH ou do `login`. Basta alterar a configuração do PAM.
+ 
+#### Estrutura de configuração do PAM
+ 
+As configurações do PAM residem em `/etc/pam.d/`. Cada ficheiro corresponde a um serviço:
+ 
+```bash
+$ ls /etc/pam.d/
+login   sshd   sudo   passwd   su   system-auth   ...
+```
+ 
+Um ficheiro de configuração PAM contém linhas com quatro campos:
+ 
+```
+tipo_de_controlo   módulo_de_controlo   módulo.so   argumentos
+```
+ 
+Por exemplo, o ficheiro `/etc/pam.d/sudo` em CentOS contém tipicamente:
+ 
+```
+auth       include      system-auth
+account    include      system-auth
+password   include      system-auth
+session    optional     pam_keyinit.so revoke
+session    required     pam_limits.so
+```
+ 
+O campo de tipo define a fase de autenticação: `auth` verifica a identidade, `account` verifica se a conta está activa e autorizada, `password` gere a mudança de senhas e `session` configura o ambiente após o login.
+ 
+O campo de controlo (`include`, `required`, `sufficient`, `optional`) determina o peso de cada módulo na decisão final:
+ 
+| Controlo | Comportamento |
+|----------|---------------|
+| `required` | O módulo tem de ter sucesso. Uma falha não é imediatamente fatal, mas a autenticação será recusada no final |
+| `sufficient` | Se este módulo tiver sucesso e nenhum `required` anterior tiver falhado, a autenticação é aprovada imediatamente |
+| `optional` | O resultado deste módulo é ignorado na decisão final (usado para efeitos secundários como logging) |
+| `include` | Inclui as regras de outro ficheiro de configuração PAM |
+ 
+#### Módulos PAM comuns
+ 
+Em CentOS, os módulos PAM mais utilizados incluem:
+ 
+`pam_unix.so` é o módulo base que implementa a autenticação tradicional contra `/etc/shadow`. Está presente em praticamente todas as configurações.
+ 
+`pam_pwquality.so` impõe políticas de qualidade de senha — comprimento mínimo, requisito de caracteres especiais, rejeição de senhas baseadas no nome do utilizador. É configurado em `/etc/security/pwquality.conf`.
+ 
+`pam_faillock.so` bloqueia contas após um número configurável de tentativas de autenticação falhadas, protegendo contra ataques de força bruta:
+ 
+```bash
+# Ver o estado de bloqueio de um utilizador
+$ sudo faillock --user carlos
+```
+ 
+`pam_limits.so` aplica limites de recursos definidos em `/etc/security/limits.conf`, como o número máximo de processos ou ficheiros abertos por utilizador.
+ 
+#### Por que isto importa para um administrador
+ 
+O PAM raramente precisa de ser configurado manualmente em operações do dia-a-dia — as distribuições como o CentOS entregam configurações padrão sensatas. Mas compreender a sua existência e estrutura é importante por três razões.
+ 
+Primeiro, quando um utilizador não consegue fazer login e `passwd` confirma que a senha está correcta, o problema está muitas vezes numa regra PAM — conta expirada, número de tentativas falhadas excedido, limite de logins simultâneos atingido.
+ 
+Segundo, quando se integra o servidor numa infraestrutura de autenticação centralizada (LDAP, Active Directory, Kerberos), a configuração do PAM é exactamente onde essa integração acontece.
+ 
+Terceiro, as políticas de senha impostas pelo `pam_pwquality.so` são o mecanismo técnico por trás das regras de complexidade de senha que a organização pode exigir. Saber onde essas regras são definidas é necessário para as ajustar ou diagnosticar problemas.
+ 
+> 💡 **Para aprofundar:** O comando `authselect` no CentOS Stream 8 e versões posteriores oferece uma interface de alto nível para gerir perfis de autenticação comuns (local, LDAP, Kerberos) sem editar os ficheiros PAM directamente. É o ponto de entrada recomendado para a maioria das configurações de autenticação em ambientes RHEL modernos.
+ 
