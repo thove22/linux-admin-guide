@@ -1130,7 +1130,7 @@ Terceiro, as políticas de senha impostas pelo `pam_pwquality.so` são o mecanis
  
 > 💡 **Para aprofundar:** O comando `authselect` no CentOS Stream 8 e versões posteriores oferece uma interface de alto nível para gerir perfis de autenticação comuns (local, LDAP, Kerberos) sem editar os ficheiros PAM directamente. É o ponto de entrada recomendado para a maioria das configurações de autenticação em ambientes RHEL modernos.
 
-## Secção 3 — Processos e Agendamentos
+## Processos e Agendamentos
  
 ### 3.1 Anatomia de um Processo Linux
  
@@ -1156,3 +1156,29 @@ As estruturas de dados que o kernel mantém internamente para cada processo regi
  
 **Terminal de controlo.** A maioria dos processos não-daemon tem um terminal de controlo associado, que define as ligações padrão de entrada, saída e erro. É também o terminal que determina para onde são enviados determinados sinais quando o utilizador prime teclas como `Ctrl+C` ou `Ctrl+Z`. Processos daemon, que correm em segundo plano sem interacção directa com o utilizador, não têm terminal de controlo, o que é indicado por um `?` na coluna `TTY` das listagens de processos.
  
+### Como um processo nasce e morre
+ 
+Para criar um novo processo, um processo existente clona-se com a chamada de sistema `fork`. O `fork` cria uma cópia quase idêntica do processo original, com um novo PID e contabilização de recursos própria. Após o `fork`, o processo filho usa normalmente uma das chamadas da família `exec` para começar a executar um programa diferente — é aqui que o programa novo substitui o código e a memória do processo filho.
+ 
+Quando o sistema arranca, o kernel cria autonomamente alguns processos iniciais. O mais importante é o `init` (ou `systemd` nas distribuições modernas), que é sempre o processo número 1. Todos os outros processos do sistema são descendentes do processo 1.
+ 
+Quando um processo termina, chama uma rotina interna para notificar o kernel que está pronto para morrer, fornecendo um código de saída. Por convenção, o código 0 significa terminação normal bem-sucedida. Para que um processo possa ser completamente removido, o kernel exige que o pai reconheça a morte do filho com uma chamada `wait`. Se o pai morrer antes do filho, o kernel re-atribui o processo órfão como filho do `init`, que aceita estes processos e trata do `wait` necessário para os limpar quando morrem.
+ 
+---
+ 
+### 3.2 Estados de um Processo
+ 
+Um processo não está automaticamente elegível para receber tempo de CPU só porque existe. O kernel mantém cada processo num de quatro estados de execução:
+ 
+| Estado | Significado |
+|--------|-------------|
+| Runnable | O processo pode ser executado. Adquiriu todos os recursos de que precisa e está apenas à espera de tempo de CPU. |
+| Sleeping | O processo está à espera que um evento específico aconteça. Shells interactivos e daemons passam a maior parte do tempo neste estado, à espera de input ou de ligações de rede. |
+| Zombie | O processo terminou mas o seu estado ainda não foi recolhido pelo processo pai. |
+| Stopped | O processo está administrativamente impedido de correr. Um processo parado só pode sair deste estado se outro processo o acordar ou eliminar. |
+ 
+Existe ainda um sub-estado de *sleeping* chamado **uninterruptible sleep** (indicado pela letra `D` nos comandos de monitorização), em que o processo não pode ser acordado nem por sinais. Este estado é normalmente transitório e indica que o processo está à espera de I/O — por exemplo, leitura de disco. Em situações degeneradas, como problemas com sistemas de ficheiros NFS montados com a opção `hard`, um processo pode ficar preso neste estado indefinidamente e não pode ser eliminado — a única solução é corrigir o problema subjacente ou reiniciar o sistema.
+ 
+Os processos **zombie** aparecem em listagens de `ps` com o estado `Z`. Se encontrar zombies persistentes, verifique os seus PPID para descobrir de onde vêm  o processo pai não está a fazer a chamada `wait` necessária para os limpar.
+ 
+---
