@@ -728,17 +728,17 @@ Estas duas ferramentas não são concorrentes, são complementares. A escolha en
 
 > 💡 **Para aprofundar:** O `sed` suporta expressões regulares completas nos seus padrões, o que multiplica significativamente o seu poder expressivo. As expressões regulares são abordadas em detalhe no Capítulo 6, que cobre automação com shell scripting. Depois de as dominar, os comandos `sed` que hoje parecem complexos tornam-se naturais.
 
-## Gestão de Identidades e Acessos
+## 2. Gestão de Identidades e Acessos
  
 No Capítulo 3 estabelecemos os fundamentos do modelo de controlo de acesso do Linux: o papel do root, a filosofia do privilégio mínimo, e as ferramentas `su` e `sudo` como mecanismos de delegação. Esta secção continua a partir desse ponto. O objectivo agora é operacional: saber gerir o ciclo de vida das contas de utilizador, monitorizar quem está no sistema, comunicar com utilizadores activos e compreender a infraestrutura de autenticação que torna tudo isto seguro.
  
 ---
  
-## 2.1 Ciclo de Vida de Contas de Utilizador
+### 2.1 Ciclo de Vida de Contas de Utilizador
  
 Em Linux, cada pessoa que interage com o sistema tem uma identidade formal: uma conta de utilizador. Esta conta não é apenas um nome — é um conjunto de atributos armazenados em ficheiros de sistema que determinam o que esse utilizador pode fazer, onde pode trabalhar e como se autentica. A administração dessas contas é uma das tarefas mais recorrentes de qualquer sysadmin.
  
-### Os ficheiros que definem os utilizadores
+#### Os ficheiros que definem os utilizadores
  
 Antes de criar ou modificar qualquer conta, é importante compreender onde o sistema guarda essa informação. Há quatro ficheiros centrais:
  
@@ -758,7 +758,7 @@ Os campos são, pela ordem: nome de utilizador, marcador de senha (o `x` indica 
  
 > ⚠️ **Nunca edite estes ficheiros directamente com um editor de texto.** Um caractere trocado pode corromper logins em todo o sistema. Use sempre os comandos dedicados, ou `vipw` e `vigr` se precisar mesmo de editar directamente, pois eles bloqueiam o ficheiro e validam a sintaxe antes de guardar.
  
-### Criar uma conta: useradd
+#### Criar uma conta: useradd
  
 O comando `useradd` cria uma nova conta no sistema. A forma mais simples não é suficiente para uso em produção:
  
@@ -799,7 +799,7 @@ $ sudo passwd -e carlos
  
 O `-e` expira imediatamente a senha, obrigando a uma mudança no próximo login.
  
-#### Contas de serviço
+##### Contas de serviço
  
 Nem todas as contas são para utilizadores humanos. Serviços como servidores web, bases de dados ou processos de backup precisam frequentemente de uma identidade de sistema para gerir ficheiros e processos sem ser o root. Para estas contas, a prática é criar um utilizador sem directório home, sem shell de login e sem possibilidade de autenticação directa:
  
@@ -809,7 +809,7 @@ $ sudo useradd -r -s /usr/sbin/nologin servico-backup
  
 A flag `-r` indica que é uma conta de sistema, atribuindo-lhe um UID abaixo do limiar de utilizadores normais (tipicamente abaixo de 1000). O shell `/usr/sbin/nologin` rejeita qualquer tentativa de login interactivo, o que é exactamente o comportamento desejado para um processo automatizado.
  
-### Modificar uma conta: usermod
+#### Modificar uma conta: usermod
  
 Quando as necessidades de um utilizador mudam, o `usermod` permite alterar praticamente qualquer atributo da conta sem a eliminar e recriar.
  
@@ -846,7 +846,7 @@ $ sudo usermod -U carlos
  
 O bloqueio com `-L` prepende um `!` ao hash da senha em `/etc/shadow`, tornando-a inválida. A conta continua a existir com todos os seus ficheiros e configurações intactos, o que é útil quando um colaborador sai temporariamente ou quando é necessário suspender acesso enquanto se investiga um incidente.
  
-### Eliminar uma conta: userdel
+#### Eliminar uma conta: userdel
  
 Antes de eliminar uma conta, é boa prática bloqueá-la primeiro e verificar que ficheiros existem fora do directório home do utilizador:
  
@@ -867,11 +867,11 @@ A opção `-r` remove o directório home e o correio do utilizador. Sem ela, a c
  
 ---
  
-## 2.2 Alternância de Identidade e Delegação de Privilégios
+### 2.2 Alternância de Identidade e Delegação de Privilégios
  
 O Capítulo 3 introduziu o conceito de `su` e `sudo` e explicou o porquê de cada abordagem. Esta secção aprofunda o uso prático, incluindo a configuração do `sudoers` e os padrões de uso mais comuns em ambientes de servidor.
  
-### O ficheiro /etc/sudoers
+#### O ficheiro /etc/sudoers
  
 O `sudo` delega autoridade com base nas regras definidas em `/etc/sudoers`. A estrutura básica de uma entrada é:
  
@@ -899,7 +899,7 @@ Aqui, `carlos` só pode reiniciar o serviço Apache, e nada mais.
 $ sudo visudo
 ```
  
-### Grupos com privilégios sudo
+#### Grupos com privilégios sudo
  
 Em vez de listar utilizadores individualmente no `sudoers`, a prática mais comum em CentOS/RHEL é adicionar utilizadores ao grupo `wheel`. O grupo `wheel` tem uma entrada pré-definida no `sudoers` que concede acesso completo de `sudo`:
  
@@ -910,7 +910,7 @@ $ sudo usermod -aG wheel carlos
  
 Após isto, `carlos` pode executar qualquer comando com `sudo` usando a sua própria senha. Esta abordagem é mais fácil de gerir em equipas: para revogar privilégios administrativos de um utilizador basta removê-lo do grupo, sem tocar no ficheiro `sudoers`.
  
-### sudo -i para sessões administrativas prolongadas
+#### sudo -i para sessões administrativas prolongadas
  
 Quando é necessário executar uma sequência longa de comandos como root, a abordagem recomendada não é `sudo su` mas sim `sudo -i`:
  
@@ -929,4 +929,120 @@ A diferença em relação a `sudo su` é que dentro de uma sessão `sudo -i`, os
  
 ---
 
+
+### 2.3 Monitorização de Sessões Activas
+ 
+Num servidor com múltiplos utilizadores ou com uma equipa de administradores, saber quem está ligado, a partir de onde e o que está a fazer é uma competência de gestão diária. O Linux oferece um conjunto de ferramentas para este fim.
+ 
+#### who: sessões activas
+ 
+O comando `who` é a forma mais directa de ver quem está ligado ao sistema neste momento:
+ 
+```bash
+$ who
+carlos   pts/0        2025-10-15 09:23 (192.168.1.25)
+ana      pts/1        2025-10-15 10:47 (192.168.1.30)
+root     pts/2        2025-10-15 11:02 (192.168.1.10)
+```
+ 
+Cada linha mostra o nome de utilizador, o terminal em uso (`pts/0` indica uma sessão pseudo-terminal, típica de ligações SSH), a hora de login e o endereço IP de origem.
+ 
+#### w: sessões activas com detalhe de actividade
+ 
+O comando `w` oferece informação mais completa, incluindo o que cada utilizador está a fazer no momento:
+ 
+```bash
+$ w
+ 11:15:32 up 3 days,  2:43,  3 users,  load average: 0.12, 0.08, 0.05
+USER     TTY      FROM             LOGIN@   IDLE JCPU   PCPU WHAT
+carlos   pts/0    192.168.1.25     09:23    5:32  0.04s  0.02s bash
+ana      pts/1    192.168.1.30     10:47    0.00s 0.11s  0.03s vim /etc/nginx/nginx.conf
+root     pts/2    192.168.1.10     11:02    2:15  0.03s  0.01s bash
+```
+ 
+A primeira linha do output contém informação de estado do sistema: hora actual, tempo desde o último boot, número de utilizadores e a carga média nos últimos 1, 5 e 15 minutos. Para cada utilizador, o campo `WHAT` mostra o último comando executado, o que permite confirmar rapidamente que `ana` está a editar a configuração do Nginx.
+ 
+#### last: histórico de logins
+ 
+O comando `last` consulta o ficheiro `/var/log/wtmp` e mostra o histórico de logins, incluindo sessões já terminadas:
+ 
+```bash
+$ last
+carlos   pts/0        192.168.1.25     Wed Oct 15 09:23   still logged in
+ana      pts/1        192.168.1.30     Wed Oct 15 10:47   still logged in
+root     pts/2        192.168.1.10     Wed Oct 15 11:02   still logged in
+carlos   pts/0        192.168.1.25     Tue Oct 14 14:15 - 18:30  (04:14)
+ana      pts/1        192.168.1.30     Tue Oct 14 09:00 - 17:45  (08:45)
+```
+ 
+Para ver o histórico de um utilizador específico:
+ 
+```bash
+$ last carlos
+```
+ 
+Para ver os últimos logins falhados (tentativas de autenticação sem sucesso):
+ 
+```bash
+$ sudo lastb
+```
+ 
+O `lastb` requer privilégios administrativos pois consulta `/var/log/btmp`, um ficheiro restrito. A análise dos logins falhados é uma ferramenta de segurança: um número elevado de tentativas falhadas para um utilizador específico pode indicar uma tentativa de ataque por força bruta.
+ 
+---
+ 
+### 2.4 Comunicação entre Utilizadores no Sistema
+ 
+Num ambiente multiutilizador, especialmente em servidores onde várias pessoas trabalham em simultâneo via SSH, existe a necessidade de comunicação directa entre utilizadores activos, sem recorrer a ferramentas externas como email ou mensageiros.
+ 
+#### wall: mensagem para todos os utilizadores
+ 
+O comando `wall` (abreviatura de *write all*) envia uma mensagem para todos os terminais activos no sistema. É a ferramenta standard para avisos de manutenção, reboots planeados ou qualquer comunicação urgente que todos os utilizadores activos precisam de ver imediatamente:
+ 
+```bash
+$ sudo wall "Atenção: o servidor vai reiniciar em 10 minutos para aplicação de actualizações. Por favor guardem o trabalho."
+```
+ 
+A mensagem aparece imediatamente no terminal de todos os utilizadores com sessão activa, interrompendo o que estiverem a fazer:
+ 
+```
+Broadcast message from root@servidor (pts/2) (Wed Oct 15 11:20:00 2025):
+ 
+Atenção: o servidor vai reiniciar em 10 minutos para aplicação de actualizações.
+Por favor guardem o trabalho.
+```
+ 
+Para enviar uma mensagem mais longa preparada antecipadamente num ficheiro:
+ 
+```bash
+$ sudo wall < /tmp/aviso_manutencao.txt
+```
+ 
+> 💡 **Use o `wall` com critério.** A mensagem aparece de forma abrupta no terminal do utilizador, podendo interromper a visualização de um ficheiro no `vi` ou a saída de um comando em execução. É a ferramenta certa para avisos urgentes, não para comunicação rotineira.
+ 
+#### write: mensagem para um utilizador específico
+ 
+O comando `write` funciona como o `wall` mas direccionado a um único utilizador:
+ 
+```bash
+$ write ana pts/1
+Olá Ana, podes reiniciar o serviço nginx quando terminares a edição?
+[Ctrl+D para enviar]
+```
+ 
+O utilizador `ana` recebe a mensagem no seu terminal. Se o utilizador estiver ligado em múltiplos terminais, é necessário especificar qual (`pts/1` no exemplo).
+ 
+Os utilizadores podem controlar se aceitam mensagens directas com o comando `mesg`:
+ 
+```bash
+# Desactivar recepção de mensagens
+$ mesg n
+ 
+# Activar recepção de mensagens
+$ mesg y
+```
+ 
+Note-se que o root consegue sempre enviar mensagens via `wall`, independentemente das preferências de `mesg` dos utilizadores. O `write` de utilizadores normais pode ser bloqueado por `mesg n`.
+ 
+---
 
