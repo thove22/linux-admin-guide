@@ -1555,4 +1555,334 @@ $ sudo du -sh /var/* | sort -rh | head -10
  
 Identificado e compreendido o problema, a sequência de acção é sempre a mesma: tentar primeiro um `TERM` para dar ao processo a oportunidade de terminar de forma ordenada, aguardar alguns segundos, e usar `KILL` apenas se o processo não responder.
  
+## 3.6 Agendamento de Tarefas: cron e at
+ 
+A automatização é um dos pilares da administração de sistemas. Tarefas como rotação de logs, backups nocturnos, limpeza de ficheiros temporários ou verificações periódicas de integridade precisam de ser executadas de forma consistente e sem intervenção humana. O Linux oferece dois mecanismos complementares para isso: o `cron`, para tarefas que se repetem de acordo com um horário definido, e o `at`, para tarefas que precisam de ser executadas uma única vez num momento futuro específico.
+ 
+---
+ 
+### cron: o agendador de tarefas recorrentes
+ 
+O daemon `cron` arranca com o sistema e corre enquanto o sistema estiver activo. A cada minuto, verifica se existe alguma tarefa agendada para aquele momento e, se existir, executa-a. A sua configuração é feita através de ficheiros chamados **crontabs** (*cron tables*), onde cada linha representa uma tarefa e o horário em que deve correr.
+ 
+O `cron` usa o `sh` para executar os comandos, o que significa que qualquer coisa que se consiga fazer a partir da shell pode ser feita através do `cron`.
+ 
+#### O formato de uma linha de crontab
+ 
+Cada linha activa num ficheiro crontab segue sempre a mesma estrutura: cinco campos de tempo seguidos do comando a executar.
+ 
+```
+minuto   hora   dia_do_mês   mês   dia_da_semana   comando
+```
+ 
+Os campos de tempo têm os seguintes intervalos de valores:
+ 
+| Campo | Descrição | Intervalo |
+|-------|-----------|-----------|
+| *minuto* | Minuto da hora | 0 a 59 |
+| *hora* | Hora do dia | 0 a 23 |
+| *dom* | Dia do mês | 1 a 31 |
+| *month* | Mês do ano | 1 a 12 |
+| *weekday* | Dia da semana | 0 a 6 (0 = Domingo) |
+ 
+ 
+Em cada campo pode colocar-se:
+ 
+- Um asterisco `*`, que corresponde a qualquer valor ("todos os minutos", "todos os dias", etc.)
+- Um número específico
+- Dois números separados por traço, definindo um intervalo: `1-5` significa de segunda a sexta-feira
+- Uma lista separada por vírgulas: `1,15` significa no dia 1 e no dia 15
+- Um intervalo com um passo: `*/2` significa de 2 em 2 unidades
 
+> **Nunca coloque um asterisco no primeiro campo a não ser que pretenda que o comando corra todos os minutos.** É o erro mais comum em crontabs de utilizadores novos.
+ 
+#### Exemplos de entradas crontab
+ 
+O melhor caminho para interiorizar a sintaxe é ler exemplos concretos. Cada um dos seguintes representa um cenário real de administração:
+ 
+```bash
+# Fazer backup todos os dias às 2:30 da manhã
+30 2 * * * /usr/local/bin/backup.sh
+ 
+# Verificar o espaço em disco de hora em hora e registar no log
+0 * * * * df -h >> /var/log/disk_usage.log
+ 
+# Correr um script às 10:45 de segunda a sexta-feira
+45 10 * * 1-5 /opt/scripts/relatorio_diario.py
+ 
+# Correr um comando no dia 5 e no dia 14 de cada mês às 9:15
+15 09 5,14 * * /home/carlos/bin/facturacao.sh
+ 
+# Remover ficheiros temporários não acedidos há mais de 3 dias, todas as manhãs à 1:20
+20 1 * * * find /tmp -atime +3 -type f -exec rm -f {} \;
+ 
+# Rodar logs ao domingo à meia-noite
+0 0 * * 0 /usr/sbin/logrotate /etc/logrotate.conf
+ 
+# Verificar servidores de rede às 23:55, todos os dias excepto quinta e sexta-feira
+55 23 * * 0-3,6 /opt/scripts/checkservers.sh
+```
+ 
+Uma particularidade importante: se tanto o campo `dom` (dia do mês) como o campo `weekday` (dia da semana) estiverem especificados com valores concretos em vez de asterisco, o `cron` selecciona os dias que satisfaçam **qualquer uma** das condições, não a intersecção das duas. Por exemplo, `0,30 * 13 * 5` não significa "de meia em meia hora às sextas-feiras dia 13" mas sim "de meia em meia hora em todas as sextas-feiras, e também de meia em meia hora em todos os dias 13 do mês".
+ 
+#### O que acontece quando um cron job produz output
+ 
+Por defeito, qualquer saída produzida por um cron job (stdout ou stderr) é enviada por email ao dono do crontab. Em servidores sem servidor de email configurado, isto resulta em mensagens acumuladas sem destino. A prática mais comum é redirecionar a saída explicitamente:
+ 
+```bash
+# Descartar toda a saída
+30 2 * * * /usr/local/bin/backup.sh > /dev/null 2>&1
+ 
+# Guardar saída e erros num ficheiro de log
+30 2 * * * /usr/local/bin/backup.sh >> /var/log/backup.log 2>&1
+```
+ 
+A notação `2>&1` redireciona o stderr para o mesmo destino que o stdout. Sem ela, apenas a saída normal seria redireccionada e os erros continuariam a ser enviados por email.
+ 
+#### Gerir o crontab de utilizador
+ 
+Cada utilizador pode ter o seu próprio crontab, armazenado no directório `/var/spool/cron/crontabs/`. Este directório é gerido internamente pelo sistema e não deve ser editado directamente: o cron não detecta alterações feitas directamente aos ficheiros e pode ignorá-las. O mecanismo correcto é sempre o comando `crontab`.
+ 
+Para editar o crontab do utilizador actual:
+ 
+```bash
+$ crontab -e
+```
+ 
+Este comando abre o crontab num editor de texto (o definido pela variável de ambiente `EDITOR`, tipicamente `vi`), e depois de guardar e sair, instala automaticamente a versão editada. Se houver erros de sintaxe, o `crontab` avisa e oferece a possibilidade de voltar a editar.
+ 
+Para listar as tarefas agendadas do utilizador actual:
+ 
+```bash
+$ crontab -l
+```
+ 
+Para remover o crontab completamente:
+ 
+```bash
+$ crontab -r
+```
+ 
+> ⚠️ **Não confunda `-r` (remove) com `-e` (edit).** O `crontab -r` apaga o crontab imediatamente sem pedir confirmação. Se precisar de instalar um crontab a partir de um ficheiro:
+ 
+```bash
+$ crontab ficheiro_crontab.txt
+```
+ 
+O root pode ver e editar o crontab de qualquer utilizador indicando o nome:
+ 
+```bash
+$ sudo crontab -l -u carlos
+$ sudo crontab -e -u carlos
+```
+ 
+#### O crontab do sistema
+ 
+Para além dos crontabs individuais de cada utilizador, o Linux tem um ficheiro de crontab do sistema em `/etc/crontab`. O formato é ligeiramente diferente: tem um campo adicional antes do comando que especifica o utilizador sob o qual a tarefa deve correr, o que permite agrupar tarefas de sistema mesmo que corram com identidades diferentes:
+ 
+```
+# /etc/crontab
+minuto  hora  dia_mês  mês  dia_semana  utilizador  comando
+ 
+42 6 * * * root /usr/local/bin/limpeza_sistema > /dev/null 2>&1
+0  3 * * * www-data /opt/webapp/scripts/cache_clear.sh
+```
+ 
+O directório `/etc/cron.d/` funciona da mesma forma que `/etc/crontab` e permite que pacotes de software instalem as suas próprias tarefas de sistema sem modificar o ficheiro central. Cada ficheiro em `/etc/cron.d/` tem o mesmo formato do `/etc/crontab`, com o campo de utilizador.
+ 
+Os directórios `/etc/cron.hourly/`, `/etc/cron.daily/`, `/etc/cron.weekly/` e `/etc/cron.monthly/` oferecem ainda uma abordagem mais simples: basta colocar um script executável nestes directórios e ele será executado automaticamente na periodicidade correspondente, sem necessidade de escrever qualquer sintaxe de crontab.
+ 
+```bash
+# Instalar um script de limpeza para execução diária
+$ sudo cp limpeza_tmp.sh /etc/cron.daily/
+$ sudo chmod +x /etc/cron.daily/limpeza_tmp.sh
+```
+ 
+#### Verificar a execução das tarefas
+ 
+O `cron` regista a execução de tarefas no log do sistema. Em CentOS, este registo está em `/var/log/cron`:
+ 
+```bash
+$ sudo grep CRON /var/log/cron
+Jun 15 02:30:01 servidor CROND[4821]: (root) CMD (/usr/local/bin/backup.sh)
+Jun 15 03:00:01 servidor CROND[5102]: (root) CMD (/usr/sbin/logrotate /etc/logrotate.conf)
+Jun 15 04:00:01 servidor CROND[5388]: (carlos) CMD (/opt/scripts/relatorio_diario.py)
+```
+ 
+Se um cron job não parece estar a correr, a primeira verificação é este ficheiro. Se a entrada aparece no log mas o resultado não é o esperado, o problema está no próprio script, não no agendamento.
+ 
+Um detalhe importante sobre o ambiente de execução do `cron`: os comandos não correm numa shell de login. Isto significa que variáveis de ambiente como `PATH`, `HOME` ou outras definidas em `~/.bash_profile` podem não estar disponíveis. Se um comando funciona na shell mas falha no crontab, o problema é quase sempre este. A solução é definir as variáveis necessárias no próprio crontab ou usar caminhos absolutos nos comandos:
+ 
+```bash
+# Definir variáveis de ambiente no crontab
+PATH=/usr/local/bin:/usr/bin:/bin
+HOME=/home/carlos
+ 
+30 2 * * * backup.sh
+```
+ 
+---
+ 
+#### Usos comuns do cron em administração de sistemas
+ 
+Os livros que serviram de base a este capítulo descrevem vários casos de uso padrão que praticamente todos os servidores têm. Vale a pena conhecê-los.
+ 
+**Limpeza de ficheiros temporários e ficheiros de core.** Quando um programa termina de forma anómala, o kernel pode escrever um ficheiro de core com a imagem da memória do processo no momento da falha. Estes ficheiros são úteis para desenvolvimento mas são desperdício de espaço em produção. Uma tarefa cron típica para os remover:
+ 
+```bash
+# Remover ficheiros core não acedidos há mais de 7 dias
+20 3 * * * find / -xdev -type f \( -name core -o -name 'core.[0-9]*' \) -atime +7 -exec rm -f {} \;
+```
+ 
+A flag `-xdev` é importante: impede o `find` de atravessar para outros sistemas de ficheiros montados, o que numa rede com NFS poderia resultar na eliminação de ficheiros em servidores remotos.
+ 
+**Rotação de logs.** Os serviços de um servidor produzem logs continuamente. Sem rotação, estes ficheiros crescem indefinidamente até encher o disco. A rotação divide os logs em segmentos por tamanho ou data, comprime os mais antigos e remove os mais velhos. Em CentOS, o `logrotate` é o utilitário padrão para isso, e é normalmente chamado pelo cron:
+ 
+```bash
+# No /etc/cron.daily/logrotate (já instalado por defeito no CentOS)
+/usr/sbin/logrotate /etc/logrotate.conf
+```
+ 
+**Sincronização de configurações em rede.** Em ambientes com múltiplos servidores, é comum manter versões únicas de ficheiros de configuração que são distribuídas periodicamente a todas as máquinas através de `rsync`. Uma tarefa cron no servidor central trata desta distribuição automática.
+ 
+---
+ 
+### Timer units do systemd: a alternativa moderna
+ 
+As distribuições Linux modernas, incluindo o CentOS Stream, oferecem uma alternativa ao `cron` através dos **timer units** do systemd. Muitas tarefas de manutenção do sistema que eram tradicionalmente geridas pelo `cron` foram migradas para este mecanismo nas versões mais recentes.
+ 
+Um timer unit do systemd consiste em dois ficheiros: um ficheiro `.timer` que define quando a tarefa deve correr, e um ficheiro `.service` que define o que deve ser executado. O `.timer` activa o `.service` no momento definido.
+ 
+Por exemplo, para criar uma tarefa que corre de 20 em 20 minutos, cria-se um par de ficheiros em `/etc/systemd/system/`:
+ 
+O ficheiro `loggertest.timer`:
+ 
+```ini
+[Unit]
+Description=Tarefa de teste com timer
+ 
+[Timer]
+OnCalendar=*-*-* *:00,20,40
+Unit=loggertest.service
+ 
+[Install]
+WantedBy=timers.target
+```
+ 
+O ficheiro `loggertest.service`:
+ 
+```ini
+[Unit]
+Description=Serviço de teste
+ 
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/logger -p local3.debug "Tarefa agendada executada"
+```
+ 
+O formato do campo `OnCalendar` segue a lógica `ano-mês-dia hora:minuto:segundo`. O asterisco funciona como wildcard, e vírgulas permitem múltiplos valores. O exemplo `*-*-* *:00,20,40` significa "todos os anos, todos os meses, todos os dias, às horas exactas, aos 20 minutos e aos 40 minutos".
+ 
+Para activar e verificar o timer:
+ 
+```bash
+$ sudo systemctl enable --now loggertest.timer
+$ sudo systemctl list-timers
+```
+ 
+#### cron vs timer units: quando usar cada um
+ 
+Ambos os mecanismos resolvem o mesmo problema mas têm pontos fortes diferentes:
+ 
+| Aspecto | cron | systemd timer units |
+|---------|------|---------------------|
+| Configuração | Simples e directa | Requer dois ficheiros |
+| Compatibilidade | Universal, existe em todos os sistemas Unix | Dependente do systemd |
+| Facilidade para utilizadores | Cada utilizador gere o seu crontab | Mais complexo para utilizadores normais |
+| Rastreabilidade | Log básico em `/var/log/cron` | Integrado no journal do systemd com detalhe completo |
+| Gestão de dependências | Não tem | Suporta dependências do systemd |
+| Activação por eventos | Não suporta | Pode activar em arranque, ligação de rede, etc. |
+ 
+Para a maioria das tarefas de manutenção do dia-a-dia, o `cron` é mais rápido de configurar e mais fácil de ler. Os timer units fazem sentido quando a tarefa precisa de integração com o ecossistema systemd, quando a rastreabilidade detalhada é importante, ou quando a tarefa faz parte de uma unidade de serviço já existente.
+ 
+---
+ 
+### at: executar uma tarefa uma única vez no futuro
+ 
+O `at` serve para agendar um comando que deve ser executado uma vez, num momento específico no futuro, sem necessidade de criar uma entrada permanente no crontab. É a ferramenta certa para situações como "reiniciar o serviço daqui a 30 minutos" ou "executar o script de migração amanhã às 23:00" sem que seja necessário estar presente.
+ 
+Para agendar um comando, invoca-se o `at` com o horário desejado. O `at` entra então em modo de input: escreve-se o comando (ou os comandos) e termina-se com `Ctrl+D`:
+ 
+```bash
+$ at 23:00
+at> /opt/scripts/migracao_base_dados.sh
+at> [Ctrl+D]
+job 1 at Wed Oct 15 23:00:00 2025
+```
+ 
+O `at` aceita descrições de tempo variadas:
+ 
+```bash
+# Hora específica hoje
+$ at 22:30
+ 
+# Hora específica numa data específica (formato DD.MM.AA)
+$ at 22:30 30.09.25
+ 
+# Daqui a um intervalo de tempo
+$ at now + 2 hours
+$ at now + 30 minutes
+ 
+# Amanhã ao meio-dia
+$ at noon tomorrow
+ 
+# Na próxima segunda-feira às 8:00
+$ at 08:00 next monday
+```
+ 
+Para verificar as tarefas `at` pendentes:
+ 
+```bash
+$ atq
+1   Wed Oct 15 23:00:00 2025 a carlos
+2   Thu Oct 16 08:00:00 2025 a root
+```
+ 
+Para remover uma tarefa pendente pelo número de job:
+ 
+```bash
+$ atrm 1
+```
+ 
+Tal como o `cron`, o `at` envia por email qualquer output produzido pela tarefa. Para evitar isso, redirecione a saída no próprio comando:
+ 
+```bash
+$ at 23:00
+at> /opt/scripts/migracao_base_dados.sh >> /var/log/migracao.log 2>&1
+at> [Ctrl+D]
+```
+ 
+Para utilizadores que preferem a integração com o systemd, o `systemd-run` oferece um equivalente ao `at` na linha de comandos:
+ 
+```bash
+# Executar um comando numa data e hora específicas
+$ sudo systemd-run --on-calendar='2025-10-15 23:00' /opt/scripts/migracao_base_dados.sh
+ 
+# Executar daqui a 30 minutos
+$ systemd-run --on-active=30m /opt/scripts/verificacao.sh
+```
+ 
+A principal diferença prática é que o `systemd-run` cria um timer unit transitório, visível com `systemctl list-timers`, e a sua execução fica registada no journal do systemd com a mesma rastreabilidade dos serviços normais.
+ 
+---
+ 
+### Comparação final: cron vs at
+ 
+| Característica | cron | at |
+|----------------|------|----|
+| Tipo de execução | Recorrente, de acordo com um horário fixo | Única, num momento específico futuro |
+| Caso de uso típico | Backup diário, rotação de logs, relatórios periódicos | Migração pontual, reinício agendado, notificação única |
+| Configuração | Ficheiro crontab com sintaxe própria | Comando interactivo no terminal |
+| Persistência | Permanente até ser removido | Removida automaticamente após execução |
+| Ver pendentes | `crontab -l` | `atq` |
+| Remover | `crontab -r` ou editar com `crontab -e` | `atrm [número]` |
+ 
