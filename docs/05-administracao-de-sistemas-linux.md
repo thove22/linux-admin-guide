@@ -1453,4 +1453,106 @@ Um processo em background fica imune ao input do teclado, incluindo `Ctrl+C`. Pa
 $ kill %1
 ```
 
+#### nice e renice: ajustar prioridades de escalonamento
+ 
+Quando é necessário correr um processo computacionalmente intensivo sem prejudicar o desempenho do servidor para outros serviços ou utilizadores, usa-se o `nice` para lançar o processo com uma prioridade reduzida:
+ 
+```bash
+# Lançar com niceness +10 (prioridade reduzida)
+$ nice -n 10 python3 analise_completa.py
+ 
+# Lançar com niceness +19 (mínima prioridade possível)
+$ nice -n 19 find / -name "*.log" -mtime +30 -delete
+```
+ 
+Para alterar a prioridade de um processo já em execução, usa-se o `renice`:
+ 
+```bash
+# Reduzir a prioridade do processo 3847 (mais simpático)
+$ sudo renice 10 3847
+ 
+# Aumentar a prioridade (requer root, valores negativos)
+$ sudo renice -5 3847
+ 
+# Alterar a prioridade de todos os processos de um utilizador
+$ sudo renice 15 -u carlos
+```
+ 
+Recorde a lógica contraintuitiva: niceness **mais alta** significa **menor prioridade**. Um processo com niceness +19 só recebe tempo de CPU quando absolutamente nenhum outro processo precisa dele. Um valor de -20 indica prioridade máxima e requer privilégios de root para ser atribuído.
+ 
+#### /proc: o sistema de ficheiros do kernel
+ 
+O Linux expõe informação detalhada sobre cada processo em execução através do directório `/proc`. Trata-se de um sistema de ficheiros virtual gerado pelo kernel em memória: os ficheiros não existem no disco, são criados pelo kernel no momento em que são lidos. Cada processo tem um subdirectório com o seu PID como nome:
+ 
+```bash
+$ ls /proc/2103/
+cmdline  cwd  environ  exe  fd  maps  mem  net  stat  status  task  ...
+```
+ 
+Alguns ficheiros particularmente úteis:
+ 
+```bash
+# Ver o comando completo com que o processo foi lançado
+$ cat /proc/2103/cmdline
+ 
+# Listar todos os ficheiros abertos pelo processo
+$ ls -la /proc/2103/fd/
+ 
+# Ver consumo de memória detalhado
+$ cat /proc/2103/status
+ 
+# Ver para que executável aponta o processo
+$ readlink /proc/2103/exe
+```
+ 
+O `/proc` contém também informação global sobre o sistema, independente de processos específicos:
+ 
+```bash
+# Informação sobre o CPU
+$ cat /proc/cpuinfo
+ 
+# Uso de memória em detalhe
+$ cat /proc/meminfo
+ 
+# Versão do kernel em execução
+$ cat /proc/version
+```
+ 
+É o `/proc` que alimenta ferramentas como `ps` e `top`. Quando essas ferramentas não mostram o nível de detalhe necessário, aceder directamente ao `/proc` é o caminho para informação mais granular sobre o estado interno de um processo específico.
+ 
+---
+ 
+#### Processos Fora de Controlo
+ 
+Processos que consomem recursos de forma excessiva são um problema recorrente em administração de sistemas. Podem ser processos que estão a funcionar correctamente mas são simplesmente exigentes em termos de CPU, ou podem ser processos com comportamento anómalo.
+ 
+O primeiro passo é sempre identificar o processo problemático. O `top` é a ferramenta mais directa para isso: os processos mais exigentes em CPU aparecem no topo da lista. Para detectar consumo excessivo de memória, ordena-se por memória com a tecla `M` dentro do `top`, ou observa-se a coluna `RES` que mostra a memória física efectivamente em uso.
+ 
+Antes de actuar sobre um processo suspeito, é importante compreender o que ele está a fazer. Um processo que usa muito CPU pode ser completamente legítimo: uma análise de dados, um processo de compilação, uma tarefa de backup. Terminar processos legítimos e importantes tem consequências. Por outro lado, um processo malicioso ou corrompido precisa de ser eliminado rapidamente, mas é importante perceber o que fez antes de o terminar para poder avaliar o impacto.
+ 
+Para examinar o que um processo está a fazer antes de agir, o `lsof` mostra todos os ficheiros e sockets abertos por um processo:
+ 
+```bash
+# Ver que ficheiros o processo 2103 tem abertos
+$ sudo lsof -p 2103
+ 
+# Ver se algum processo está a escrever massivamente num directório
+$ sudo lsof +D /var/log/
+ 
+# Ver que processo está a usar a porta 8080
+$ sudo lsof -i :8080
+```
+ 
+Se um processo está a preencher um sistema de ficheiros com output, o `df` identifica qual está cheio e o `du` encontra o directório responsável:
+ 
+```bash
+# Ver uso de todos os sistemas de ficheiros
+$ df -h
+ 
+# Encontrar o directório mais pesado dentro de /var
+$ sudo du -sh /var/* | sort -rh | head -10
+```
+ 
+Identificado e compreendido o problema, a sequência de acção é sempre a mesma: tentar primeiro um `TERM` para dar ao processo a oportunidade de terminar de forma ordenada, aguardar alguns segundos, e usar `KILL` apenas se o processo não responder.
+ 
 
