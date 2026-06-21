@@ -409,7 +409,7 @@ O ficheiro original continua aberto e activo na sessão. A cópia fica guardada 
 
 O `vi` é a ferramenta certa quando precisamos de abrir um ficheiro, navegar pelo seu conteúdo e fazer edições de forma interactiva. Mas existe uma classe inteira de tarefas de administração onde abrir um editor interactivo seria a abordagem errada: quando precisamos de alterar a mesma linha em quarenta ficheiros de configuração, quando queremos extrair apenas as linhas de erro de um log com milhares de entradas, ou quando estamos a construir um script que deve modificar ficheiros automaticamente sem qualquer intervenção humana.
 
-É precisamente para estas situações que existe o `sed` — o *stream editor*, ou editor de fluxo. Ao contrário do `vi`, o `sed` não é interactivo. Não se abre um ficheiro, não se navega, não se digita texto directamente. Em vez disso, passa-se uma instrução de edição como argumento na linha de comandos, e o `sed` aplica essa instrução ao texto linha por linha, escrevendo o resultado no *standard output*. O ficheiro original permanece intacto, a menos que se instruza explicitamente o contrário.
+É precisamente para estas situações que existe o `sed` o *stream editor*, ou editor de fluxo. Ao contrário do `vi`, o `sed` não é interactivo. Não se abre um ficheiro, não se navega, não se digita texto directamente. Em vez disso, passa-se uma instrução de edição como argumento na linha de comandos, e o `sed` aplica essa instrução ao texto linha por linha, escrevendo o resultado no *standard output*. O ficheiro original permanece intacto, a menos que se instruza explicitamente o contrário.
 
 Esta diferença de filosofia é fundamental: o `vi` é um editor para humanos lerem e modificarem texto de forma deliberada; o `sed` é uma ferramenta para automatizar transformações de texto em escala, integrável em pipelines e scripts.
 
@@ -727,3 +727,206 @@ Estas duas ferramentas não são concorrentes, são complementares. A escolha en
 | Transformar a saída de um comando antes de a guardar | `sed` em pipeline |
 
 > 💡 **Para aprofundar:** O `sed` suporta expressões regulares completas nos seus padrões, o que multiplica significativamente o seu poder expressivo. As expressões regulares são abordadas em detalhe no Capítulo 6, que cobre automação com shell scripting. Depois de as dominar, os comandos `sed` que hoje parecem complexos tornam-se naturais.
+
+## Gestão de Identidades e Acessos
+ 
+No Capítulo 3 estabelecemos os fundamentos do modelo de controlo de acesso do Linux: o papel do root, a filosofia do privilégio mínimo, e as ferramentas `su` e `sudo` como mecanismos de delegação. Esta secção continua a partir desse ponto. O objectivo agora é operacional: saber gerir o ciclo de vida das contas de utilizador, monitorizar quem está no sistema, comunicar com utilizadores activos e compreender a infraestrutura de autenticação que torna tudo isto seguro.
+ 
+---
+ 
+## 2.1 Ciclo de Vida de Contas de Utilizador
+ 
+Em Linux, cada pessoa que interage com o sistema tem uma identidade formal: uma conta de utilizador. Esta conta não é apenas um nome — é um conjunto de atributos armazenados em ficheiros de sistema que determinam o que esse utilizador pode fazer, onde pode trabalhar e como se autentica. A administração dessas contas é uma das tarefas mais recorrentes de qualquer sysadmin.
+ 
+### Os ficheiros que definem os utilizadores
+ 
+Antes de criar ou modificar qualquer conta, é importante compreender onde o sistema guarda essa informação. Há quatro ficheiros centrais:
+ 
+`/etc/passwd` contém uma linha por utilizador com sete campos separados por `:`. Por exemplo:
+ 
+```
+carlos:x:1001:1001:Carlos Silva:/home/carlos:/bin/bash
+```
+ 
+Os campos são, pela ordem: nome de utilizador, marcador de senha (o `x` indica que a senha real está noutro ficheiro), UID, GID primário, comentário com o nome completo, directório home e shell de login. Este ficheiro é legível por todos os utilizadores do sistema, razão pela qual as senhas foram movidas para `/etc/shadow`.
+ 
+`/etc/shadow` guarda os hashes das palavras-passe e as políticas de expiração. Apenas o root tem acesso de leitura. Um campo com `!` no lugar do hash indica que a conta está bloqueada.
+ 
+`/etc/group` define os grupos do sistema, com o nome do grupo, GID e a lista de membros.
+ 
+`/etc/gshadow` armazena palavras-passe de grupo e administradores de grupo, raramente manipulado directamente.
+ 
+> ⚠️ **Nunca edite estes ficheiros directamente com um editor de texto.** Um caractere trocado pode corromper logins em todo o sistema. Use sempre os comandos dedicados, ou `vipw` e `vigr` se precisar mesmo de editar directamente, pois eles bloqueiam o ficheiro e validam a sintaxe antes de guardar.
+ 
+### Criar uma conta: useradd
+ 
+O comando `useradd` cria uma nova conta no sistema. A forma mais simples não é suficiente para uso em produção:
+ 
+```bash
+# Forma mínima — evitar em produção
+$ sudo useradd carlos
+```
+ 
+Esta invocação cria a entrada em `/etc/passwd` mas não cria directório home nem define shell. Num servidor real, o mínimo útil é:
+ 
+```bash
+$ sudo useradd -m -s /bin/bash -c "Carlos Silva" carlos
+```
+ 
+Os parâmetros utilizados têm os seguintes efeitos:
+ 
+| Opção | Efeito |
+|-------|--------|
+| `-m` | Cria o directório home em `/home/carlos` e povoa-o com os ficheiros padrão de `/etc/skel` |
+| `-s /bin/bash` | Define o Bash como shell de login |
+| `-c "Carlos Silva"` | Preenche o campo de comentário com o nome completo, útil para identificação |
+ 
+Após criar a conta, é necessário definir uma senha. Sem senha, a conta não pode ser usada para login:
+ 
+```bash
+$ sudo passwd carlos
+Changing password for user carlos.
+New password:
+Retype new password:
+passwd: all authentication tokens updated successfully.
+```
+ 
+Para forçar o utilizador a alterar a senha no primeiro login, o que é boa prática para contas novas:
+ 
+```bash
+$ sudo passwd -e carlos
+```
+ 
+O `-e` expira imediatamente a senha, obrigando a uma mudança no próximo login.
+ 
+#### Contas de serviço
+ 
+Nem todas as contas são para utilizadores humanos. Serviços como servidores web, bases de dados ou processos de backup precisam frequentemente de uma identidade de sistema para gerir ficheiros e processos sem ser o root. Para estas contas, a prática é criar um utilizador sem directório home, sem shell de login e sem possibilidade de autenticação directa:
+ 
+```bash
+$ sudo useradd -r -s /usr/sbin/nologin servico-backup
+```
+ 
+A flag `-r` indica que é uma conta de sistema, atribuindo-lhe um UID abaixo do limiar de utilizadores normais (tipicamente abaixo de 1000). O shell `/usr/sbin/nologin` rejeita qualquer tentativa de login interactivo, o que é exactamente o comportamento desejado para um processo automatizado.
+ 
+### Modificar uma conta: usermod
+ 
+Quando as necessidades de um utilizador mudam, o `usermod` permite alterar praticamente qualquer atributo da conta sem a eliminar e recriar.
+ 
+**Adicionar a um grupo suplementar** é a operação mais comum, e tem uma armadilha importante:
+ 
+```bash
+# CORRECTO — adiciona ao grupo sem remover dos existentes
+$ sudo usermod -aG developers carlos
+ 
+# PERIGOSO — substitui TODOS os grupos suplementares pelo especificado
+$ sudo usermod -G developers carlos
+```
+ 
+O flag `-a` significa *append* (acrescentar). Sem ele, o `-G` substitui a lista completa de grupos suplementares do utilizador, retirando-o potencialmente de grupos de que precisava. Este é um dos erros mais comuns e pode silenciosamente revogar acessos que o utilizador precisava.
+ 
+Outras operações frequentes com `usermod`:
+ 
+```bash
+# Mudar o shell de login
+$ sudo usermod -s /bin/zsh carlos
+ 
+# Mudar o directório home e mover o conteúdo existente
+$ sudo usermod -d /srv/users/carlos -m carlos
+ 
+# Definir data de expiração da conta (útil para contractors)
+$ sudo usermod -e 2025-12-31 carlos
+ 
+# Bloquear temporariamente a conta sem a eliminar
+$ sudo usermod -L carlos
+ 
+# Desbloquear a conta
+$ sudo usermod -U carlos
+```
+ 
+O bloqueio com `-L` prepende um `!` ao hash da senha em `/etc/shadow`, tornando-a inválida. A conta continua a existir com todos os seus ficheiros e configurações intactos, o que é útil quando um colaborador sai temporariamente ou quando é necessário suspender acesso enquanto se investiga um incidente.
+ 
+### Eliminar uma conta: userdel
+ 
+Antes de eliminar uma conta, é boa prática bloqueá-la primeiro e verificar que ficheiros existem fora do directório home do utilizador:
+ 
+```bash
+# Bloquear enquanto se prepara a remoção
+$ sudo usermod -L carlos
+ 
+# Encontrar ficheiros do utilizador fora do seu home
+$ sudo find /var /srv /opt -user carlos 2>/dev/null
+ 
+# Eliminar a conta e o directório home
+$ sudo userdel -r carlos
+```
+ 
+A opção `-r` remove o directório home e o correio do utilizador. Sem ela, a conta desaparece mas os ficheiros ficam órfãos no sistema, com o UID numérico visível onde antes estava o nome — o que dificulta auditorias futuras.
+ 
+> ⚠️ **Não elimine contas de utilizadores que ainda têm processos em execução.** Identifique e termine esses processos primeiro. Eliminar uma conta com sessões activas pode deixar processos "zumbi" difíceis de gerir.
+ 
+---
+ 
+## 2.2 Alternância de Identidade e Delegação de Privilégios
+ 
+O Capítulo 3 introduziu o conceito de `su` e `sudo` e explicou o porquê de cada abordagem. Esta secção aprofunda o uso prático, incluindo a configuração do `sudoers` e os padrões de uso mais comuns em ambientes de servidor.
+ 
+### O ficheiro /etc/sudoers
+ 
+O `sudo` delega autoridade com base nas regras definidas em `/etc/sudoers`. A estrutura básica de uma entrada é:
+ 
+```
+utilizador  MÁQUINA=(COMO_QUEM) COMANDOS
+```
+ 
+Por exemplo:
+ 
+```
+carlos  ALL=(ALL) ALL
+```
+ 
+Esta linha diz que o utilizador `carlos`, em qualquer máquina (`ALL`), pode executar qualquer comando (`ALL`) como qualquer utilizador (`ALL`). É equivalente a dar acesso total de root. Uma configuração mais restrita e mais adequada ao princípio do privilégio mínimo seria:
+ 
+```
+carlos  ALL=(root) /usr/bin/systemctl restart httpd
+```
+ 
+Aqui, `carlos` só pode reiniciar o serviço Apache, e nada mais.
+ 
+> ⚠️ **Nunca edite `/etc/sudoers` directamente com `vi` ou `nano`.** Use sempre o comando `visudo`, que bloqueia o ficheiro, valida a sintaxe antes de guardar e avisa se a configuração resultante impossibilitaria o uso futuro do `sudo`. Um ficheiro `sudoers` corrompido pode bloquear o acesso administrativo ao sistema.
+ 
+```bash
+$ sudo visudo
+```
+ 
+### Grupos com privilégios sudo
+ 
+Em vez de listar utilizadores individualmente no `sudoers`, a prática mais comum em CentOS/RHEL é adicionar utilizadores ao grupo `wheel`. O grupo `wheel` tem uma entrada pré-definida no `sudoers` que concede acesso completo de `sudo`:
+ 
+```bash
+# Adicionar utilizador ao grupo wheel
+$ sudo usermod -aG wheel carlos
+```
+ 
+Após isto, `carlos` pode executar qualquer comando com `sudo` usando a sua própria senha. Esta abordagem é mais fácil de gerir em equipas: para revogar privilégios administrativos de um utilizador basta removê-lo do grupo, sem tocar no ficheiro `sudoers`.
+ 
+### sudo -i para sessões administrativas prolongadas
+ 
+Quando é necessário executar uma sequência longa de comandos como root, a abordagem recomendada não é `sudo su` mas sim `sudo -i`:
+ 
+```bash
+$ sudo -i
+[root@servidor ~]#
+```
+ 
+Este comando abre uma sessão interactiva de root através dos mecanismos nativos do `sudo`, mantendo o registo de auditoria activo. Para terminar a sessão e regressar ao utilizador normal:
+ 
+```bash
+[root@servidor ~]# exit
+```
+ 
+A diferença em relação a `sudo su` é que dentro de uma sessão `sudo -i`, os comandos continuam a ser registados no log do sistema com a identidade do utilizador original, enquanto que numa sessão iniciada por `sudo su` o registo de auditoria fica fragmentado após a transição de identidade.
+ 
+---
+
+
