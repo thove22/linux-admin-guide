@@ -1129,4 +1129,30 @@ Segundo, quando se integra o servidor numa infraestrutura de autenticação cent
 Terceiro, as políticas de senha impostas pelo `pam_pwquality.so` são o mecanismo técnico por trás das regras de complexidade de senha que a organização pode exigir. Saber onde essas regras são definidas é necessário para as ajustar ou diagnosticar problemas.
  
 > 💡 **Para aprofundar:** O comando `authselect` no CentOS Stream 8 e versões posteriores oferece uma interface de alto nível para gerir perfis de autenticação comuns (local, LDAP, Kerberos) sem editar os ficheiros PAM directamente. É o ponto de entrada recomendado para a maioria das configurações de autenticação em ambientes RHEL modernos.
+
+## Secção 3 — Processos e Agendamentos
+ 
+### 3.1 Anatomia de um Processo Linux
+ 
+Quando lançamos um programa no Linux, o kernel não o deixa simplesmente correr de forma autónoma. Cria em torno dele uma estrutura de controlo chamada **processo**, que é a abstracção central através da qual o sistema operativo gere e monitoriza o uso de memória, tempo de CPU e recursos de I/O de tudo o que está a correr. É parte da filosofia fundadora do UNIX que tanto os programas do sistema como os do utilizador operem dentro desta mesma estrutura, sujeitos às mesmas regras. Não há mecanismos especiais reservados para processos do sistema: um único conjunto de ferramentas controla-os a todos.
+ 
+#### O que constitui um processo
+ 
+Um processo é composto por dois elementos fundamentais: um **espaço de endereçamento** e um conjunto de **estruturas de dados mantidas pelo kernel**.
+ 
+O espaço de endereçamento é um conjunto de páginas de memória que o kernel reservou para uso exclusivo daquele processo. Contém o código que está a ser executado, as bibliotecas de que esse código depende, as variáveis do programa, as pilhas de execução (*stacks*) e informação auxiliar que o kernel precisa enquanto o processo corre. Como o Linux é um sistema de memória virtual, não existe uma correspondência directa entre a localização de uma página no espaço de endereçamento de um processo e a sua localização física na RAM ou no swap. O kernel trata desta tradução de forma transparente.
+ 
+As estruturas de dados que o kernel mantém internamente para cada processo registam informação crítica: o mapa do espaço de endereçamento, o estado actual de execução, a prioridade de escalonamento, os recursos consumidos até ao momento, os ficheiros e portas de rede que o processo tem abertos, a máscara de sinais bloqueados e a identidade do seu dono.
+ 
+#### Os atributos mais importantes de um processo
+ 
+**PID — Process ID.** O kernel atribui um número único a cada processo no momento da sua criação. Os PIDs são atribuídos por ordem crescente, começando do zero. Quase todos os comandos e chamadas de sistema que manipulam processos precisam de um PID para identificar o alvo da operação.
+ 
+**PPID — Parent PID.** No Linux não existe uma chamada de sistema que crie directamente um processo a executar um programa diferente. O mecanismo existente é o seguinte: um processo existente clona-se para criar um novo processo. O processo original chama-se **pai** (*parent*) e a cópia chama-se **filho** (*child*). O PPID é o PID do processo pai a partir do qual o processo filho foi criado. Este atributo é muito útil quando se confronta com um processo desconhecido ou com comportamento anómalo: seguir a cadeia de PPIDs até à origem permite perceber quem lançou o processo e em que contexto.
+ 
+**UID e EUID.** O UID de um processo é o identificador numérico do utilizador que o criou. O EUID (*Effective User ID*) é um identificador adicional que determina a que recursos e ficheiros o processo tem efectivamente permissão de aceder em cada momento. Na maioria dos processos, UID e EUID são iguais. A excepção são programas com o bit *setuid* activado, que correm temporariamente com a identidade do dono do ficheiro executável em vez da do utilizador que os lançou. É exactamente este mecanismo que permite a um utilizador comum alterar a sua própria senha através do comando `passwd`, mesmo que o ficheiro `/etc/shadow` onde as senhas estão armazenadas seja restrito ao root.
+ 
+**Niceness.** A prioridade de escalonamento de um processo determina quanto tempo de CPU recebe relativamente aos outros. O kernel usa um algoritmo dinâmico para calcular prioridades, mas tem também em conta um valor configurável chamado **nice value** ou simplesmente *niceness*. O nome vem da ideia de que um processo com alta niceness está a "ser simpático" com os outros utilizadores do sistema, cedendo-lhes CPU. Um valor alto significa baixa prioridade; um valor baixo ou negativo significa alta prioridade. O intervalo vai de -20 (máxima prioridade) a +19 (mínima prioridade). Qualquer utilizador pode aumentar a niceness do seu processo, mas apenas o root pode atribuir valores negativos ou diminuir a niceness de um processo já em execução.
+ 
+**Terminal de controlo.** A maioria dos processos não-daemon tem um terminal de controlo associado, que define as ligações padrão de entrada, saída e erro. É também o terminal que determina para onde são enviados determinados sinais quando o utilizador prime teclas como `Ctrl+C` ou `Ctrl+Z`. Processos daemon, que correm em segundo plano sem interacção directa com o utilizador, não têm terminal de controlo, o que é indicado por um `?` na coluna `TTY` das listagens de processos.
  
