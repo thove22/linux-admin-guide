@@ -1156,7 +1156,7 @@ As estruturas de dados que o kernel mantém internamente para cada processo regi
  
 **Terminal de controlo.** A maioria dos processos não-daemon tem um terminal de controlo associado, que define as ligações padrão de entrada, saída e erro. É também o terminal que determina para onde são enviados determinados sinais quando o utilizador prime teclas como `Ctrl+C` ou `Ctrl+Z`. Processos daemon, que correm em segundo plano sem interacção directa com o utilizador, não têm terminal de controlo, o que é indicado por um `?` na coluna `TTY` das listagens de processos.
  
-### Como um processo nasce e morre
+#### Como um processo nasce e morre
  
 Para criar um novo processo, um processo existente clona-se com a chamada de sistema `fork`. O `fork` cria uma cópia quase idêntica do processo original, com um novo PID e contabilização de recursos própria. Após o `fork`, o processo filho usa normalmente uma das chamadas da família `exec` para começar a executar um programa diferente — é aqui que o programa novo substitui o código e a memória do processo filho.
  
@@ -1167,29 +1167,29 @@ Quando um processo termina, chama uma rotina interna para notificar o kernel que
 ---
  
 ### 3.2 Estados de um Processo
- 
-Um processo não está automaticamente elegível para receber tempo de CPU só porque existe. O kernel mantém cada processo num de quatro estados de execução:
+
+Um processo não está automaticamente elegível para receber tempo de CPU só porque existe. O kernel controla o acesso ao processador atravésde um conjunto de estados de execução. Em qualquer momento, cada processo encontra-se num destes estados:
  
 | Estado | Significado |
 |--------|-------------|
-| Runnable | O processo pode ser executado. Adquiriu todos os recursos de que precisa e está apenas à espera de tempo de CPU. |
-| Sleeping | O processo está à espera que um evento específico aconteça. Shells interactivos e daemons passam a maior parte do tempo neste estado, à espera de input ou de ligações de rede. |
-| Zombie | O processo terminou mas o seu estado ainda não foi recolhido pelo processo pai. |
-| Stopped | O processo está administrativamente impedido de correr. Um processo parado só pode sair deste estado se outro processo o acordar ou eliminar. |
+| Runnable | O processo está pronto para executar. Adquiriu todos os recursos de que necessita e aguarda apenas tempo de CPU disponível. |
+| Sleeping | O processo está à espera que um evento específico aconteça, como a chegada de dados de rede ou a conclusão de uma leitura de disco. Shells interactivas e daemons passam a maior parte do tempo neste estado. |
+| Zombie | O processo terminou a sua execução mas o seu estado ainda não foi recolhido pelo processo pai através de uma chamada `wait`. |
+| Stopped | O processo está administrativamente suspenso e não pode correr. Só sai deste estado quando outro processo o acordar com um sinal adequado ou o eliminar. |
  
-Existe ainda um sub-estado de *sleeping* chamado **uninterruptible sleep** (indicado pela letra `D` nos comandos de monitorização), em que o processo não pode ser acordado nem por sinais. Este estado é normalmente transitório e indica que o processo está à espera de I/O — por exemplo, leitura de disco. Em situações degeneradas, como problemas com sistemas de ficheiros NFS montados com a opção `hard`, um processo pode ficar preso neste estado indefinidamente e não pode ser eliminado — a única solução é corrigir o problema subjacente ou reiniciar o sistema.
+ Existe ainda um sub-estado de *sleeping* particularmente importante para um administrador: o **uninterruptible sleep**, indicado pela letra `D` no campo `STAT` das listagens de processos. Um processo neste estado está à espera de uma operação de I/O que não pode ser interrompida, como a leitura de um disco físico. Normalmente é um estado transitório que desaparece em fracções de segundo. Em situações degeneradas, como problemas com sistemas de ficheiros NFS montados com a opção `hard`, um processo pode ficar preso neste estado de forma indefinida. Como não pode ser acordado nem por sinais, incluindo o KILL, a única solução é corrigir o problema subjacente ou reiniciar o sistema.
  
-Os processos **zombie** aparecem em listagens de `ps` com o estado `Z`. Se encontrar zombies persistentes, verifique os seus PPID para descobrir de onde vêm  o processo pai não está a fazer a chamada `wait` necessária para os limpar.
- 
+Os processos em estado **zombie** são uma indicação de que o processo pai não está a fazer a limpeza correcta dos seus filhos terminados. Alguns zombies transitórios são normais, mas zombies persistentes em número crescente apontam para um problema no processo pai. O comando `ps` identifica-os com o estado `Z`, e o PPID indica qual é o processo pai responsável.
+
 ---
 
-### 3.3 Sinais: Comunicar com Processos
+### 3.3 Sinais: Comunicação entre Processos
+
+Os sinais são pedidos de interrupção ao nível do processo, o mecanismo fundamental pelo qual o kernel, o terminal e outros processos comunicam com um processo em execução. Existem cerca de trinta tipos de sinais definidos, e têm usos variados: um utilizador pode enviar um sinal para terminar um processo rebelde; o terminal gera sinais quando o utilizador prime determinadas teclas; o kernel envia sinais para notificar um processo de eventos como a morte de um filho ou a ocorrência de um erro de memória.
  
-Os sinais são pedidos de interrupção ao nível do processo. Existem cerca de trinta tipos definidos, e são utilizados de várias formas: como meio de comunicação entre processos, para terminar ou suspender processos quando são premidas certas teclas no terminal, para notificar um processo de uma condição importante como a morte de um filho, ou para indicar erros como divisão por zero.
+Quando um processo recebe um sinal, uma de duas coisas acontece. Se o processo tiver definido uma rotina de tratamento (*signal handler*) para aquele sinal, essa rotina é chamada imediatamente, suspendendo a execução normal; quando a rotina termina, o processo retoma o ponto onde foi interrompido. Se não existir um handler, o kernel executa a acção por defeito para aquele sinal, que pode ser terminar o processo, suspendê-lo, ou simplesmente ignorar o sinal.
  
-Quando um processo recebe um sinal, uma de duas coisas pode acontecer: se o processo tiver definido uma rotina de tratamento (*handler*) para aquele sinal, essa rotina é chamada; caso contrário, o kernel executa a acção por defeito, que varia consoante o sinal. Os programas podem também pedir que sinais sejam ignorados ou bloqueados.
- 
-A tabela seguinte lista os sinais mais importantes para um administrador de sistemas:
+Os programas podem pedir que sinais sejam ignorados ou bloqueados. Um sinal ignorado é simplesmente descartado sem qualquer efeito. Um sinal bloqueado é colocado em fila para entrega futura, mas o kernel não exige que o processo actue sobre ele até que o sinal seja explicitamente desbloqueado.
  
 | Número | Nome | Descrição | Acção por defeito | Pode ser interceptado? | Pode ser bloqueado? |
 |--------|------|-----------|-------------------|----------------------|---------------------|
@@ -1205,31 +1205,34 @@ A tabela seguinte lista os sinais mais importantes para um administrador de sist
 | — | WINCH | Window changed | Ignorar | Sim | Sim |
 | — | USR1 | User-defined #1 | Terminar | Sim | Sim |
 | — | USR2 | User-defined #2 | Terminar | Sim | Sim |
+
+Os sinais `KILL` e `STOP` são excepções absolutas: não podem ser interceptados, bloqueados nem ignorados por nenhum processo. O `KILL` é executado directamente pelo kernel sem sequer notificar o processo alvo. O `STOP` suspende a execução do processo até que um sinal `CONT` seja recebido.
  
+Os sinais que parecem equivalentes têm, na prática, significados e usos muito diferentes:
  
-Os sinais `KILL` e `STOP` são especiais: não podem ser interceptados, bloqueados ou ignorados. `KILL` destrói o processo ao nível do kernel, e `STOP` suspende a sua execução até que um sinal `CONT` seja recebido.
+O sinal `KILL` destrói o processo ao nível do kernel. O processo nunca chega a receber este sinal; é simplesmente eliminado. É o recurso de último caso quando tudo o resto falhou.
  
-É útil perceber as diferenças entre os sinais que parecem fazer a mesma coisa:
+O sinal `TERM` é um pedido para o processo terminar de forma ordenada. O processo recebe o sinal, tem a oportunidade de fazer limpeza, fechar ficheiros, guardar estado, e só então sai. É o comportamento por defeito do comando `kill` sem argumentos.
  
-`KILL` é executado directamente pelo kernel — o processo nunca chega sequer a receber este sinal. É garantidamente fatal (com a excepção rara de processos em *uninterruptible sleep*).
+O sinal `INT` é o que é gerado pelo terminal quando se prime `Ctrl+C`. Semanticamente é um pedido para interromper a operação actual. Programas simples devem sair; programas interactivos como uma shell devem parar o que estão a fazer e aguardar novo input.
  
-`TERM` é um pedido educado para terminar. Espera-se que o processo faça limpeza do seu estado e saia. O processo pode ignorar este sinal se assim o quiser.
+O sinal `HUP` tem duas interpretações distintas consoante o contexto. Para daemons de servidor, é convencionalmente interpretado como um pedido para reler o ficheiro de configuração e aplicar alterações sem reiniciar o serviço. É por isso que, após editar a configuração do Nginx ou do sshd, o método correcto de aplicar as alterações sem interromper sessões activas é enviar um `HUP` ao processo:
  
-`INT` é gerado pelo terminal quando se prime `Ctrl+C`. É um pedido para terminar a operação actual. Programas com linha de comando interactiva devem parar o que estão a fazer e aguardar novo input, em vez de simplesmente sair.
+```bash
+$ sudo kill -HUP $(cat /var/run/nginx.pid)
+```
  
-`HUP` tem duas interpretações comuns. Para muitos daemons, é interpretado como um pedido de reset o daemon relê o seu ficheiro de configuração e reajusta-se sem reiniciar. Este é o método standard para aplicar alterações de configuração a serviços como o Nginx ou o SSH sem interromper as sessões activas.
+O sinal `TSTP` é a versão interceptável do `STOP`, gerada quando se prime `Ctrl+Z`. Ao contrário do `STOP`, pode ser apanhado pelos programas, o que lhes permite fazer limpeza antes de se suspenderem.
  
-`TSTP` é uma versão "suave" do `STOP` gerada quando se prime `Ctrl+Z`. Ao contrário do `STOP`, pode ser interceptado  os programas que o apanham normalmente limpam o seu estado antes de se suspenderem.
- 
-`USR1` e `USR2` não têm significado fixo. Cada programa pode usá-los como quiser. O Apache, por exemplo, usa `USR1` para sinalizar um reinício gracioso.
- 
+Os sinais `USR1` e `USR2` não têm significado predefinido. Cada aplicação pode usá-los para o que entender. O Apache Web Server usa `USR1` para iniciar um reinício gracioso; o Nginx usa `USR2` para fazer upgrade do binário sem perder ligações activas.
+
 ---
  
-### 3.4 Gestão Activa de Processos
+### 3.4 Monitorização de Processos
+
+#### ps: fotografia instantânea do sistema
  
-#### ps: obter uma fotografia do sistema
- 
-O `ps` é a ferramenta principal para monitorizar processos. Na sua forma mais simples, sem opções, mostra apenas os processos da sessão actual:
+O `ps` é a ferramenta principal de monitorização de processos. Na sua forma mais simples, sem opções, mostra apenas os processos associados à sessão actual:
  
 ```bash
 $ ps
@@ -1238,7 +1241,7 @@ $ ps
 10129 pts/1    00:00:00 ps
 ```
  
-Para uma visão completa do sistema — todos os processos, incluindo os que não têm terminal de controlo — a combinação de opções mais útil é `aux`:
+Esta vista limitada é útil para confirmar o que está a correr no terminal actual, mas raramente é suficiente para administração. A combinação de opções que fornece a visão mais completa do sistema é `aux`:
  
 ```bash
 $ ps aux
@@ -1249,136 +1252,162 @@ carlos    1847  0.1  1.4  58492  7340 pts/0    Ss   10:22   0:01 bash
 carlos    2103  5.2  3.0 124800 15360 pts/0    R    10:45   0:23 python3 analise.py
 ```
  
-A opção `a` mostra todos os processos, `u` selecciona o formato orientado ao utilizador e `x` inclui processos sem terminal de controlo. A tabela seguinte explica os campos do output:
+A opção `a` expande a listagem para todos os processos de todos os utilizadores, `u` selecciona o formato orientado ao utilizador com colunas de memória e CPU, e `x` inclui processos que não têm terminal de controlo associado (os daemons, indicados pelo `?` na coluna `TTY`). A tabela seguinte descreve os campos do output:
  
 | Campo | Conteúdo |
 |-------|----------|
-| USER | Nome de utilizador do dono do processo |
-| PID | Process ID |
-| %CPU | Percentagem de CPU que o processo está a usar |
-| %MEM | Percentagem de memória real que o processo está a usar |
-| VSZ | Tamanho virtual total do processo |
-| RSS | Resident set size (número de páginas em memória física) |
-| TTY | Terminal de controlo |
-| STAT | Estado actual do processo (ver tabela de estados) |
-| TIME | Tempo de CPU consumido pelo processo |
-| COMMAND | Nome do comando e argumentos |
+| USER | Nome do utilizador dono do processo |
+| PID | Identificador único do processo |
+| %CPU | Percentagem de CPU consumida |
+| %MEM | Percentagem de memória física utilizada |
+| VSZ | Tamanho total do espaço de endereçamento virtual |
+| RSS | Resident set size: memória física efectivamente mapeada |
+| TTY | Terminal de controlo (`?` para processos sem terminal) |
+| STAT | Estado actual do processo |
+| TIME | Tempo total de CPU consumido desde o arranque |
+| COMMAND | Nome e argumentos do comando |
  
-O campo `STAT` merece atenção especial. Para além das letras de estado básicas, podem aparecer flags adicionais:
  
-| Código STAT | Significado |
-|-------------|-------------|
-| `R` | Running — em execução ou pronto a executar |
-| `S` | Sleeping — à espera de um evento (menos de 20 segundos) |
-| `D` | Uninterruptible sleep — à espera de I/O, não pode ser interrompido |
-| `T` | Stopped — parado por instrução |
-| `Z` | Zombie — terminou mas ainda não foi limpo pelo pai |
-| `<` | Alta prioridade (processo "não simpático") |
-| `N` | Baixa prioridade (processo simpático) |
+O campo `STAT` merece atenção especial porque condensa muita informação num código curto. Para além das letras de estado base, podem aparecer modificadores adicionais:
+ 
+| Código | Significado |
+|--------|-------------|
+| `R` | Running: em execução ou pronto a executar |
+| `S` | Sleeping: à espera de um evento, menos de 20 segundos |
+| `D` | Uninterruptible sleep: à espera de I/O, não pode ser interrompido |
+| `T` | Stopped: suspenso por instrução |
+| `Z` | Zombie: terminou mas ainda não foi limpo pelo pai |
+| `<` | Alta prioridade (processo com niceness negativo) |
+| `N` | Baixa prioridade (processo com niceness positivo) |
 | `s` | Líder de sessão |
 | `l` | Processo multithreaded |
-
-Para filtrar a lista e encontrar um processo específico, é comum combinar `ps aux` com `grep`:
+ 
+ 
+Para filtrar a listagem e encontrar processos por nome, combina-se `ps aux` com `grep`:
  
 ```bash
 $ ps aux | grep nginx
-root      1203  0.0  0.3  45820  1932 ?        Ss   09:15   0:00 nginx: master process
-nginx     1204  0.0  0.2  46244  1120 ?        S    09:15   0:00 nginx: worker process
+root      1203  0.0  0.3  45820  1932 ?   Ss   09:15   0:00 nginx: master process
+nginx     1204  0.0  0.2  46244  1120 ?   S    09:15   0:00 nginx: worker process
 ```
-
-#### top: monitorização dinâmica em tempo real
  
-O `ps` oferece uma fotografia estática do sistema no momento em que é executado. Para uma visão contínua e actualizada, usa-se o `top`:
+Para visualizar a árvore de processos com as relações pai-filho, usa-se o `pstree`:
+ 
+```bash
+$ pstree -p
+systemd(1)-+-agetty(854)
+           |-crond(832)
+           |-nginx(1203)-+-nginx(1204)
+           |             `-nginx(1205)
+           |-sshd(1089)-+-sshd(2041)-+-sshd(2043)
+           |             |            `-bash(2044)-+-ps(3102)
+```
+ 
+#### top: monitorização contínua e interactiva
+ 
+O `ps` oferece uma fotografia estática do sistema no instante em que é executado. Para acompanhar o comportamento do sistema ao longo do tempo, com actualização contínua, usa-se o `top`:
  
 ```bash
 $ top
 ```
  
 ```
-top - 11:42:30 up 3 days,  4:10,  2 users,  load average: 0.52, 0.38, 0.29
+top - 11:42:30 up 3 days, 4:10,  2 users,  load average: 0.52, 0.38, 0.29
 Tasks: 142 total,   1 running, 141 sleeping,   0 stopped,   0 zombie
 %Cpu(s):  2.1 us,  1.0 sy,  0.0 ni, 96.3 id,  0.5 wa,  0.0 hi,  0.1 si
 MiB Mem :   3844.5 total,    412.3 free,   1823.4 used,   1608.8 buff/cache
 MiB Swap:   2048.0 total,   2048.0 free,      0.0 used.   1732.8 avail Mem
  
-  PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
- 2103 carlos    20   0  124800  15360   4096 R   5.2   3.0   0:23.14 python3
- 1203 root      20   0   45820   1932    896 S   0.3   0.0   0:02.41 nginx
-    1 root      20   0    3356    560    480 S   0.0   0.0   0:00.91 systemd
+  PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+  COMMAND
+ 2103 carlos    20   0  124800  15360   4096 R   5.2   3.0   0:23.14  python3
+ 1203 root      20   0   45820   1932    896 S   0.3   0.0   0:02.41  nginx
+    1 root      20   0    3356    560    480 S   0.0   0.0   0:00.91  systemd
 ```
  
-O cabeçalho do `top` contém informação de estado do sistema que convém saber interpretar:
+O cabeçalho do `top` contém informação de estado do sistema que é essencial saber interpretar:
  
 | Campo | Significado |
 |-------|-------------|
-| `up 3 days, 4:10` | Uptime — tempo decorrido desde o último arranque |
+| `up 3 days, 4:10` | Uptime: tempo decorrido desde o último arranque do sistema |
 | `2 users` | Número de utilizadores com sessão activa |
-| `load average: 0.52, 0.38, 0.29` | Número médio de processos em estado runnable nos últimos 1, 5 e 15 minutos. Valores abaixo de 1.0 indicam que o sistema não está sobrecarregado |
+| `load average: 0.52, 0.38, 0.29` | Número médio de processos em estado runnable nos últimos 1, 5 e 15 minutos. Num sistema com um núcleo de CPU, valores abaixo de 1.0 indicam que o sistema não está sobrecarregado |
 | `Tasks:` | Resumo do número de processos por estado |
-| `%Cpu(s): 2.1 us` | 2.1% do CPU a ser usado por processos de utilizador |
-| `1.0 sy` | 1.0% do CPU a ser usado por processos de sistema (kernel) |
-| `96.3 id` | 96.3% do CPU inactivo |
-| `0.5 wa` | 0.5% do CPU à espera de I/O |
-
-Por defeito, o `top` actualiza a cada 3 segundos e ordena os processos por consumo de CPU, o que coloca os processos mais exigentes no topo da lista. Dentro do `top`, algumas teclas úteis:
+| `2.1 us` | Percentagem de CPU a ser usada por processos de utilizador |
+| `1.0 sy` | Percentagem de CPU a ser usada pelo kernel |
+| `96.3 id` | Percentagem de CPU inactivo |
+| `0.5 wa` | Percentagem de CPU à espera de operações de I/O |
+ 
+ 
+Por defeito, o `top` actualiza a cada 3 segundos e ordena os processos por consumo de CPU, colocando os mais exigentes no topo. A interacção com o `top` é feita por teclado enquanto está a correr:
  
 | Tecla | Acção |
 |-------|-------|
-| `q` | Sair |
-| `k` | Eliminar um processo (pede o PID e o sinal) |
+| `q` | Sair do top |
+| `k` | Enviar um sinal a um processo (pede o PID e depois o sinal) |
 | `r` | Alterar o nice value de um processo |
 | `M` | Ordenar por consumo de memória |
-| `P` | Ordenar por consumo de CPU (por defeito) |
-| `u` | Filtrar por utilizador |
-| `h` | Mostrar ajuda |
+| `P` | Ordenar por consumo de CPU (comportamento por defeito) |
+| `u` | Filtrar processos por nome de utilizador |
+| `h` | Mostrar ajuda com todos os atalhos disponíveis |
+ 
+O root pode lançar o `top` com a opção `-q` para lhe atribuir a maior prioridade possível. Esta opção é valiosa precisamente nas situações em que o sistema está tão sobrecarregado que comandos normais têm dificuldade em correr.
 
+### 3.5 Gestão Activa de Processos
+ 
 #### kill: enviar sinais a processos
  
-O comando `kill` envia sinais a processos. Apesar do nome, não serve apenas para terminar processos — pode enviar qualquer sinal. A sintaxe é:
+O comando `kill` envia sinais a processos. O nome é enganador: embora seja frequentemente usado para terminar processos, pode enviar qualquer sinal. A sua sintaxe é:
  
 ```bash
 kill [-sinal] PID
 ```
  
-Sem especificar o sinal, o `kill` envia `TERM` (15) por defeito, que é um pedido educado para o processo terminar:
+Sem especificar o sinal, o `kill` envia `TERM` (15) por defeito, que é um pedido para o processo terminar de forma ordenada:
  
 ```bash
 $ kill 2103
 ```
  
-Se o processo ignorar o `TERM` — o que pode acontecer com processos bloqueados ou mal comportados — usa-se o `KILL` (9), que não pode ser ignorado:
+Se o processo não responder ao `TERM` após alguns segundos, o recurso seguinte é o sinal `KILL` (9), que não pode ser ignorado pelo processo:
  
 ```bash
 $ kill -9 2103
-# ou equivalentemente:
-$ kill -KILL 2103
 ```
  
-> **Use `kill -9` apenas como último recurso.** O sinal `KILL` não dá ao processo oportunidade de limpar recursos, fechar ficheiros ou guardar estado. Pode resultar em ficheiros corrompidos ou locks não libertados. Tente sempre `TERM` primeiro e aguarde alguns segundos.
- 
-Para enviar um sinal a todos os processos com um determinado nome, usa-se o `killall`:
+A lista de sinais disponíveis pode ser consultada com:
  
 ```bash
-# Reiniciar o nginx enviando HUP ao processo master
-$ sudo kill -HUP $(cat /var/run/nginx.pid)
- 
-# Terminar todos os processos com o nome "python3"
-$ sudo killall python3
+$ kill -l
+ 1) SIGHUP    2) SIGINT    3) SIGQUIT   4) SIGILL    5) SIGTRAP
+ 9) SIGKILL  10) SIGUSR1  11) SIGSEGV  12) SIGUSR2  15) SIGTERM
 ```
  
-O `pkill` é uma alternativa mais flexível, permitindo seleccionar processos por nome, utilizador ou outros atributos:
+>  **Use `kill -9` apenas como último recurso.** O sinal `KILL` não dá ao processo oportunidade de fazer limpeza: fechar ficheiros correctamente, guardar estado, libertar locks. Em servidores de base de dados, por exemplo, um `KILL` forçado pode deixar ficheiros de dados num estado inconsistente que exige recuperação manual. Tente sempre `TERM` primeiro e aguarde alguns segundos antes de recorrer ao `KILL`.
+ 
+Para enviar um sinal a processos pelo nome em vez do PID, usa-se o `pkill`:
  
 ```bash
+# Enviar TERM a todos os processos com o nome "python3"
+$ sudo pkill python3
+ 
+# Enviar HUP ao processo nginx
+$ sudo pkill -HUP nginx
+ 
 # Terminar todos os processos do utilizador carlos
 $ sudo pkill -u carlos
- 
-# Enviar HUP ao processo nginx pelo nome
-$ sudo pkill -HUP nginx
 ```
  
-#### Controlo de jobs: foreground, background e suspensão
+O `killall` tem comportamento similar no Linux, eliminando processos pelo nome:
  
-Quando se executa um comando na shell, por defeito ele corre em **foreground**  a shell fica bloqueada à espera que o processo termine antes de devolver o prompt. Para processos de longa duração, isto pode ser inconveniente.
+```bash
+$ sudo killall httpd
+```
+ 
+>  **Atenção ao `killall` em sistemas UNIX não-Linux.** Em Solaris, HP-UX e AIX, o `killall` sem argumentos elimina todos os processos do utilizador actual. Executado como root, derruba o sistema. No Linux este comportamento não existe, mas se trabalhar em ambientes mistos, prefira o `pkill` que é mais seguro e portável.
+ 
+#### Controlo de jobs: foreground e background
+ 
+Quando se executa um comando na shell, por defeito ele corre em **foreground**: a shell fica bloqueada à espera que o processo termine antes de devolver o prompt. Para processos de longa duração numa sessão de administração, isto impede qualquer outra interacção com a shell enquanto o processo não terminar.
  
 Para lançar um processo directamente em **background**, acrescenta-se `&` no final do comando:
  
@@ -1387,17 +1416,17 @@ $ python3 relatorio_mensal.py &
 [1] 3847
 ```
  
-A shell imprime o número do job `[1]` e o PID do processo `3847`, e o prompt regressa imediatamente. O processo continua a correr em segundo plano.
+A shell imprime o número do job `[1]` e o PID `3847`, e o prompt regressa imediatamente. O processo continua a correr em segundo plano.
  
-Se um processo já estiver a correr em foreground e quisermos movê-lo para background sem o terminar, premimos `Ctrl+Z`:
+Se um processo já estiver a correr em foreground e for necessário movê-lo para background sem o terminar, prime-se `Ctrl+Z`. O processo é suspenso (estado `T`) e o controlo regressa à shell:
  
 ```bash
 $ python3 relatorio_mensal.py
 ^Z
-[1]+  Stopped                 python3 relatorio_mensal.py
+[1]+  Stopped    python3 relatorio_mensal.py
 ```
  
-O processo foi suspenso (estado `T`). Para retomar a sua execução em background:
+Para retomar a execução do processo suspenso em background:
  
 ```bash
 $ bg %1
@@ -1408,13 +1437,20 @@ Para listar todos os jobs activos da sessão actual:
  
 ```bash
 $ jobs
-[1]-  Running                 python3 relatorio_mensal.py &
-[2]+  Stopped                 vim /etc/nginx/nginx.conf
+[1]-  Running    python3 relatorio_mensal.py &
+[2]+  Stopped    vim /etc/nginx/nginx.conf
 ```
  
-Para trazer um processo de background para foreground:
+Para trazer um processo de background de volta para foreground:
  
 ```bash
 $ fg %1
 ```
+ 
+Um processo em background fica imune ao input do teclado, incluindo `Ctrl+C`. Para o terminar, é necessário usar o `kill` com o seu PID ou com a notação de jobspec:
+ 
+```bash
+$ kill %1
+```
+
 
