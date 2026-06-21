@@ -1225,5 +1225,97 @@ Os sinais `KILL` e `STOP` são especiais: não podem ser interceptados, bloquead
  
 ---
  
+### 3.4 Gestão Activa de Processos
+ 
+#### ps: obter uma fotografia do sistema
+ 
+O `ps` é a ferramenta principal para monitorizar processos. Na sua forma mais simples, sem opções, mostra apenas os processos da sessão actual:
+ 
+```bash
+$ ps
+  PID TTY          TIME CMD
+ 5198 pts/1    00:00:00 bash
+10129 pts/1    00:00:00 ps
+```
+ 
+Para uma visão completa do sistema — todos os processos, incluindo os que não têm terminal de controlo — a combinação de opções mais útil é `aux`:
+ 
+```bash
+$ ps aux
+USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root         1  0.0  0.2   3356   560 ?        Ss   Mar05   0:31 /sbin/init
+root         2  0.0  0.0      0     0 ?        S<   Mar05   0:00 [kthreadd]
+carlos    1847  0.1  1.4  58492  7340 pts/0    Ss   10:22   0:01 bash
+carlos    2103  5.2  3.0 124800 15360 pts/0    R    10:45   0:23 python3 analise.py
+```
+ 
+A opção `a` mostra todos os processos, `u` selecciona o formato orientado ao utilizador e `x` inclui processos sem terminal de controlo. A tabela seguinte explica os campos do output:
+ 
+| Campo | Conteúdo |
+|-------|----------|
+| USER | Nome de utilizador do dono do processo |
+| PID | Process ID |
+| %CPU | Percentagem de CPU que o processo está a usar |
+| %MEM | Percentagem de memória real que o processo está a usar |
+| VSZ | Tamanho virtual total do processo |
+| RSS | Resident set size (número de páginas em memória física) |
+| TTY | Terminal de controlo |
+| STAT | Estado actual do processo (ver tabela de estados) |
+| TIME | Tempo de CPU consumido pelo processo |
+| COMMAND | Nome do comando e argumentos |
+ 
+O campo `STAT` merece atenção especial. Para além das letras de estado básicas, podem aparecer flags adicionais:
+ 
+| Código STAT | Significado |
+|-------------|-------------|
+| `R` | Running — em execução ou pronto a executar |
+| `S` | Sleeping — à espera de um evento (menos de 20 segundos) |
+| `D` | Uninterruptible sleep — à espera de I/O, não pode ser interrompido |
+| `T` | Stopped — parado por instrução |
+| `Z` | Zombie — terminou mas ainda não foi limpo pelo pai |
+| `<` | Alta prioridade (processo "não simpático") |
+| `N` | Baixa prioridade (processo simpático) |
+| `s` | Líder de sessão |
+| `l` | Processo multithreaded |
 
+Para filtrar a lista e encontrar um processo específico, é comum combinar `ps aux` com `grep`:
+ 
+```bash
+$ ps aux | grep nginx
+root      1203  0.0  0.3  45820  1932 ?        Ss   09:15   0:00 nginx: master process
+nginx     1204  0.0  0.2  46244  1120 ?        S    09:15   0:00 nginx: worker process
+```
 
+#### top: monitorização dinâmica em tempo real
+ 
+O `ps` oferece uma fotografia estática do sistema no momento em que é executado. Para uma visão contínua e actualizada, usa-se o `top`:
+ 
+```bash
+$ top
+```
+ 
+```
+top - 11:42:30 up 3 days,  4:10,  2 users,  load average: 0.52, 0.38, 0.29
+Tasks: 142 total,   1 running, 141 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  2.1 us,  1.0 sy,  0.0 ni, 96.3 id,  0.5 wa,  0.0 hi,  0.1 si
+MiB Mem :   3844.5 total,    412.3 free,   1823.4 used,   1608.8 buff/cache
+MiB Swap:   2048.0 total,   2048.0 free,      0.0 used.   1732.8 avail Mem
+ 
+  PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+ 2103 carlos    20   0  124800  15360   4096 R   5.2   3.0   0:23.14 python3
+ 1203 root      20   0   45820   1932    896 S   0.3   0.0   0:02.41 nginx
+    1 root      20   0    3356    560    480 S   0.0   0.0   0:00.91 systemd
+```
+ 
+O cabeçalho do `top` contém informação de estado do sistema que convém saber interpretar:
+ 
+| Campo | Significado |
+|-------|-------------|
+| `up 3 days, 4:10` | Uptime — tempo decorrido desde o último arranque |
+| `2 users` | Número de utilizadores com sessão activa |
+| `load average: 0.52, 0.38, 0.29` | Número médio de processos em estado runnable nos últimos 1, 5 e 15 minutos. Valores abaixo de 1.0 indicam que o sistema não está sobrecarregado |
+| `Tasks:` | Resumo do número de processos por estado |
+| `%Cpu(s): 2.1 us` | 2.1% do CPU a ser usado por processos de utilizador |
+| `1.0 sy` | 1.0% do CPU a ser usado por processos de sistema (kernel) |
+| `96.3 id` | 96.3% do CPU inactivo |
+| `0.5 wa` | 0.5% do CPU à espera de I/O |
