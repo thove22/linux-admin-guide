@@ -1663,7 +1663,7 @@ Para remover o crontab completamente:
 $ crontab -r
 ```
  
-> ⚠️ **Não confunda `-r` (remove) com `-e` (edit).** O `crontab -r` apaga o crontab imediatamente sem pedir confirmação. Se precisar de instalar um crontab a partir de um ficheiro:
+>  **Não confunda `-r` (remove) com `-e` (edit).** O `crontab -r` apaga o crontab imediatamente sem pedir confirmação. Se precisar de instalar um crontab a partir de um ficheiro:
  
 ```bash
 $ crontab ficheiro_crontab.txt
@@ -1885,4 +1885,458 @@ A principal diferença prática é que o `systemd-run` cria um timer unit transi
 | Persistência | Permanente até ser removido | Removida automaticamente após execução |
 | Ver pendentes | `crontab -l` | `atq` |
 | Remover | `crontab -r` ou editar com `crontab -e` | `atrm [número]` |
+
+## Observabilidade do Sistema
  
+### 4.1 Logs: A Memória do Sistema
+ 
+Quando algo corre mal num servidor e não há ponto de partida óbvio para a investigação, o primeiro lugar a consultar são sempre os logs. Esta é uma das máximas mais antigas da administração de sistemas, e continua tão válida hoje como há quarenta anos. Os logs são o registo contínuo do que acontece no sistema: quais os serviços que arrancaram, quais falharam, quem fez login, quais os erros que ocorreram e quando. Sem logs, administrar um servidor em produção seria trabalhar às cegas.
+ 
+A maioria dos programas de sistema escreve as suas mensagens de diagnóstico para o serviço de logging do sistema. Historicamente, esse serviço era o `syslogd`, um daemon que recebia mensagens e as distribuía para ficheiros, consolas ou servidores remotos. Nas distribuições modernas baseadas em systemd, incluindo o CentOS Stream, a maior parte deste trabalho é feito pelo `journald`, um daemon integrado no systemd que recolhe e armazena mensagens num formato binário estruturado. Em muitas instalações, o `journald` e o `rsyslogd` coexistem: o `journald` recolhe tudo, e o `rsyslogd` complementa com funcionalidades de envio para servidores remotos e integração com sistemas de monitorização externos.
+ 
+Uma mensagem de log típica tem o seguinte aspecto:
+ 
+```
+Aug 19 17:59:48 servidor sshd[484]: Server listening on 0.0.0.0 port 22.
+```
+ 
+Nesta linha estão o timestamp, o nome do servidor, o nome do processo e o seu PID, e a mensagem em si. Para além destes campos, as mensagens de syslog têm dois atributos adicionais importantes: a **facility** e a **severity**.
+ 
+A **facility** identifica a categoria geral do serviço que enviou a mensagem: kernel, sistema de email, impressão, autenticação, e assim por diante. A **severity** indica a urgência da mensagem, numa escala de 0 a 7:
+ 
+| Nível | Nome | Significado |
+|-------|------|-------------|
+| 0 | emerg | O sistema está inutilizável |
+| 1 | alert | É necessária acção imediata |
+| 2 | crit | Condição crítica |
+| 3 | err | Erro |
+| 4 | warning | Aviso |
+| 5 | notice | Condição normal mas significativa |
+| 6 | info | Mensagem informativa |
+| 7 | debug | Informação de diagnóstico detalhada |
+ 
+Juntas, facility e severity formam a **priority** de uma mensagem. São estes dois valores que determinam para onde a mensagem é enviada e se merece atenção imediata.
+ 
+### Onde estão os logs
+ 
+Para perceber que sistema de logging está activo, o ponto de partida é verificar o que está instalado:
+ 
+```bash
+# Verificar se o journald está activo
+$ journalctl --no-pager -n 5
+ 
+# Verificar se o rsyslogd está a correr
+$ systemctl status rsyslog
+ 
+# Ver os ficheiros de log tradicionais
+$ ls /var/log/
+```
+ 
+O directório `/var/log/` contém os logs mantidos pelos daemons de logging e por outros serviços. Em sistemas com `rsyslogd`, este directório terá vários ficheiros de texto directamente legíveis. Os logs binários do `journald` ficam em `/var/log/journal/`. Alguns ficheiros em `/var/log/` são mantidos por serviços independentes: o `wtmp` e o `lastlog`, por exemplo, guardam registos de login e são acedidos pelos comandos `last` e `lastlog`, não pelo sistema de logging.
+ 
+---
+
+### 4.2 Análise de Logs com journalctl
+ 
+O `journalctl` é a ferramenta para aceder ao journal do systemd. Sem argumentos, mostra todas as mensagens desde o registo mais antigo, usando um paginador para não inundar o terminal:
+ 
+```bash
+$ journalctl
+```
+ 
+Este comando produz demasiada informação para ser útil na maioria dos casos. O valor real do `journalctl` está nas suas opções de filtragem, que permitem isolar exactamente as mensagens relevantes para um problema específico.
+ 
+Para ter acesso completo ao journal é necessário ser root ou pertencer ao grupo `adm` ou `systemd-journal`. O utilizador padrão na maioria das distribuições já tem este acesso por defeito.
+ 
+#### Filtrar por tempo
+ 
+A opção `-S` (*since*) é uma das mais úteis. Permite restringir a pesquisa a mensagens a partir de um determinado momento:
+ 
+```bash
+# Mensagens das últimas 4 horas
+$ journalctl -S -4h
+ 
+# Mensagens desde as 06:00 de hoje
+$ journalctl -S 06:00:00
+ 
+# Mensagens desde uma data específica
+$ journalctl -S 2025-06-01
+ 
+# Mensagens num intervalo preciso
+$ journalctl -S '2025-06-01 14:00:00' -U '2025-06-01 15:00:00'
+```
+ 
+A opção `-U` (*until*) define o fim do intervalo. Combinadas, `-S` e `-U` permitem isolar exactamente a janela de tempo de um incidente.
+ 
+#### Filtrar por serviço (unit)
+ 
+Para ver apenas os logs de um serviço específico do systemd:
+ 
+```bash
+# Logs do serviço SSH
+$ journalctl -u sshd
+ 
+# Logs do nginx
+$ journalctl -u nginx
+ 
+# Logs do cron
+$ journalctl -u crond
+```
+ 
+A extensão `.service` pode ser omitida. Para descobrir os nomes de todos os serviços que têm entradas no journal:
+ 
+```bash
+$ journalctl -F _SYSTEMD_UNIT
+```
+ 
+A opção `-F` lista todos os valores presentes no journal para um campo específico.
+ 
+#### Filtrar por processo
+ 
+Para ver as mensagens de um processo específico pelo seu PID:
+ 
+```bash
+$ journalctl _PID=3847
+```
+ 
+#### Filtrar por severidade
+ 
+Para ver apenas mensagens a partir de um determinado nível de urgência:
+ 
+```bash
+# Mensagens de nível 3 (err) e mais urgentes (0, 1, 2, 3)
+$ journalctl -p 3
+ 
+# Apenas mensagens de nível crítico e de alerta
+$ journalctl -p 2..3
+```
+ 
+Esta filtragem é útil em serviços que geram grandes volumes de mensagens informativas mas onde apenas os erros interessam.
+ 
+#### Filtrar por boot
+ 
+Para ver os logs de um arranque específico do sistema:
+ 
+```bash
+# Logs do arranque actual
+$ journalctl -b
+ 
+# Logs do arranque anterior
+$ journalctl -b -1
+ 
+# Logs de dois arranques atrás
+$ journalctl -b -2
+```
+ 
+Para listar todos os boots registados com os seus IDs e timestamps:
+ 
+```bash
+$ journalctl --list-boots
+```
+ 
+Uma utilização particularmente prática desta opção é verificar se o sistema encerrou correctamente na última vez. Combinando `-b -1` com `-r` (ordem inversa), as últimas mensagens do arranque anterior aparecem primeiro:
+ 
+```bash
+$ journalctl -r -b -1
+```
+ 
+Se o encerramento foi limpo, as últimas mensagens mostrarão o processo de shutdown ordenado. Se o sistema reiniciou abruptamente por falha de energia ou kernel panic, as mensagens simplesmente terminam sem qualquer sequência de encerramento, o que é por si só uma informação importante.
+ 
+#### Filtrar por texto
+ 
+Para pesquisar mensagens que correspondam a uma expressão regular:
+ 
+```bash
+# Mensagens que contenham "error" seguido de qualquer coisa e depois "disk"
+$ journalctl -g 'error.*disk'
+ 
+# Mensagens relacionadas com autenticação falhada
+$ journalctl -g 'Failed password'
+```
+ 
+Quando se encontra uma mensagem relevante por pesquisa de texto, o passo seguinte é normalmente usar o timestamp dessa mensagem para ver o contexto temporal:
+ 
+```bash
+# Ver o que aconteceu nos 10 minutos antes da mensagem encontrada
+$ journalctl -S '2025-06-01 14:23:00' -U '2025-06-01 14:33:00'
+```
+ 
+#### Monitorização em tempo real
+ 
+Para acompanhar os logs à medida que chegam, como se faria com `tail -f` num ficheiro de texto:
+ 
+```bash
+$ journalctl -f
+```
+ 
+Para monitorizar apenas um serviço específico em tempo real:
+ 
+```bash
+$ journalctl -f -u nginx
+```
+ 
+Esta combinação é especialmente útil ao reiniciar um serviço após uma alteração de configuração: o log aparece em tempo real e é imediatamente visível se o serviço arrancar correctamente ou falha com um erro.
+
+Esta combinação é especialmente útil ao reiniciar um serviço após uma alteração de configuração: o log aparece em tempo real e é imediatamente visível se o serviço arrancar correctamente ou falha com um erro.
+ 
+### Outros campos úteis
+ 
+O `journalctl` tem acesso a um conjunto rico de campos estruturados. Para descobrir todos os campos disponíveis:
+ 
+```bash
+$ journalctl -N
+```
+ 
+Qualquer campo que comece com underscore (como `_PID`, `_SYSTEMD_UNIT`, `_HOSTNAME`) é um campo de confiança: não pode ser alterado pelo cliente que envia a mensagem, sendo preenchido pelo próprio journald. Estes campos são mais fiáveis para filtrar do que o conteúdo livre das mensagens.
+ 
+---
+
+### 4.3 rsyslog: O Logger Tradicional
+ 
+Em muitos servidores CentOS, o `rsyslogd` corre em paralelo com o `journald`. As suas razões de existência são principalmente duas: a capacidade de enviar logs para um servidor centralizado na rede, e a compatibilidade com sistemas e ferramentas que esperam logs em ficheiros de texto plano.
+ 
+#### A configuração do rsyslog
+ 
+O ficheiro de configuração principal é `/etc/rsyslog.conf`, com configurações adicionais em `/etc/rsyslog.d/`. A estrutura básica de uma regra de configuração segue o formato:
+ 
+```
+facility.severity    destino
+```
+ 
+Por exemplo:
+ 
+```
+# Mensagens de autenticação vão para /var/log/secure
+authpriv.*           /var/log/secure
+ 
+# Mensagens de kernel vão para o log de kernel
+kern.*               /var/log/kern.log
+ 
+# Tudo de nível warning ou mais urgente vai para o log geral
+*.warning            /var/log/messages
+ 
+# Enviar tudo para um servidor remoto
+*.* @@servidor-log.empresa.com:514
+```
+ 
+O asterisco como facility significa "todas as facilities". O `@@` indica envio por TCP; um único `@` usaria UDP.
+ 
+#### Logs de texto em /var/log
+ 
+Nos sistemas com `rsyslogd` activo, os ficheiros de log mais importantes ficam em `/var/log/`:
+ 
+```bash
+$ ls /var/log/
+messages    secure    cron    boot.log    dmesg    wtmp    lastlog
+```
+ 
+Os ficheiros mais relevantes para administração são:
+ 
+`/var/log/messages` contém as mensagens gerais do sistema. É o ponto de partida para investigar a maioria dos problemas.
+ 
+`/var/log/secure` regista todas as tentativas de autenticação, logins bem-sucedidos, falhas de senha e uso de `sudo`. Num servidor exposto à Internet, este ficheiro costuma ter tentativas de login falhadas continuamente.
+ 
+`/var/log/cron` regista a execução de tarefas agendadas pelo `crond`.
+ 
+`/var/log/boot.log` contém mensagens do processo de arranque do sistema.
+ 
+`/var/log/dmesg` regista mensagens do kernel, especialmente as relacionadas com hardware detectado durante o boot.
+ 
+Para ler estes ficheiros em tempo real:
+ 
+```bash
+$ sudo tail -f /var/log/messages
+$ sudo tail -f /var/log/secure
+```
+ 
+---
+ 
+### 4.4 Rotação de Logs
+ 
+Os logs crescem continuamente. Sem um mecanismo de controlo, encheriam o disco do servidor e degradariam o desempenho. A solução standard é a **rotação de logs**: o processo de dividir os ficheiros de log em segmentos, comprimindo os mais antigos e eliminando os mais velhos.
+ 
+Em CentOS, o utilitário `logrotate` trata desta rotação. O seu mecanismo é simples: mantém várias versões numeradas de cada ficheiro de log.
+ 
+Para o ficheiro `/var/log/messages`, a rotação funciona assim:
+ 
+1. Remove o ficheiro mais antigo: `messages-4.gz`
+2. Renomeia `messages-3.gz` para `messages-4.gz`
+3. Renomeia `messages-2.gz` para `messages-3.gz`
+4. Renomeia `messages-1.gz` para `messages-2.gz`
+5. Comprime `messages` actual e renomeia para `messages-1.gz`
+6. O `rsyslogd` começa a escrever num novo ficheiro `messages` vazio
+A configuração do `logrotate` está em `/etc/logrotate.conf` e em ficheiros individuais por serviço em `/etc/logrotate.d/`. Uma configuração típica para um serviço:
+ 
+```
+/var/log/nginx/access.log {
+    daily               # Rodar diariamente
+    missingok           # Não dar erro se o ficheiro não existir
+    rotate 14           # Manter 14 versões anteriores
+    compress            # Comprimir as versões antigas
+    delaycompress       # Comprimir apenas a partir da segunda versão
+    notifempty          # Não rodar se o ficheiro estiver vazio
+    postrotate          # Após a rotação, notificar o nginx
+        nginx -s reopen
+    endscript
+}
+```
+ 
+O `logrotate` é normalmente chamado pelo cron ou pelo systemd uma vez por dia. Para forçar uma rotação manualmente, útil para testar a configuração:
+ 
+```bash
+# Simulação sem fazer nada (dry run)
+$ sudo logrotate -d /etc/logrotate.conf
+ 
+# Forçar rotação real
+$ sudo logrotate -f /etc/logrotate.conf
+```
+ 
+#### Manutenção do journal do systemd
+ 
+O journal do `journald` não precisa de rotação no sentido tradicional: o próprio daemon gere o espaço que ocupa. Em vez de manter ficheiros por tempo, o `journald` elimina mensagens antigas com base no espaço disponível no sistema de ficheiros e em limites configuráveis. Os parâmetros de gestão estão em `/etc/systemd/journald.conf`:
+ 
+```ini
+[Journal]
+SystemMaxUse=500M       # Máximo de espaço em disco para o journal
+SystemKeepFree=1G       # Espaço mínimo a manter livre
+MaxRetentionSec=1month  # Tempo máximo de retenção das mensagens
+```
+ 
+Após alterar esta configuração, é necessário reiniciar o journald:
+ 
+```bash
+$ sudo systemctl restart systemd-journald
+```
+ 
+Para verificar o espaço actual ocupado pelo journal:
+ 
+```bash
+$ journalctl --disk-usage
+Archived and active journals take up 432.0M in the file system.
+```
+ 
+Para limpar manualmente entradas mais antigas que um determinado período:
+ 
+```bash
+# Manter apenas os últimos 7 dias
+$ sudo journalctl --vacuum-time=7d
+ 
+# Manter apenas até 200MB
+$ sudo journalctl --vacuum-size=200M
+```
+ 
+---
+ 
+### 4.5 Informação e Arquitectura do Sistema
+ 
+Além dos logs, um administrador precisa de ter acesso rápido a informação sobre o próprio sistema: versão do kernel, hardware instalado, uso de recursos, nome do servidor. Existe um conjunto de comandos dedicados a fornecer esta informação.
+ 
+#### uname: informação do kernel
+ 
+```bash
+$ uname -a
+Linux servidor-01 5.14.0-162.6.1.el9_1.x86_64 #1 SMP PREEMPT_DYNAMIC
+```
+ 
+Os campos, pela ordem: nome do sistema operativo, nome do servidor, versão do kernel, data de compilação do kernel, arquitectura do hardware e plataforma.
+ 
+Para obter apenas a versão do kernel:
+ 
+```bash
+$ uname -r
+5.14.0-162.6.1.el9_1.x86_64
+```
+ 
+#### hostnamectl: identidade do servidor
+ 
+O `hostnamectl` mostra e altera o hostname do sistema de forma persistente:
+ 
+```bash
+$ hostnamectl
+   Static hostname: servidor-01
+   Pretty hostname: Servidor de Produção
+         Icon name: computer-server
+           Chassis: server
+        Machine ID: a1b2c3d4e5f6...
+           Boot ID: f6e5d4c3b2a1...
+  Operating System: CentOS Stream 9
+       CPE OS Name: cpe:/o:centos:centos:9
+            Kernel: Linux 5.14.0-162.6.1.el9_1.x86_64
+      Architecture: x86-64
+```
+ 
+Para alterar o hostname de forma permanente:
+ 
+```bash
+$ sudo hostnamectl set-hostname servidor-producao-01
+```
+ 
+Esta alteração é imediata e persiste após reinicialização, modificando `/etc/hostname` automaticamente. Em servidores, o hostname deve ser descritivo e consistente com a convenção de nomenclatura da organização. Alterar o hostname de um servidor em produção pode afectar configurações de DNS, certificados SSL e logs históricos, pelo que deve ser feito com planeamento.
+ 
+#### lshw e lscpu: inventário de hardware
+ 
+```bash
+# Ver um resumo do hardware instalado
+$ sudo lshw -short
+ 
+# Informação detalhada sobre o CPU
+$ lscpu
+Architecture:        x86_64
+CPU(s):              4
+Thread(s) per core:  2
+Core(s) per socket:  2
+Socket(s):           1
+Vendor ID:           GenuineIntel
+Model name:          Intel(R) Xeon(R) CPU E5-2670 v2
+CPU MHz:             2494.220
+```
+ 
+Para dispositivos de bloco (discos):
+ 
+```bash
+$ lsblk
+NAME   MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+sda      8:0    0   40G  0 disk
+sda1     8:1    0    1M  0 part
+sda2     8:2    0    1G  0 part /boot
+sda3     8:3    0   39G  0 part
+  vg0-root 253:0  0   20G  0 lvm  /
+  vg0-swap 253:1  0    4G  0 lvm  [SWAP]
+  vg0-var  253:2  0   15G  0 lvm  /var
+```
+ 
+---
+ 
+### 4.6 Relatórios SOS
+ 
+O `sosreport` (ou `sos report` nas versões mais recentes) é uma ferramenta que recolhe automaticamente um conjunto abrangente de informação de diagnóstico sobre o sistema e comprime tudo num único arquivo. É o standard da indústria para enviar informação de diagnóstico ao suporte técnico da Red Hat ou da CentOS, mas é igualmente útil para criar um inventário completo do estado do sistema em qualquer momento.
+ 
+```bash
+$ sudo sos report
+```
+ 
+O comando percorre o sistema recolhendo: configurações de rede, estado de serviços, logs recentes, informação de hardware, configurações de sistema, estado de pacotes instalados, e muito mais. O processo demora alguns minutos e no final indica onde ficou guardado o arquivo:
+ 
+```
+Your sos report has been generated and saved in:
+  /var/tmp/sosreport-servidor-01-20251015-143022.tar.xz
+```
+ 
+O arquivo pode ser enviado directamente ao suporte ou analisado localmente. Para extrair e inspeccionar o conteúdo:
+ 
+```bash
+$ tar -xf sosreport-servidor-01-20251015-143022.tar.xz
+$ ls sosreport-servidor-01-20251015-143022/
+etc/  proc/  run/  sys/  var/  sos_commands/  sos_logs/
+```
+ 
+Para recolher apenas informação sobre componentes específicos:
+ 
+```bash
+# Apenas logs e configuração de rede
+$ sudo sos report --only-plugins networking,logs
+```
+ 
+O `sosreport` é também uma ferramenta de documentação valiosa antes de efectuar alterações de grande impacto num servidor: cria um snapshot completo do estado do sistema que pode ser comparado com o estado após a alteração para identificar exactamente o que mudou.
+ 
+> **Boas práticas com logs em produção:** mantenha uma política explícita de retenção de logs, documente onde cada serviço escreve os seus logs, e verifique regularmente o espaço consumido com `journalctl --disk-usage` e `du -sh /var/log/*`. Um servidor cujos logs são ignorados até que um disco encha não está a ser administrado, está a ser sobrevivido.
