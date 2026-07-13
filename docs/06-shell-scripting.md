@@ -483,4 +483,183 @@ esac
  
 ---
 
-
+## 4. Controlo de Fluxo: Ciclos
+ 
+### 4.1 O ciclo for
+ 
+O ciclo `for` em Bash é um ciclo "para cada": itera sobre uma lista de valores, executando um bloco de comandos para cada elemento.
+ 
+```bash
+for variavel in lista_de_valores; do
+    # comandos
+done
+```
+ 
+A forma mais simples itera sobre uma lista explícita:
+ 
+```bash
+#!/bin/bash
+ 
+for SERVICO in nginx sshd crond rsyslog; do
+    if systemctl is-active --quiet "$SERVICO"; then
+        echo "$SERVICO: activo"
+    else
+        echo "$SERVICO: INACTIVO"
+    fi
+done
+```
+ 
+O `for` é particularmente poderoso quando a lista é gerada dinamicamente. Uma das combinações mais comuns é iterar sobre ficheiros com um glob:
+ 
+```bash
+#!/bin/bash
+# Processar todos os ficheiros .log no directório /var/log/app
+ 
+for FICHEIRO in /var/log/app/*.log; do
+    [ -f "$FICHEIRO" ] || continue  # saltar se não for ficheiro regular
+    TAMANHO=$(du -sh "$FICHEIRO" | cut -f1)
+    echo "$FICHEIRO: $TAMANHO"
+done
+```
+ 
+A linha `[ -f "$FICHEIRO" ] || continue` é uma boa prática: se o glob não encontrar ficheiros, Bash expande-o para o padrão literal `*.log`, que é um string que não corresponde a nenhum ficheiro. Testar com `-f` e usar `continue` para saltar para a próxima iteração evita processar uma string inválida.
+ 
+Outro padrão muito comum é combinar `for` com substituição de comandos:
+ 
+```bash
+#!/bin/bash
+# Verificar conectividade SSH com uma lista de servidores
+ 
+SERVIDORES="servidor-01 servidor-02 servidor-03 servidor-04"
+ 
+for HOST in $SERVIDORES; do
+    if ssh -q -o ConnectTimeout=5 -o BatchMode=yes "$HOST" exit 2>/dev/null; then
+        echo "$HOST: SSH acessível"
+    else
+        echo "$HOST: SSH INACESSÍVEL"
+    fi
+done
+```
+ 
+#### Ciclo for com intervalo numérico
+ 
+Para iterar um número fixo de vezes ou sobre um intervalo numérico:
+ 
+```bash
+# Intervalo simples
+for i in {1..10}; do
+    echo "Iteração $i"
+done
+ 
+# Com passo (de 2 em 2)
+for i in {0..20..2}; do
+    echo "$i"
+done
+ 
+# Sintaxe estilo C (Bash específico)
+for ((i=1; i<=5; i++)); do
+    echo "Linha $i"
+done
+```
+ 
+### 4.2 O ciclo while
+ 
+O ciclo `while` executa um bloco de comandos enquanto uma condição for verdadeira. Usa o mesmo mecanismo de exit codes que o `if`: enquanto o comando de condição retornar 0, o ciclo continua.
+ 
+```bash
+while condição; do
+    # comandos
+done
+```
+ 
+Um exemplo clássico de administração: aguardar que um serviço fique disponível antes de continuar:
+ 
+```bash
+#!/bin/bash
+# Aguardar que o serviço de base de dados esteja disponível
+ 
+TENTATIVAS=0
+MAX_TENTATIVAS=30
+ 
+while ! mysqladmin ping -h localhost --silent 2>/dev/null; do
+    TENTATIVAS=$((TENTATIVAS + 1))
+ 
+    if [ "$TENTATIVAS" -ge "$MAX_TENTATIVAS" ]; then
+        echo "ERRO: base de dados não disponível após $MAX_TENTATIVAS tentativas." >&2
+        exit 1
+    fi
+ 
+    echo "Aguardando base de dados... (tentativa $TENTATIVAS/$MAX_TENTATIVAS)"
+    sleep 2
+done
+ 
+echo "Base de dados disponível. A continuar..."
+```
+ 
+O `!` inverte o exit code da condição: o ciclo corre enquanto `mysqladmin ping` falha, e termina quando a ligação é bem-sucedida.
+ 
+Outro padrão útil: processar um ficheiro linha a linha:
+ 
+```bash
+#!/bin/bash
+# Criar utilizadores a partir de um ficheiro com um nome por linha
+ 
+FICHEIRO_UTILIZADORES="$1"
+ 
+while IFS= read -r UTILIZADOR; do
+    # Ignorar linhas vazias e comentários
+    [ -z "$UTILIZADOR" ] && continue
+    [[ "$UTILIZADOR" == \#* ]] && continue
+ 
+    if id "$UTILIZADOR" &>/dev/null; then
+        echo "Utilizador $UTILIZADOR já existe."
+    else
+        useradd -m -s /bin/bash "$UTILIZADOR"
+        echo "Utilizador $UTILIZADOR criado."
+    fi
+done < "$FICHEIRO_UTILIZADORES"
+```
+ 
+A construção `while IFS= read -r UTILIZADOR` é o idioma correcto para ler ficheiros linha a linha: `IFS=` evita que espaços no início e fim da linha sejam removidos, e `-r` impede que barras invertidas sejam interpretadas.
+ 
+#### do-while com until
+ 
+O Bash tem um ciclo `until` que funciona exactamente ao contrário do `while`: corre enquanto a condição for falsa, e termina quando passa a ser verdadeira. É o equivalente ao do-while de outras linguagens:
+ 
+```bash
+#!/bin/bash
+# Pedir uma senha até que seja válida (pelo menos 8 caracteres)
+ 
+until [ "${#SENHA}" -ge 8 ]; do
+    read -rs -p "Introduza a senha (mínimo 8 caracteres): " SENHA
+    echo
+    if [ "${#SENHA}" -lt 8 ]; then
+        echo "Senha demasiado curta. Tente novamente."
+    fi
+done
+ 
+echo "Senha aceite."
+```
+ 
+`${#SENHA}` é a expansão do comprimento da string: devolve o número de caracteres da variável `SENHA`.
+ 
+### 4.3 break e continue
+ 
+`break` termina o ciclo imediatamente, independentemente da condição. `continue` salta para a próxima iteração sem executar o resto do corpo do ciclo.
+ 
+```bash
+#!/bin/bash
+# Procurar o primeiro ficheiro de log com mais de 100MB
+ 
+for FICHEIRO in /var/log/*.log; do
+    [ -f "$FICHEIRO" ] || continue  # saltar não-ficheiros
+ 
+    TAMANHO_KB=$(du -k "$FICHEIRO" | cut -f1)
+ 
+    if [ "$TAMANHO_KB" -gt 102400 ]; then  # 100MB = 102400KB
+        echo "Ficheiro grande encontrado: $FICHEIRO ($(du -sh "$FICHEIRO" | cut -f1))"
+        break  # parar assim que encontrar o primeiro
+    fi
+done
+``` 
+---
