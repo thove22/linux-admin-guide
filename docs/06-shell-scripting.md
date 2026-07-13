@@ -663,3 +663,237 @@ for FICHEIRO in /var/log/*.log; do
 done
 ``` 
 ---
+
+
+## 5. Funções
+ 
+As funções permitem agrupar um bloco de comandos reutilizável e chamá-lo pelo nome. São o mecanismo principal para organizar scripts que crescem além de uma dúzia de linhas, evitando repetição de código e tornando a lógica mais legível.
+ 
+### 5.1 Definir e chamar funções
+ 
+```bash
+nome_da_funcao() {
+    # corpo da função
+}
+ 
+# Chamada
+nome_da_funcao
+```
+ 
+A definição tem de aparecer antes da primeira chamada no script. Uma convenção útil é definir todas as funções no início do script, e colocar a lógica principal no final:
+ 
+```bash
+#!/bin/bash
+set -euo pipefail
+ 
+# Funções
+registar_log() {
+    local NIVEL="$1"
+    local MENSAGEM="$2"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$NIVEL] $MENSAGEM"
+}
+ 
+verificar_disco() {
+    local PONTO_MONTAGEM="${1:-/}"
+    local LIMITE="${2:-85}"
+ 
+    local USO
+    USO=$(df "$PONTO_MONTAGEM" | awk 'NR==2 {print $5}' | tr -d '%')
+ 
+    if [ "$USO" -ge "$LIMITE" ]; then
+        registar_log "AVISO" "Disco $PONTO_MONTAGEM: ${USO}% (limite: ${LIMITE}%)"
+        return 1
+    fi
+ 
+    registar_log "OK" "Disco $PONTO_MONTAGEM: ${USO}%"
+    return 0
+}
+ 
+# Lógica principal
+verificar_disco "/" 85
+verificar_disco "/var" 90
+```
+ 
+### 5.2 Argumentos e valor de retorno
+ 
+Dentro de uma função, `$1`, `$2`, `$@` e `$#` referem-se aos argumentos da função, não aos do script principal. Isto permite escrever funções genéricas:
+ 
+```bash
+criar_directorio_seguro() {
+    local DIR="$1"
+    local DONO="${2:-root}"
+ 
+    if [ -d "$DIR" ]; then
+        registar_log "INFO" "Directório $DIR já existe."
+        return 0
+    fi
+ 
+    mkdir -p "$DIR" && chown "$DONO" "$DIR" && chmod 750 "$DIR"
+    registar_log "INFO" "Directório $DIR criado (dono: $DONO)."
+}
+ 
+criar_directorio_seguro "/opt/app/dados" "www-data"
+criar_directorio_seguro "/opt/app/logs" "www-data"
+```
+ 
+O `return` dentro de uma função define o exit code da função (acessível em `$?` após a chamada). Para retornar um valor de texto, o idioma correcto é escrever para stdout e capturar com substituição de comandos:
+ 
+```bash
+obter_ip_principal() {
+    ip route get 1.1.1.1 | awk '{print $7; exit}'
+}
+ 
+MEU_IP=$(obter_ip_principal)
+echo "IP principal: $MEU_IP"
+```
+ 
+### 5.3 Âmbito de variáveis
+ 
+Por defeito, todas as variáveis em Bash são globais. Uma função pode ler e modificar qualquer variável do script. Para evitar efeitos colaterais indesejados, declaram-se as variáveis internas das funções com `local`:
+ 
+```bash
+#!/bin/bash
+ 
+CONTADOR=0
+ 
+incrementar() {
+    local PASSO="${1:-1}"  # variável local, não afecta o exterior
+    CONTADOR=$((CONTADOR + PASSO))  # modifica variável global intencionalmente
+}
+ 
+incrementar
+incrementar 5
+echo "Contador: $CONTADOR"  # imprime 6
+echo "PASSO fora da função: ${PASSO:-indefinida}"  # PASSO não existe aqui
+```
+ 
+---
+
+## 6. Produtividade no Terminal
+ 
+### 6.1 Aliases: criar comandos personalizados
+ 
+Os aliases são substituições de texto definidas na shell: quando se escreve o nome de um alias, a shell substitui-o pela sequência de comandos definida antes de executar. São a forma mais directa de criar atalhos para comandos frequentes ou para corrigir opções que se quer que sejam sempre activas.
+ 
+Para criar um alias temporário (válido apenas na sessão actual):
+ 
+```bash
+$ alias ll='ls -lh --color=auto'
+$ alias grep='grep --color=auto'
+$ alias ..='cd ..'
+$ alias ...='cd ../..'
+```
+ 
+Para ver todos os aliases activos:
+ 
+```bash
+$ alias
+```
+ 
+Para remover um alias:
+ 
+```bash
+$ unalias ll
+```
+ 
+Para tornar os aliases permanentes, adicionam-se ao ficheiro `~/.bashrc` (ou `~/.bash_profile` para aliases que devem estar disponíveis em shells de login):
+ 
+```bash
+# Aliases úteis para administração de sistemas
+alias ll='ls -lh --color=auto'
+alias la='ls -lah --color=auto'
+alias grep='grep --color=auto'
+alias df='df -h'
+alias du='du -sh'
+alias ps='ps aux'
+alias free='free -h'
+ 
+# Navegação rápida
+alias ..='cd ..'
+alias ...='cd ../..'
+alias logs='cd /var/log'
+alias etc='cd /etc'
+ 
+# Segurança: pedir confirmação antes de operações destrutivas
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
+```
+ 
+Após editar o `~/.bashrc`, é necessário recarregá-lo na sessão actual:
+ 
+```bash
+$ source ~/.bashrc
+# ou equivalentemente:
+$ . ~/.bashrc
+```
+ 
+> ⚠️ **Aliases em scripts:** os aliases definidos no `~/.bashrc` não estão disponíveis dentro de scripts shell, porque scripts correm numa shell não-interactiva que não carrega o `~/.bashrc`. Se precisar de reutilizar lógica dentro de scripts, use funções, não aliases.
+ 
+### 6.2 Gestão do histórico de comandos
+ 
+O Bash mantém um histórico dos comandos executados, armazenado no ficheiro `~/.bash_history`. Este histórico é uma ferramenta de produtividade e também de auditoria: permite recuperar comandos complexos sem os redigitar, e em contexto de segurança pode mostrar o que foi executado numa sessão.
+ 
+#### Navegar no histórico
+ 
+| Tecla | Acção |
+|-------|-------|
+| `Ctrl+R` | Pesquisa incremental retroactiva no histórico |
+| `Seta cima` | Comando anterior |
+| `Seta baixo` | Próximo comando |
+| `!!` | Repete o último comando |
+| `!n` | Executa o comando número n do histórico |
+| `!string` | Executa o comando mais recente que começa com `string` |
+| `!$` | O último argumento do comando anterior |
+ 
+O `Ctrl+R` é o atalho mais útil: começa uma pesquisa interactiva no histórico. Basta digitar parte do comando para encontrá-lo:
+ 
+```
+(reverse-i-search)`ssh': ssh carlos@192.168.1.10
+```
+ 
+#### Ver o histórico
+ 
+```bash
+# Ver os últimos 20 comandos com números
+$ history 20
+ 
+# Pesquisar no histórico com grep
+$ history | grep "systemctl"
+ 
+# Ver o ficheiro directamente
+$ cat ~/.bash_history
+```
+ 
+#### Configurar o histórico
+ 
+O comportamento do histórico é controlado por variáveis de ambiente, que podem ser definidas no `~/.bashrc`:
+ 
+```bash
+# Tamanho do histórico em memória e no ficheiro
+HISTSIZE=10000
+HISTFILESIZE=20000
+ 
+# Não guardar comandos duplicados consecutivos nem comandos com espaço inicial
+HISTCONTROL=ignoreboth
+ 
+# Não guardar no histórico comandos triviais ou sensíveis
+HISTIGNORE='ls:ll:cd:pwd:exit:history:clear'
+ 
+# Adicionar timestamp a cada entrada do histórico
+HISTTIMEFORMAT='%Y-%m-%d %H:%M:%S  '
+ 
+# Guardar o histórico de cada sessão em vez de o substituir
+shopt -s histappend
+```
+ 
+Com `HISTTIMEFORMAT` definido, o `history` mostra a data e hora de cada comando:
+ 
+```
+10021  2025-10-15 14:23:41  systemctl restart nginx
+10022  2025-10-15 14:24:03  journalctl -u nginx -n 50
+10023  2025-10-15 14:24:51  vim /etc/nginx/nginx.conf
+```
+ 
+Esta configuração transforma o histórico numa ferramenta de auditoria leve: é possível saber exactamente quando cada comando foi executado, o que é útil para reconstruir o que aconteceu durante um incidente.
+
