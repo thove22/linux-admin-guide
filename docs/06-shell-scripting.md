@@ -295,3 +295,190 @@ Cada opção tem um efeito específico:
  
 ---
 
+## 3. Controlo de Fluxo: Condicionais
+ 
+### 3.1 O comando test e os operadores de comparação
+ 
+Antes de escrever condicionais, é necessário perceber como a shell avalia condições. O comando `[` (também chamado `test`) é o mecanismo central de avaliação. É literalmente um programa que recebe uma expressão e retorna 0 (verdadeiro) ou 1 (falso):
+ 
+```bash
+$ [ -f /etc/passwd ] && echo "existe" || echo "não existe"
+existe
+```
+ 
+#### Testes de ficheiros
+ 
+| Operador | Testa se |
+|----------|----------|
+| `-e ficheiro` | O ficheiro existe (qualquer tipo) |
+| `-f ficheiro` | É um ficheiro regular |
+| `-d ficheiro` | É um directório |
+| `-h ficheiro` | É um link simbólico |
+| `-s ficheiro` | Existe e não está vazio |
+| `-r ficheiro` | Tem permissão de leitura |
+| `-w ficheiro` | Tem permissão de escrita |
+| `-x ficheiro` | Tem permissão de execução |
+ 
+#### Testes de strings
+ 
+| Operador | Testa se |
+|----------|----------|
+| `str1 = str2` | As strings são iguais |
+| `str1 != str2` | As strings são diferentes |
+| `-z str` | A string está vazia |
+| `-n str` | A string não está vazia |
+ 
+#### Testes aritméticos
+ 
+Para comparações numéricas, usa-se operadores específicos em vez do `=`, porque `=` compara strings e `01` seria diferente de `1` como string mas igual como número:
+ 
+| Operador | Retorna verdadeiro quando o primeiro argumento é |
+|----------|--------------------------------------------------|
+| `-eq` | igual ao segundo |
+| `-ne` | diferente do segundo |
+| `-lt` | menor que o segundo |
+| `-gt` | maior que o segundo |
+| `-le` | menor ou igual ao segundo |
+| `-ge` | maior ou igual ao segundo |
+ 
+> *(imagem: Tabela 11-3 — Arithmetic Comparison Operators)*
+ 
+### 3.2 if / then / elif / else / fi
+ 
+A estrutura `if` executa um bloco de código se uma condição for verdadeira:
+ 
+```bash
+#!/bin/bash
+# verificar_servico.sh — verifica se um serviço está activo
+ 
+SERVICO="$1"
+ 
+if [ -z "$SERVICO" ]; then
+    echo "Uso: $0 <nome_do_servico>" >&2
+    exit 1
+fi
+ 
+if systemctl is-active --quiet "$SERVICO"; then
+    echo "$SERVICO está a correr."
+else
+    echo "$SERVICO está parado. A tentar reiniciar..."
+    systemctl start "$SERVICO"
+    if systemctl is-active --quiet "$SERVICO"; then
+        echo "$SERVICO reiniciado com sucesso."
+    else
+        echo "ERRO: Não foi possível reiniciar $SERVICO." >&2
+        exit 1
+    fi
+fi
+```
+ 
+Este script illustra vários pontos importantes. A variável `$1` é sempre colocada em aspas duplas para lidar com o caso em que é vazia. A condição `-z "$SERVICO"` verifica exactamente essa situação. O `if` pode usar qualquer comando como condição, não apenas `[`: `systemctl is-active` retorna 0 se o serviço está activo, o que é exactamente o que `if` precisa.
+ 
+Quando há múltiplas condições alternativas, usa-se `elif`:
+ 
+```bash
+#!/bin/bash
+ 
+USO=$(df / | awk 'NR==2 {print $5}' | tr -d '%')
+ 
+if [ "$USO" -ge 90 ]; then
+    echo "CRÍTICO: disco a $USO% de capacidade"
+    exit 2
+elif [ "$USO" -ge 75 ]; then
+    echo "AVISO: disco a $USO% de capacidade"
+    exit 1
+else
+    echo "OK: disco a $USO% de capacidade"
+    exit 0
+fi
+```
+ 
+#### Operadores lógicos && e ||
+ 
+Para condições compostas, podem usar-se os operadores `&&` (AND) e `||` (OR):
+ 
+```bash
+# Verdadeiro se ambas as condições forem verdadeiras
+if [ -f "$FICHEIRO" ] && [ -r "$FICHEIRO" ]; then
+    cat "$FICHEIRO"
+fi
+ 
+# Verdadeiro se pelo menos uma condição for verdadeira
+if [ "$OPCAO" = "sim" ] || [ "$OPCAO" = "s" ]; then
+    echo "Confirmado."
+fi
+```
+ 
+Os operadores `&&` e `||` também funcionam directamente na linha de comandos sem `if`, como forma compacta de escrever condicionais simples:
+ 
+```bash
+# Executar backup apenas se o directório existir
+[ -d /dados ] && tar -czf /backup/dados.tar.gz /dados
+ 
+# Criar directório se não existir
+[ -d /var/log/app ] || mkdir -p /var/log/app
+```
+ 
+### 3.3 A estrutura case
+ 
+O `case` é mais adequado do que `if/elif` quando há muitos valores possíveis para a mesma variável. É especialmente limpo para scripts que aceitam argumentos como "start", "stop", "restart":
+ 
+```bash
+#!/bin/bash
+# gerir_servico.sh — script de gestão de serviços
+ 
+SERVICO="$1"
+ACCAO="$2"
+ 
+if [ $# -ne 2 ]; then
+    echo "Uso: $0 <servico> <start|stop|restart|status>" >&2
+    exit 1
+fi
+ 
+case "$ACCAO" in
+    start)
+        echo "A iniciar $SERVICO..."
+        systemctl start "$SERVICO"
+        ;;
+    stop)
+        echo "A parar $SERVICO..."
+        systemctl stop "$SERVICO"
+        ;;
+    restart)
+        echo "A reiniciar $SERVICO..."
+        systemctl restart "$SERVICO"
+        ;;
+    status)
+        systemctl status "$SERVICO"
+        ;;
+    reload)
+        echo "A recarregar configuração de $SERVICO..."
+        systemctl reload "$SERVICO"
+        ;;
+    *)
+        echo "Acção desconhecida: $ACCAO" >&2
+        echo "Acções válidas: start, stop, restart, status, reload" >&2
+        exit 1
+        ;;
+esac
+```
+ 
+A estrutura `case` funciona da seguinte forma: a variável após `case` é comparada com cada padrão antes do `)`. Quando há correspondência, os comandos até `;;` são executados e o `case` termina, saltando para `esac`. O padrão `*` funciona como caso por defeito, apanhando tudo o que não correspondeu aos padrões anteriores.
+ 
+Os padrões suportam wildcards e alternativas com `|`:
+ 
+```bash
+case "$RESPOSTA" in
+    sim|s|yes|y|1)
+        echo "Confirmado."
+        ;;
+    nao|n|no|0)
+        echo "Cancelado."
+        ;;
+    *)
+        echo "Resposta inválida."
+        ;;
+esac
+```
+ 
+---
