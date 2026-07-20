@@ -340,9 +340,8 @@ Para comparações numéricas, usa-se operadores específicos em vez do `=`, por
 | `-gt` | maior que o segundo |
 | `-le` | menor ou igual ao segundo |
 | `-ge` | maior ou igual ao segundo |
- 
-> *(imagem: Tabela 11-3 — Arithmetic Comparison Operators)*
- 
+
+
 ### 3.2 if / then / elif / else / fi
  
 A estrutura `if` executa um bloco de código se uma condição for verdadeira:
