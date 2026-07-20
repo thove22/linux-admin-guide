@@ -28,7 +28,10 @@ Quando se envia dados de um computador para outro, os dados percorrem estas cama
 
 A configuração de rede mais comum em ambientes de escritório, laboratório e virtualização é a rede local com acesso à internet através de um router.
 
-> *(diagrama: rede local com Host A, Host B, Host C, Router e ligação à Internet — a desenhar)*
+<figure align="center">
+  <img src="../assets/img/Lan.jpg" alt="Topologia de uma rede local típica" width="500">
+  <figcaption><b>img 1:</b> Topologia de uma rede local típica </figcaption>
+</figure>
 
 Neste modelo, todos os computadores ligados entre si formam uma **LAN** (*Local Area Network*). Um deles é o **router**, um host especial que sabe mover dados entre a rede local e o exterior. A ligação do router à internet chama-se **uplink** ou ligação WAN (*Wide Area Network*).
 
