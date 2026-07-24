@@ -2090,3 +2090,872 @@ Um servidor central acumula volumes de dados consideráveis. É indispensável c
 Esta configuração mantém 90 dias de histórico comprimido, o que é um ponto de partida razoável para a maioria das organizações. Os requisitos concretos dependem de políticas internas e de eventuais obrigações legais de retenção.
 
 >  **rsyslog e journald em conjunto.** Em CentOS Stream, o `journald` é o ponto central de recolha local, e o `rsyslog` pode ser configurado para ler directamente do journal através do módulo `imjournal` e reencaminhar para o servidor central. Esta combinação aproveita a recolha estruturada do journald com a capacidade de transporte remoto do rsyslog, e é a arquitectura recomendada em sistemas RHEL modernos.
+
+## 5. Segurança do Sistema
+
+## 5.1 Princípios de Hardening
+
+### O sistema é seguro?
+
+Não. E nenhum outro sistema operativo ligado a uma rede o é.
+
+Vale a pena começar por aqui, porque a alternativa é uma ilusão perigosa. Se fosse necessária segurança absoluta e inquebrável, seria preciso um espaço de ar mensurável entre o computador e qualquer outro dispositivo, e provavelmente também uma sala blindada contra radiação electromagnética. Como isso não é prático, o que resta é uma questão diferente e mais útil: quanto esforço vale a pena investir para tornar este sistema suficientemente resistente ao ataque que é realista esperar?
+
+Existem razões estruturais pelas quais o Linux nunca será perfeitamente seguro. O sistema foi optimizado para conveniência e manipulação fácil de dados num ambiente multiutilizador em rede, não para segurança. O software que corre em cima dele é desenvolvido por uma comunidade enorme de programadores com níveis muito diferentes de experiência e de atenção ao detalhe, e mesmo funcionalidades bem-intencionadas podem introduzir falhas graves. E a maior parte das funções administrativas está implementada fora do kernel, onde pode ser inspeccionada e manipulada.
+
+Do outro lado da balança está o facto de o código ser aberto. Milhares de pessoas podem examinar cada linha à procura de problemas, o que é geralmente considerado uma vantagem substancial face a sistemas fechados onde apenas um número limitado de pessoas tem acesso ao código.
+
+Seria de esperar que a segurança melhorasse gradualmente à medida que os problemas fossem descobertos e corrigidos. Infelizmente não é isso que acontece. O software cresce em complexidade, os atacantes estão cada vez mais organizados e financiados, e os sistemas estão cada vez mais interligados. A segurança é uma batalha contínua que nunca fica verdadeiramente ganha.
+
+### A equação incómoda
+
+Existe uma fórmula bem conhecida na literatura de administração de sistemas que resume, de forma deliberadamente absurda, uma verdade incontornável:
+
+$$\text{Segurança} = \frac{1}{(1.072)(\text{Conveniência})}$$
+
+O `1.072` não significa nada. É precisamente essa a piada: a fórmula tem a aparência de rigor científico mas não mede coisa alguma. O que ela transmite, e transmite bem, é a relação inversa que ninguém consegue contornar. **Quanto mais seguro o sistema, mais constrangidos ficam os utilizadores e o próprio administrador.**
+
+Esta relação deve estar presente em cada decisão de hardening. Exigir password no GRUB protege contra ataque físico, mas significa que uma máquina não volta sozinha após uma falha de energia. Desactivar a autenticação por password no SSH elimina ataques de força bruta, mas se as chaves se perderem o acesso perde-se com elas. Rodar as credenciais de três em três meses reduz a janela de exposição, mas gera trabalho e resistência.
+
+Nenhuma destas medidas é correcta ou incorrecta em abstracto. Cada uma é um compromisso, e implementá-las sem ponderar o impacto nos utilizadores é uma forma de incompetência tão real como não as implementar de todo.
+
+### Como a segurança é comprometida na prática
+
+Antes de configurar firewalls e políticas, importa perceber por onde os problemas entram realmente. A grande maioria dos incidentes cabe em três categorias.
+
+#### Engenharia social
+
+Os utilizadores humanos, incluindo os administradores, são o elo mais fraco da cadeia. Mesmo com consciência elevada de segurança, pessoas bem-intencionadas são facilmente convencidas a revelar informação sensível. Nenhuma tecnologia protege contra isto.
+
+O problema manifesta-se de muitas formas. Atacantes telefonam fazendo-se passar por utilizadores confusos a pedir ajuda com o acesso. Administradores publicam informação sensível em fóruns públicos ao pedir ajuda com um problema. Alguém de fato e prancheta entra na sala de comunicações a dizer que vem fazer manutenção. O **phishing** descreve tentativas de recolher informação através de email, mensagens ou SMS enganadores, e é particularmente difícil de detectar quando a comunicação inclui informação específica sobre a vítima que lhe dá aparência de autenticidade.
+
+A defesa é organizacional, não técnica. A política de segurança deve incluir formação para novos colaboradores e comunicação regular sobre o que fazer e não fazer. Uma regra que vale a pena estabelecer e repetir: **os administradores nunca pedem a password de um utilizador**, nem por email, nem por telefone, nem por mensagem. Qualquer pedido desse tipo deve ser reportado imediatamente.
+
+#### Vulnerabilidades de software
+
+Ao longo dos anos foram descobertos incontáveis erros de programação com implicações de segurança. Explorando erros subtis, atacantes conseguem manipular sistemas para fazer o que querem.
+
+Os **buffer overflows** são o exemplo clássico. Um programador reserva um espaço de memória de tamanho fixo para guardar determinada informação. Se o código não verificar rigorosamente que os dados cabem no espaço reservado, a memória adjacente pode ser sobrescrita. Um atacante que componha os dados de entrada com cuidado consegue, no pior caso, executar código arbitrário.
+
+Os buffer overflows são um subconjunto de uma categoria mais ampla: **erros de validação de entrada**. Praticamente todos os programas aceitam input, e se o processarem sem verificar rigorosamente o formato e o conteúdo, acontecem coisas más. Considere-se este script aparentemente inofensivo:
+
+```perl
+#!/usr/bin/perl
+# Exemplo de erro de validação de entrada
+open(HTMLFILE, "/var/www/html/$ARGV[0]") or die "erro\n";
+while(<HTMLFILE>) { print; }
+close HTMLFILE;
+```
+
+A intenção é imprimir o conteúdo de um ficheiro dentro de `/var/www/html`. Mas se o utilizador passar `../../../etc/passwd` como argumento, o conteúdo de `/etc/passwd` é impresso. O programa nunca foi escrito para fazer isso, e no entanto faz.
+
+O que pode um administrador fazer contra este tipo de falha? Muito pouco, até que o problema seja identificado e corrigido pelo autor do software. Por isso a manutenção de patches é a tarefa de segurança de maior valor que existe.
+
+#### Erros de configuração
+
+Muito software pode ser configurado de forma segura ou de forma insegura. E porque o software é escrito para ser útil e não irritante, a configuração por defeito é frequentemente a menos segura. Contas sem password, partilhas acessíveis a toda a rede, bases de dados sem autenticação, serviços a correr que ninguém precisa.
+
+Esta é a categoria de problemas mais fácil de encontrar e corrigir. É também a mais comum. Grande parte do trabalho de hardening consiste simplesmente em garantir que não se deixou involuntariamente um tapete de boas-vindas à porta.
+
+### Os pilares práticos do hardening
+
+#### Patches
+
+Manter o sistema actualizado é a tarefa de segurança com melhor retorno por unidade de esforço. Uma política razoável inclui três elementos.
+
+Um **calendário regular** que é efectivamente cumprido. Actualizações mensais são normalmente suficientes, e a regularidade importa mais do que a imediatez. Não é aceitável corrigir a vulnerabilidade de alto perfil que apareceu nas notícias e ignorar as restantes dezenas.
+
+Um **plano de alteração** que documente o impacto de cada conjunto de patches, os testes a fazer depois de instalar, e como reverter em caso de problema.
+
+**Conhecimento do que é relevante** para o ambiente. Isto implica subscrever as listas de segurança do fornecedor e manter um inventário fiável das aplicações e sistemas em uso.
+
+```bash
+# Ver actualizações de segurança disponíveis
+$ sudo dnf updateinfo list security
+
+# Aplicar apenas actualizações de segurança
+$ sudo dnf update --security
+
+# Ver o detalhe de um aviso de segurança específico
+$ sudo dnf updateinfo info RHSA-2025:1234
+```
+
+#### Serviços desnecessários
+
+A maioria dos sistemas vem com vários serviços activos por defeito. Cada serviço a escutar numa porta é superfície de ataque. A regra é simples: se não é necessário, deve ser desactivado, e preferencialmente removido.
+
+```bash
+# Ver todas as portas em escuta e o processo responsável
+$ sudo ss -tulnp
+
+# Identificar que processo usa uma porta específica
+$ sudo lsof -i:22
+$ sudo fuser 22/tcp
+
+# Listar serviços activados no arranque
+$ systemctl list-unit-files --state=enabled --type=service
+
+# Desactivar e parar um serviço desnecessário
+$ sudo systemctl disable --now avahi-daemon
+```
+
+Alguns protocolos têm riscos de segurança inerentes que os tornam inaceitáveis em praticamente qualquer circunstância. O **FTP**, o **Telnet** e os programas "r" do BSD (`rcp`, `rlogin`, `rsh`) usam métodos de autenticação e transferência inseguros. Devem ser desactivados em todos os sistemas a favor de alternativas cifradas como o SSH.
+
+#### Passwords e autenticação
+
+A regra é directa: toda a conta tem de ter password, e essa password não pode ser adivinhável. Nunca se devem transmitir passwords reutilizáveis em texto simples pela rede. Se o sistema permite login remoto, tem de ser através de SSH ou equivalente cifrado.
+
+Onde for possível, a autenticação por chave deve substituir completamente a autenticação por password, como visto na secção 2.1.
+
+#### Registo remoto de eventos
+
+Um servidor comprometido tem os seus logs comprometidos. A primeira coisa que um atacante competente faz é apagar o rasto. Logs enviados em tempo real para um servidor separado sobrevivem a essa limpeza e podem ser a única fonte fiável do que aconteceu. A centralização com `rsyslog` descrita na secção 4.7 não é apenas conveniência operacional, é uma medida de segurança.
+
+#### Cópias de segurança
+
+Backups regulares fazem parte de qualquer plano de segurança, e correspondem ao pilar da **disponibilidade** na tríade CIA (Confidencialidade, Integridade, Disponibilidade). Se ocorrer um incidente significativo, um backup limpo é o ponto a partir do qual se pode restaurar com confiança.
+
+Mas os backups são também um risco. Um conjunto de suportes roubado contorna toda a restante segurança do sistema. Backups guardados fora das instalações devem ser cifrados, e o local de armazenamento deve ser avaliado com o mesmo critério que se aplicaria a um datacenter.
+
+#### Vírus, worms e rootkits
+
+O Linux tem estado largamente imune a vírus. Existem alguns, quase todos de natureza académica, e nenhum causou os danos que se tornaram comuns no mundo Windows.
+
+A razão não é apenas quota de mercado. O modelo de controlo de acessos limita genuinamente o alcance de uma infecção: como o acesso de escrita aos executáveis do sistema é restrito ao nível do sistema de ficheiros, uma conta de utilizador sem privilégios não consegue infectar o resto do ambiente. **A menos que o código malicioso seja executado como root.** A moral é a de sempre: não usar a conta root para actividade diária.
+
+Existe ainda assim uma razão válida para correr antivírus num servidor Linux, que é proteger os sistemas Windows da organização. Um servidor de email pode analisar anexos, e um servidor de ficheiros pode analisar partilhas. O `ClamAV` é a ferramenta livre mais usada para este efeito.
+
+Os **rootkits** são uma categoria diferente e mais preocupante. São programas que escondem informação do sistema: processos, ficheiros, ligações de rede. Variam desde substituições simples de comandos (versões modificadas do `ls` e do `ps` que omitem determinados nomes) até módulos de kernel praticamente indetectáveis.
+
+Quando um rootkit é confirmado, a decisão pragmática raramente é limpá-lo. O tempo necessário para garantir uma limpeza completa é normalmente maior do que o tempo de salvar os dados, reformatar e reinstalar a partir de uma fonte confiável. E a limpeza nunca oferece garantias.
+
+#### Vigilância
+
+A segurança de um sistema depende da monitorização regular do seu estado: ligações de rede, tabela de processos, logs, integridade dos ficheiros. Os problemas de segurança começam pequenos e crescem depressa, e quanto mais cedo uma anomalia for identificada, melhor.
+
+Isto significa ler efectivamente os relatórios das ferramentas de segurança. Um problema menor ignorado num relatório pode ter-se tornado uma catástrofe quando chega o relatório seguinte.
+
+### Filosofia geral
+
+Alguns princípios que resumem a postura correcta:
+
+**Não guarde no sistema aquilo que não precisa de lá estar.** Segredos comerciais, dados de pessoal, informação financeira. Se tem de estar online, deve estar cifrado. A cifra oferece um grau de protecção muito superior a simplesmente tentar impedir que utilizadores não autorizados acedam aos ficheiros.
+
+**Não forneça sítios onde atacantes possam fazer ninho.** Um atacante que entra num sistema usa-o frequentemente como base para atacar outros, ou para mascarar a origem de ataques a terceiros. Serviços expostos com vulnerabilidades conhecidas, directórios com escrita para todos, contas partilhadas e sistemas esquecidos são todos convites.
+
+**Instale armadilhas.** Ferramentas de detecção de intrusão e verificação de integridade avisam quando algo muda de forma inesperada.
+
+**Aprenda continuamente.** Conhecimento tradicional, formação dos utilizadores e bom senso são as partes mais importantes de qualquer plano de segurança. Especialistas externos podem preencher lacunas, mas sempre sob supervisão e aprovação de quem conhece o ambiente.
+
+**Investigue o que parece estranho.** Mensagens de log invulgares, alterações no padrão de actividade de uma conta, actividade a horas improváveis, ou actividade numa conta cujo dono está de férias.
+
+---
+
+## 5.2 firewalld e SELinux: As Camadas de Segurança do CentOS
+
+### O conceito de firewall
+
+Além de proteger sistemas individualmente, é possível implementar segurança ao nível da rede. A ferramenta base é o **firewall**: um dispositivo ou software que impede pacotes indesejados de alcançar redes e sistemas.
+
+Um **firewall de filtragem de pacotes** limita o tráfego que pode passar, com base na informação do cabeçalho de cada pacote. Funciona como um posto fronteiriço: define-se que endereços de destino, números de porta e tipos de protocolo são aceitáveis, e o filtro descarta silenciosamente tudo o que não corresponda ao perfil.
+
+Um **firewall de inspecção com estado** (*stateful*) vai mais longe. Em vez de avaliar cada pacote isoladamente, mantém registo das ligações em curso e avalia se cada pacote faz sentido no contexto da conversa a que pertence. Isto permite, por exemplo, aceitar tráfego de entrada que seja resposta a um pedido que a máquina fez, sem ter de abrir portas de entrada permanentemente.
+
+A forma mais segura de configurar um filtro de pacotes é começar por uma configuração que **não permite nada** e depois abrir apenas o que se descobre ser necessário. O inverso, começar por permitir tudo e ir fechando, deixa sempre buracos que ninguém se lembrou de fechar.
+
+### Quão seguros são os firewalls?
+
+Um firewall não deve ser a defesa principal, e muito menos a única. É um componente de uma estratégia em camadas.
+
+O uso de firewalls confere frequentemente uma falsa sensação de segurança. Se a existência de um firewall levar a relaxar as restantes protecções, o efeito líquido na segurança do sistema terá sido negativo. Cada máquina dentro da organização deve continuar a ser individualmente actualizada, endurecida e monitorizada. Caso contrário, o que se constrói é uma estrutura com casca dura e centro mole: quem atravessar o perímetro encontra tudo aberto lá dentro.
+
+No fim do dia, é a vigilância do administrador que torna uma rede segura, não uma peça de hardware.
+
+### A pilha de firewall no Linux
+
+No Linux, a filtragem de pacotes acontece no kernel, num subsistema chamado **Netfilter**. Por cima dele existem várias camadas de interface, e é importante perceber a relação entre elas porque a terminologia gera confusão.
+
+O **iptables** foi durante muitos anos a ferramenta de linha de comandos usada para configurar o Netfilter. Organiza regras em **cadeias** (*chains*), e conjuntos de cadeias em **tabelas** (*tables*). A tabela por defeito chama-se `filter` e contém três cadeias: `INPUT` para tráfego destinado à máquina local, `OUTPUT` para tráfego que dela sai, e `FORWARD` para tráfego que chega numa interface e tem de ser encaminhado para outra.
+
+Cada regra tem um **alvo** (*target*) que determina o destino dos pacotes que lhe correspondem. Os principais são `ACCEPT` (deixa passar), `DROP` (descarta silenciosamente), `REJECT` (descarta e devolve um erro ICMP) e `LOG` (regista e continua a avaliar).
+
+As opções de linha de comandos mais usadas nas regras:
+
+| Opção | Significado |
+|-------|-------------|
+| `-p proto` | Corresponde por protocolo: `tcp`, `udp` ou `icmp` |
+| `-s origem` | Corresponde por endereço IP de origem (notação CIDR aceite) |
+| `-d destino` | Corresponde por endereço IP de destino |
+| `--sport porta` | Corresponde por porta de origem |
+| `--dport porta` | Corresponde por porta de destino |
+| `--icmp-type tipo` | Corresponde por código de tipo ICMP |
+| `!` | Nega a cláusula seguinte |
+| `-t tabela` | Especifica a tabela a que o comando se aplica (por defeito `filter`) |
+
+O **nftables** substituiu o iptables como interface moderna para o Netfilter, com sintaxe mais coerente e melhor desempenho.
+
+O **firewalld** é a camada de gestão de alto nível usada no CentOS. Não substitui o Netfilter, configura-o. A grande vantagem do firewalld é permitir alterações dinâmicas sem reiniciar todo o conjunto de regras e sem quebrar ligações estabelecidas, algo que com iptables puro exigia recarregar tudo.
+
+### firewalld: zonas
+
+O conceito central do firewalld é a **zona**. Uma zona é um conjunto de regras aplicado a um nível de confiança, e cada interface de rede é atribuída a uma zona. Isto permite tratar de forma diferente o tráfego que chega pela interface interna e o que chega pela interface exposta à internet.
+
+As zonas pré-definidas, por ordem crescente de confiança:
+
+| Zona | Comportamento |
+|------|---------------|
+| `drop` | Descarta todo o tráfego de entrada sem resposta |
+| `block` | Rejeita o tráfego de entrada com erro ICMP |
+| `public` | Zona por defeito. Aceita apenas serviços explicitamente permitidos |
+| `external` | Como `public`, com masquerading activo (NAT) |
+| `dmz` | Para servidores expostos com acesso limitado à rede interna |
+| `work` | Rede de trabalho, confiança moderada |
+| `home` | Rede doméstica, confiança elevada |
+| `internal` | Rede interna, confiança elevada |
+| `trusted` | Aceita todo o tráfego |
+
+### Operação do firewalld
+
+```bash
+# Estado do serviço
+$ sudo firewall-cmd --state
+running
+
+# Ver a zona por defeito
+$ sudo firewall-cmd --get-default-zone
+public
+
+# Ver a configuração completa da zona activa
+$ sudo firewall-cmd --list-all
+public (active)
+  target: default
+  interfaces: enp0s31f6
+  sources:
+  services: dhcpv6-client ssh
+  ports: 8080/tcp
+  protocols:
+  masquerade: no
+  rich rules:
+
+# Listar todas as zonas e as suas configurações
+$ sudo firewall-cmd --list-all-zones
+
+# Ver que serviços o firewalld conhece
+$ sudo firewall-cmd --get-services
+```
+
+O firewalld trabalha com **serviços** nomeados em vez de números de porta sempre que possível. Isto torna a configuração legível: `--add-service=http` é mais claro e menos propenso a erro do que `--add-port=80/tcp`, e o firewalld sabe que alguns serviços precisam de mais do que uma porta.
+
+```bash
+# Abrir um serviço (apenas até ao próximo reload)
+$ sudo firewall-cmd --add-service=https
+
+# Abrir um serviço de forma permanente
+$ sudo firewall-cmd --add-service=https --permanent
+
+# Abrir uma porta específica
+$ sudo firewall-cmd --add-port=8080/tcp --permanent
+
+# Fechar um serviço
+$ sudo firewall-cmd --remove-service=telnet --permanent
+
+# Aplicar as alterações permanentes à configuração activa
+$ sudo firewall-cmd --reload
+```
+
+> ⚠️ **A distinção entre runtime e permanent é a fonte de erro mais comum no firewalld.** Sem `--permanent`, a alteração aplica-se imediatamente mas desaparece no próximo reload ou reinício. Com `--permanent`, é gravada mas não se aplica até fazer `--reload`. O procedimento seguro em servidores remotos é testar primeiro sem `--permanent`, confirmar que não perdeu o acesso, e só depois tornar permanente.
+
+### Rich rules
+
+Para regras que precisam de mais granularidade do que "abrir este serviço", o firewalld tem as *rich rules*:
+
+```bash
+# Permitir SSH apenas a partir de uma rede específica
+$ sudo firewall-cmd --permanent --add-rich-rule='
+  rule family="ipv4"
+  source address="192.168.1.0/24"
+  service name="ssh"
+  accept'
+
+# Bloquear completamente um endereço
+$ sudo firewall-cmd --permanent --add-rich-rule='
+  rule family="ipv4"
+  source address="203.0.113.66"
+  drop'
+
+# Permitir e registar acessos a um serviço, com limite de taxa
+$ sudo firewall-cmd --permanent --add-rich-rule='
+  rule service name="ssh"
+  log prefix="SSH-ACESSO" level="info" limit value="3/m"
+  accept'
+
+$ sudo firewall-cmd --reload
+```
+
+A primeira regra é particularmente útil e vale como padrão a seguir: restringir o SSH à rede de gestão em vez de o deixar aberto ao mundo elimina a esmagadora maioria das tentativas de intrusão automatizadas.
+
+### SELinux: a segunda camada
+
+O firewall controla o que entra e sai pela rede. O **SELinux** (*Security-Enhanced Linux*) controla o que cada processo pode fazer dentro do sistema, independentemente das permissões tradicionais de ficheiros.
+
+Esta é a diferença fundamental. O modelo de permissões UNIX visto no Capítulo 4 é **discricionário** (DAC): o dono de um ficheiro decide quem lhe acede. O SELinux implementa controlo **obrigatório** (MAC): existe uma política a nível de sistema que define o que cada processo pode fazer, e essa política prevalece mesmo sobre o root.
+
+O efeito prático é de contenção. Se o servidor web for comprometido através de uma vulnerabilidade, o processo comprometido continua confinado à política definida para servidores web. Não consegue ler `/etc/shadow`, não consegue escrever fora dos directórios que lhe estão atribuídos, não consegue abrir ligações de rede arbitrárias. O ataque não é impedido, mas o seu alcance é drasticamente limitado.
+
+#### Modos de funcionamento
+
+```bash
+# Ver o modo actual
+$ getenforce
+Enforcing
+
+# Ver estado detalhado
+$ sestatus
+SELinux status:                 enabled
+SELinuxfs mount:                /sys/fs/selinux
+Current mode:                   enforcing
+Mode from config file:          enforcing
+Policy MLS status:              enabled
+Loaded policy name:             targeted
+```
+
+Existem três modos:
+
+**Enforcing** aplica a política e bloqueia o que a viola. É o modo correcto em produção.
+
+**Permissive** não bloqueia nada, mas regista todas as violações que teria bloqueado. É o modo de diagnóstico: permite descobrir que ajustes a política precisa antes de a activar.
+
+**Disabled** desliga o SELinux completamente.
+
+```bash
+# Mudar temporariamente para permissive (até ao reinício)
+$ sudo setenforce 0
+
+# Voltar a enforcing
+$ sudo setenforce 1
+```
+
+Para alteração permanente edita-se `/etc/selinux/config`.
+
+> ⚠️ **Desactivar o SELinux é a solução errada.** É frequente encontrar guias na internet que sugerem `SELINUX=disabled` como primeiro passo de qualquer instalação. Isto resolve o sintoma eliminando uma camada inteira de defesa, e é o equivalente a desligar o alarme porque toca demasiado. Os problemas de SELinux são quase sempre questão de contexto de ficheiros ou de um boolean, e resolvem-se em segundos quando se sabe onde olhar.
+
+#### Contextos de segurança
+
+Cada ficheiro, processo e porta tem um **contexto de segurança** associado. É esse contexto que a política usa para decidir o que é permitido.
+
+```bash
+# Ver o contexto de ficheiros
+$ ls -Z /var/www/html/
+unconfined_u:object_r:httpd_sys_content_t:s0 index.html
+
+# Ver o contexto de processos
+$ ps -eZ | grep httpd
+system_u:system_r:httpd_t:s0    1203 ?  00:00:00 httpd
+
+# Ver o contexto de portas
+$ sudo semanage port -l | grep http
+http_port_t   tcp   80, 81, 443, 488, 8008, 8009, 8443
+```
+
+O campo que interessa na prática é o **tipo**, o terceiro campo, terminado em `_t`. A política diz, por exemplo, que um processo com tipo `httpd_t` pode ler ficheiros com tipo `httpd_sys_content_t`. Se um ficheiro em `/var/www/html` tiver o tipo errado, o Apache não o consegue ler, mesmo que as permissões estejam correctas e o dono seja o utilizador `apache`.
+
+Este é o problema mais comum em CentOS, e a resolução é directa:
+
+```bash
+# Restaurar o contexto correcto com base na política
+$ sudo restorecon -Rv /var/www/empresa
+
+# Definir permanentemente o contexto de um directório não-standard
+$ sudo semanage fcontext -a -t httpd_sys_content_t "/dados/web(/.*)?"
+$ sudo restorecon -Rv /dados/web
+
+# Permitir que o Apache escuta numa porta não-standard
+$ sudo semanage port -a -t http_port_t -p tcp 8080
+```
+
+#### Booleans
+
+Os *booleans* são interruptores que activam ou desactivam comportamentos permitidos pela política, sem precisar de a reescrever:
+
+```bash
+# Listar booleans relacionados com o Apache
+$ getsebool -a | grep httpd
+
+# Permitir que o Apache faça ligações de rede de saída
+# (necessário quando o Apache actua como proxy inverso)
+$ sudo setsebool -P httpd_can_network_connect on
+
+# Permitir que o Apache aceda a bases de dados
+$ sudo setsebool -P httpd_can_network_connect_db on
+```
+
+A opção `-P` torna a alteração permanente. Sem ela, volta ao estado anterior no reinício.
+
+#### Diagnosticar problemas de SELinux
+
+Quando algo não funciona e as permissões parecem correctas, o SELinux é o suspeito imediato. As negações são registadas no log de auditoria:
+
+```bash
+# Ver negações recentes
+$ sudo ausearch -m AVC -ts recent
+
+# Análise legível com sugestão de resolução
+$ sudo journalctl -t setroubleshoot --since "10 min ago"
+
+# Instalar a ferramenta de análise se necessário
+$ sudo dnf install setroubleshoot-server -y
+```
+
+O `setroubleshoot` traduz as negações crípticas do log de auditoria em explicações legíveis, e sugere o comando concreto para resolver o problema. É a ferramenta que transforma o SELinux de obstáculo em sistema gerível.
+
+Um fluxo de diagnóstico eficaz:
+
+```bash
+# 1. Confirmar que o SELinux é a causa: passar para permissive e testar
+$ sudo setenforce 0
+# ... testar a operação que falhava ...
+
+# 2. Se agora funciona, o SELinux era a causa. Voltar a enforcing.
+$ sudo setenforce 1
+
+# 3. Ver o que foi negado e porquê
+$ sudo ausearch -m AVC -ts recent | audit2why
+
+# 4. Aplicar a correcção sugerida (contexto ou boolean)
+```
+
+---
+
+## 5.3 OpenLDAP: Autenticação Centralizada
+
+### O problema das contas dispersas
+
+Num único servidor, gerir contas com `useradd` e `passwd` é perfeitamente adequado. Com dez servidores, começa a ser incómodo. Com cinquenta, torna-se insustentável.
+
+Considere-se o que acontece quando um colaborador sai da organização num ambiente com contas locais. É preciso desactivar a conta em cada máquina onde ela existe. Se uma for esquecida, fica uma porta aberta indefinidamente. Quando alguém entra, é preciso criar a conta em todo o lado, com o mesmo UID em cada máquina para que as permissões de ficheiros em partilhas de rede façam sentido. E quando um utilizador muda a password, muda-a apenas na máquina onde executou o comando.
+
+A solução é centralizar: manter as identidades num único directório, e configurar todos os servidores para consultarem esse directório ao autenticar.
+
+### O que é um directório LDAP
+
+O **LDAP** (*Lightweight Directory Access Protocol*) é um protocolo de acesso a serviços de directório. Um directório é uma base de dados optimizada para leitura, organizada hierarquicamente, desenhada para armazenar informação sobre entidades: pessoas, grupos, máquinas, serviços.
+
+A estrutura é uma árvore, chamada **DIT** (*Directory Information Tree*). Cada nó é uma **entrada**, e cada entrada é identificada de forma única pelo seu **DN** (*Distinguished Name*), que descreve o caminho completo desde a raiz.
+
+```
+dc=empresa,dc=pt                          <- raiz do directório
+├── ou=people
+│   ├── uid=carlos,ou=people,dc=empresa,dc=pt
+│   ├── uid=ana,ou=people,dc=empresa,dc=pt
+│   └── uid=bruno,ou=people,dc=empresa,dc=pt
+├── ou=groups
+│   ├── cn=sysadmins,ou=groups,dc=empresa,dc=pt
+│   └── cn=developers,ou=groups,dc=empresa,dc=pt
+└── ou=machines
+```
+
+Os componentes do DN seguem convenções: `dc` é *domain component*, `ou` é *organizational unit*, `cn` é *common name*, `uid` é o identificador de utilizador.
+
+Cada entrada tem **atributos** (pares nome/valor) e pertence a uma ou mais **objectClass**, que definem quais os atributos obrigatórios e opcionais. Uma entrada de utilizador para autenticação POSIX é tipicamente assim:
+
+```ldif
+dn: uid=carlos,ou=people,dc=empresa,dc=pt
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: carlos
+cn: Carlos Silva
+sn: Silva
+uidNumber: 1001
+gidNumber: 1001
+homeDirectory: /home/carlos
+loginShell: /bin/bash
+mail: carlos@empresa.pt
+```
+
+Repare-se em como estes atributos correspondem exactamente aos campos de `/etc/passwd` vistos na secção 2.1 do Capítulo 5. É precisamente essa a ideia: o LDAP substitui os ficheiros locais como fonte da informação de contas.
+
+### Instalação do servidor
+
+```bash
+$ sudo dnf install openldap openldap-servers openldap-clients -y
+
+$ sudo systemctl enable --now slapd
+$ sudo systemctl status slapd
+
+# Abrir as portas no firewall
+$ sudo firewall-cmd --add-service=ldap --permanent
+$ sudo firewall-cmd --add-service=ldaps --permanent
+$ sudo firewall-cmd --reload
+```
+
+O daemon chama-se `slapd` (*Standalone LDAP Daemon*). Escuta na porta 389 para ligações não cifradas e 636 para LDAPS.
+
+### Configuração inicial
+
+As versões modernas do OpenLDAP guardam a própria configuração dentro do directório, numa árvore separada chamada `cn=config`. Isto significa que a configuração se altera com operações LDAP, não editando ficheiros.
+
+```bash
+# Gerar um hash da password de administração
+$ slappasswd
+New password:
+Re-enter new password:
+{SSHA}xK2a9Pq3rF8mNvB4cD7eG1hJ5kL0nM2p
+```
+
+Cria-se um ficheiro LDIF com as alterações de configuração:
+
+```ldif
+# config-admin.ldif
+dn: olcDatabase={2}mdb,cn=config
+changetype: modify
+replace: olcSuffix
+olcSuffix: dc=empresa,dc=pt
+-
+replace: olcRootDN
+olcRootDN: cn=admin,dc=empresa,dc=pt
+-
+replace: olcRootPW
+olcRootPW: {SSHA}xK2a9Pq3rF8mNvB4cD7eG1hJ5kL0nM2p
+```
+
+E aplica-se:
+
+```bash
+$ sudo ldapmodify -Y EXTERNAL -H ldapi:/// -f config-admin.ldif
+```
+
+Depois carregam-se os esquemas necessários para contas POSIX:
+
+```bash
+$ sudo ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/openldap/schema/cosine.ldif
+$ sudo ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/openldap/schema/nis.ldif
+$ sudo ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/openldap/schema/inetorgperson.ldif
+```
+
+### Popular o directório
+
+Cria-se a estrutura base e as primeiras entradas:
+
+```ldif
+# base.ldif
+dn: dc=empresa,dc=pt
+objectClass: top
+objectClass: dcObject
+objectClass: organization
+o: Empresa Lda
+dc: empresa
+
+dn: ou=people,dc=empresa,dc=pt
+objectClass: organizationalUnit
+ou: people
+
+dn: ou=groups,dc=empresa,dc=pt
+objectClass: organizationalUnit
+ou: groups
+```
+
+```bash
+$ ldapadd -x -D "cn=admin,dc=empresa,dc=pt" -W -f base.ldif
+```
+
+As opções significam: `-x` autenticação simples, `-D` o DN com que se liga, `-W` pedir a password interactivamente, `-f` o ficheiro a carregar.
+
+### Consultar o directório
+
+```bash
+# Ver toda a árvore
+$ ldapsearch -x -b "dc=empresa,dc=pt"
+
+# Procurar um utilizador específico
+$ ldapsearch -x -b "dc=empresa,dc=pt" "(uid=carlos)"
+
+# Listar apenas os uid de todas as pessoas
+$ ldapsearch -x -b "ou=people,dc=empresa,dc=pt" "(objectClass=posixAccount)" uid
+
+# Testar a ligação a um servidor remoto
+$ ldapsearch -x -H ldap://ldap.empresa.pt -b "dc=empresa,dc=pt"
+```
+
+### Configurar os clientes com SSSD
+
+Do lado dos servidores que devem autenticar contra o LDAP, a ferramenta moderna é o **SSSD** (*System Security Services Daemon*). Faz a ligação ao directório, mantém cache local das credenciais (o que permite login mesmo se o servidor LDAP estiver temporariamente inacessível) e integra-se com o PAM visto no Capítulo 5.
+
+```bash
+$ sudo dnf install sssd sssd-ldap oddjob-mkhomedir authselect -y
+```
+
+Configura-se `/etc/sssd/sssd.conf`:
+
+```ini
+[sssd]
+config_file_version = 2
+services = nss, pam
+domains = empresa.pt
+
+[domain/empresa.pt]
+id_provider = ldap
+auth_provider = ldap
+ldap_uri = ldaps://ldap.empresa.pt
+ldap_search_base = dc=empresa,dc=pt
+ldap_id_use_start_tls = true
+ldap_tls_reqcert = demand
+cache_credentials = true
+enumerate = false
+```
+
+O ficheiro tem de ter permissões restritas ou o SSSD recusa arrancar:
+
+```bash
+$ sudo chmod 600 /etc/sssd/sssd.conf
+$ sudo systemctl enable --now sssd
+```
+
+Activa-se o perfil de autenticação com `authselect`, que gere a configuração do PAM e do NSS de forma segura:
+
+```bash
+$ sudo authselect select sssd with-mkhomedir --force
+$ sudo systemctl enable --now oddjobd
+```
+
+A opção `with-mkhomedir` faz com que o directório home seja criado automaticamente no primeiro login de um utilizador do directório.
+
+### Verificar
+
+```bash
+# O sistema reconhece o utilizador do LDAP?
+$ id carlos
+uid=1001(carlos) gid=1001(carlos) groups=1001(carlos)
+
+$ getent passwd carlos
+carlos:*:1001:1001:Carlos Silva:/home/carlos:/bin/bash
+
+# Testar o login
+$ su - carlos
+```
+
+> ⚠️ **Use sempre LDAPS ou StartTLS.** O LDAP em texto simples transmite credenciais de autenticação sem cifra. Num serviço cuja função é precisamente autenticar toda a organização, isto é inaceitável. A configuração acima usa `ldaps://` e exige verificação do certificado.
+
+---
+
+## 5.4 Auditoria e Verificação de Segurança
+
+Configurar defesas é metade do trabalho. A outra metade é verificar continuamente que continuam no lugar e que ninguém as contornou.
+
+### auditd: o subsistema de auditoria
+
+O `auditd` regista eventos ao nível do kernel: acessos a ficheiros, chamadas de sistema, alterações de configuração, uso de comandos privilegiados. É o mecanismo que permite responder à pergunta "quem alterou este ficheiro e quando".
+
+```bash
+$ sudo systemctl status auditd
+```
+
+Definem-se regras em `/etc/audit/rules.d/audit.rules`:
+
+```bash
+# Vigiar alterações a ficheiros de contas
+-w /etc/passwd -p wa -k identidade
+-w /etc/shadow -p wa -k identidade
+-w /etc/group -p wa -k identidade
+-w /etc/sudoers -p wa -k escalonamento
+
+# Vigiar a configuração do SSH
+-w /etc/ssh/sshd_config -p wa -k config_ssh
+
+# Registar todos os comandos executados como root
+-a always,exit -F arch=b64 -F euid=0 -S execve -k comandos_root
+```
+
+A flag `-p wa` vigia escrita e alteração de atributos. A flag `-k` define uma etiqueta que facilita a pesquisa posterior.
+
+```bash
+# Carregar as regras
+$ sudo augenrules --load
+
+# Pesquisar eventos por etiqueta
+$ sudo ausearch -k identidade
+
+# Ver quem alterou um ficheiro específico
+$ sudo ausearch -f /etc/passwd
+
+# Relatório resumido de eventos
+$ sudo aureport --summary
+$ sudo aureport --auth --summary
+```
+
+### Verificação de integridade
+
+#### rpm -V: verificar pacotes instalados
+
+Uma capacidade subestimada do gestor de pacotes é a verificação de integridade. O `rpm` guarda checksums, permissões e propriedade de cada ficheiro instalado, e pode comparar o estado actual contra esses valores.
+
+```bash
+# Verificar um pacote específico
+$ rpm -V openssh-server
+
+# Verificar todos os pacotes instalados (demora)
+$ sudo rpm -Va
+
+# Descobrir a que pacote pertence um ficheiro
+$ rpm -qf /usr/sbin/sshd
+```
+
+O output do `rpm -V` usa códigos por posição. `S` indica tamanho alterado, `M` permissões alteradas, `5` checksum MD5 diferente, `U` dono diferente, `G` grupo diferente, `T` timestamp diferente. Um `5` num binário de sistema é um sinal grave: significa que o ficheiro foi substituído.
+
+#### AIDE: base de dados de integridade
+
+O **AIDE** (*Advanced Intrusion Detection Environment*) cria uma base de dados com o estado de todos os ficheiros do sistema e detecta alterações posteriores.
+
+```bash
+$ sudo dnf install aide -y
+
+# Criar a base de dados inicial (fazer logo após a instalação do sistema)
+$ sudo aide --init
+$ sudo mv /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz
+
+# Verificar o sistema contra a base de dados
+$ sudo aide --check
+```
+
+> 💡 **A base de dados do AIDE deve ser guardada fora do sistema que verifica.** Se um atacante comprometer a máquina, pode regenerar a base de dados para incluir os seus ficheiros modificados, e a verificação passará a dar tudo em ordem. Guardar uma cópia num servidor separado ou em suporte só de leitura resolve o problema.
+
+Uma verificação diária agendada com cron, como visto no Capítulo 5, transforma o AIDE numa vigilância contínua:
+
+```bash
+# /etc/cron.daily/aide-check
+0 3 * * * /usr/sbin/aide --check | mail -s "AIDE: $(hostname)" admin@empresa.pt
+```
+
+### Análise de portas e serviços expostos
+
+```bash
+# O que está a escutar localmente
+$ sudo ss -tulnp
+
+# Analisar a partir de outra máquina o que está realmente exposto
+$ nmap -sV 192.168.1.50
+
+# Análise completa de todas as portas
+$ sudo nmap -sS -p- 192.168.1.50
+```
+
+A distinção importa: `ss` mostra o que o sistema pensa que está a escutar; `nmap` a partir de outra máquina mostra o que está efectivamente acessível através do firewall. As duas visões devem coincidir com o que se espera, e discrepâncias merecem investigação.
+
+> ⚠️ **Só faça scan de sistemas que administra ou para os quais tem autorização escrita.** Fazer port scan de infraestrutura de terceiros é ilegal em muitas jurisdições, independentemente da intenção.
+
+### Detecção de rootkits
+
+```bash
+$ sudo dnf install rkhunter -y
+
+# Actualizar as assinaturas
+$ sudo rkhunter --update
+
+# Registar o estado actual como referência
+$ sudo rkhunter --propupd
+
+# Executar a verificação
+$ sudo rkhunter --check --skip-keypress
+```
+
+### Protecção contra força bruta com fail2ban
+
+O `fail2ban` monitoriza os logs à procura de padrões de ataque e bloqueia automaticamente os endereços responsáveis, criando regras de firewall temporárias.
+
+```bash
+$ sudo dnf install fail2ban -y
+```
+
+Configura-se em `/etc/fail2ban/jail.local`:
+
+```ini
+[DEFAULT]
+bantime = 3600
+findtime = 600
+maxretry = 5
+backend = systemd
+
+[sshd]
+enabled = true
+port = ssh
+logpath = %(sshd_log)s
+maxretry = 3
+bantime = 7200
+```
+
+Esta configuração bloqueia durante duas horas qualquer endereço com três tentativas de login SSH falhadas em dez minutos.
+
+```bash
+$ sudo systemctl enable --now fail2ban
+
+# Ver o estado das jails
+$ sudo fail2ban-client status
+$ sudo fail2ban-client status sshd
+
+# Desbloquear um endereço manualmente
+$ sudo fail2ban-client set sshd unbanip 192.168.1.99
+```
+
+### Revisão periódica de segurança
+
+Alguns comandos que vale a pena executar com regularidade:
+
+```bash
+# Contas com UID 0 (deve existir apenas o root)
+$ awk -F: '$3 == 0 {print $1}' /etc/passwd
+
+# Contas sem password definida
+$ sudo awk -F: '$2 == "" {print $1}' /etc/shadow
+
+# Ficheiros com setuid ou setgid (superfície de escalonamento)
+$ sudo find / -xdev \( -perm -4000 -o -perm -2000 \) -type f -ls
+
+# Ficheiros com escrita para todos
+$ sudo find / -xdev -type f -perm -0002 -ls
+
+# Directórios com escrita para todos sem sticky bit
+$ sudo find / -xdev -type d -perm -0002 ! -perm -1000 -ls
+
+# Tentativas de autenticação falhadas
+$ sudo lastb | head -20
+$ sudo journalctl -u sshd | grep "Failed password" | tail -20
+
+# Quem usou sudo recentemente
+$ sudo ausearch -m USER_CMD -ts today
+```
+
+### Uma lista de verificação de hardening
+
+Uma forma prática de aplicar tudo o que foi visto é através de uma lista de verificação aplicada a cada sistema novo. Ter um procedimento documentado tem ainda a vantagem de ser demonstrável quando alguém pergunta que medidas foram tomadas.
+
+**Contas e acesso**
+- [ ] Password de root definida e guardada em local seguro
+- [ ] Login directo de root desactivado no SSH (`PermitRootLogin no`)
+- [ ] Autenticação por chave configurada e testada
+- [ ] Autenticação por password desactivada no SSH
+- [ ] Acesso SSH restrito por `AllowUsers` ou por rede de origem
+- [ ] Contas de sistema com shell `/usr/sbin/nologin`
+- [ ] Política de qualidade de passwords activa (`pam_pwquality`)
+
+**Serviços e rede**
+- [ ] Serviços desnecessários desactivados e removidos
+- [ ] Telnet, FTP e serviços "r" ausentes do sistema
+- [ ] firewalld activo com política restritiva
+- [ ] Apenas as portas necessárias abertas
+- [ ] `ss -tulnp` revisto e cada porta justificada
+
+**Sistema**
+- [ ] SELinux em modo enforcing
+- [ ] Sistema actualizado e calendário de patches definido
+- [ ] Sincronização de tempo activa e verificada
+- [ ] Logs enviados para servidor central
+- [ ] `auditd` activo com regras nos ficheiros críticos
+- [ ] Base de dados AIDE criada e guardada fora do sistema
+- [ ] Backups configurados, cifrados e testados por restauro
+
+**Verificação**
+- [ ] `nmap` executado a partir do exterior e resultado conforme o esperado
+- [ ] Ficheiros setuid/setgid inventariados
+- [ ] `fail2ban` activo para os serviços expostos
+- [ ] Procedimento de revisão periódica agendado
+
