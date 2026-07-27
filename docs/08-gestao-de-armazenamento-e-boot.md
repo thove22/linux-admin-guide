@@ -733,3 +733,300 @@ Quando se agenda um encerramento para o futuro, o comando `shutdown` cria o fich
 
 O aviso enviado aos utilizadores com sessão activa usa o mecanismo `wall` visto no Capítulo 5.
 
+## 2. Fundamentos de Armazenamento e Particionamento
+
+## 2.1 Como o Linux vê o armazenamento
+
+Antes de particionar um disco, é preciso perceber como o Linux organiza o armazenamento em camadas. Cada camada resolve um problema específico, e conhecê-las evita a confusão que surge quando os comandos mostram coisas que não parecem corresponder ao que se espera.
+
+O ponto de partida é o **dispositivo de bloco**. Um disco inteiro é apresentado pelo kernel como um dispositivo de bloco, com um nome como `/dev/sda`. Chama-se dispositivo de bloco porque os dados são lidos e escritos em blocos de tamanho fixo, ao contrário dos dispositivos de caractere que lidam com fluxos de bytes.
+
+Por cima do disco físico existe a **tabela de partições**, uma pequena área no início do disco que descreve como o espaço está dividido. Cada divisão é uma **partição**, e o kernel apresenta cada partição também como um dispositivo de bloco próprio, com nomes como `/dev/sda1` e `/dev/sda2`.
+
+Dentro de uma partição vive o **sistema de ficheiros**, que é a base de dados que transforma um espaço bruto de blocos na hierarquia de ficheiros e directórios com que o utilizador interage. É esse sistema de ficheiros que se acede quando se corre `ls` ou `cd`.
+
+Para chegar aos dados de um ficheiro, o kernel percorre estas camadas de cima para baixo: consulta a tabela de partições para localizar a partição correcta, procura na base de dados do sistema de ficheiros dessa partição a localização do ficheiro, e finalmente lê os blocos onde os dados estão.
+
+Este percurso atravessa uma pilha de subsistemas dentro do kernel. Os processos de utilizador fazem pedidos através de chamadas de sistema, que passam pela camada do sistema de ficheiros, depois pela interface de dispositivo de bloco que mapeia as partições, e finalmente pelos controladores que falam com o hardware de armazenamento.
+
+Existe ainda um caminho alternativo. É possível aceder ao dispositivo de bloco directamente, sem passar pelo sistema de ficheiros, através dos ficheiros de dispositivo em `/dev`. É este acesso directo que ferramentas como o `dd` ou o `fdisk` usam para manipular o disco ao nível dos blocos brutos, e é também o que as torna perigosas: escrevem directamente no disco sem a rede de segurança do sistema de ficheiros.
+
+O **LVM** (*Logical Volume Manager*), que veremos na secção 4, insere-se entre a partição e o sistema de ficheiros, acrescentando uma camada de flexibilidade. Por agora, começamos pelo particionamento tradicional e directo.
+
+---
+
+## 2.2 Dispositivos de bloco e nomenclatura
+
+Os nomes dos dispositivos de bloco seguem convenções que revelam o tipo de hardware e a sua ordem de detecção.
+
+Os discos são nomeados por família. Discos SATA, SAS, SCSI e USB aparecem como `/dev/sda`, `/dev/sdb`, `/dev/sdc`, e assim por diante, onde a letra final indica a ordem pela qual o kernel os detectou. Discos NVMe, uma tecnologia mais recente e rápida, seguem um esquema diferente: `/dev/nvme0n1`, `/dev/nvme1n1`.
+
+As partições acrescentam um número ao nome do disco:
+
+| Dispositivo | Significado |
+|-------------|-------------|
+| `/dev/sda` | Primeiro disco SATA/SAS/USB (o disco inteiro) |
+| `/dev/sda1` | Primeira partição do primeiro disco |
+| `/dev/sda2` | Segunda partição do primeiro disco |
+| `/dev/sdb1` | Primeira partição do segundo disco |
+| `/dev/nvme0n1` | Primeiro disco NVMe |
+| `/dev/nvme0n1p1` | Primeira partição do primeiro disco NVMe |
+
+Note-se que os discos NVMe usam `p1` para separar o número da partição, porque o nome do disco já termina em número e `nvme0n11` seria ambíguo.
+
+>  **A letra do dispositivo não é fixa.** O `/dev/sdb` de hoje pode ser o `/dev/sdc` amanhã, porque a atribuição depende da ordem de detecção. Acrescentar ou remover um disco, ou até uma alteração no tempo de arranque, pode reordenar as letras. Esta instabilidade é a razão pela qual, como veremos na secção 3, os sistemas de ficheiros nunca devem ser montados permanentemente pelo nome do dispositivo, mas sim pelo UUID.
+
+Existem também interfaces especiais que representam armazenamento sem ser um disco físico simples. Os dispositivos `/dev/dm-*` e os nomes em `/dev/mapper/` correspondem ao **device mapper**, o subsistema que o LVM e o RAID usam. Se estes aparecerem no sistema, é sinal de que uma dessas tecnologias está em uso.
+
+---
+
+## 2.3 Tabelas de partições: MBR e GPT
+
+A tabela de partições não tem nada de mágico. É apenas um bloco de dados no início do disco que descreve como os blocos estão divididos. Existem dois formatos em uso, e a diferença entre eles tem consequências práticas.
+
+### MBR
+
+O **MBR** (*Master Boot Record*) é o formato tradicional, que remonta aos primeiros PCs. Como visto na secção 1, os primeiros 512 bytes do disco contêm tanto o código de arranque como a tabela de partições, e é essa herança que impõe as suas limitações.
+
+O MBR permite apenas **quatro partições primárias**. Para contornar este limite, uma das quatro pode ser designada como **partição estendida**, que funciona como um contentor para **partições lógicas**. Assim, um disco pode ter três partições primárias mais uma estendida que contém várias lógicas.
+
+```
+Disco com MBR:
+├── sda1  (primária)
+├── sda2  (primária)
+├── sda3  (primária)
+└── sda4  (estendida)
+    ├── sda5  (lógica)
+    ├── sda6  (lógica)
+    └── sda7  (lógica)
+```
+
+As partições lógicas começam sempre a numeração no 5, independentemente de quantas primárias existam, porque os números 1 a 4 estão reservados às primárias.
+
+O MBR tem duas limitações que o tornam obsoleto para hardware moderno. Não suporta discos maiores que 2 TiB, porque usa endereços de 32 bits para localizar os blocos. E o esquema de partições primárias e estendidas é desajeitado. Por estas razões, o MBR foi substituído pelo GPT.
+
+### GPT
+
+O **GPT** (*GUID Partition Table*) é o formato moderno, associado ao firmware UEFI mas utilizável também com BIOS. Resolve as limitações do MBR de forma directa.
+
+Suporta discos até tamanhos que na prática não têm limite relevante (na ordem dos zettabytes). Permite até 128 partições por defeito, todas em pé de igualdade, sem a distinção artificial entre primárias, estendidas e lógicas. E cada partição tem um identificador único global (GUID) e pode ter um nome descritivo.
+
+O GPT guarda ainda uma cópia da tabela de partições no final do disco, além da cópia no início, o que oferece resistência a corrupção: se a tabela principal for danificada, a cópia de segurança permite recuperá-la.
+
+### Qual usar
+
+Para qualquer instalação nova em hardware moderno, GPT é a escolha correcta. A instalação do CentOS no Capítulo 2 usou GPT, e é por isso que a tabela de partições incluía a partição `biosboot`, necessária apenas quando se usa GPT com firmware em modo BIOS, como explicado na secção 1.
+
+O MBR mantém relevância apenas em dois cenários: hardware muito antigo que não suporta GPT, e discos pequenos onde a compatibilidade com sistemas legados é necessária.
+
+---
+
+## 2.4 Inspeccionar o armazenamento
+
+Antes de alterar seja o que for, é preciso saber o que existe. Vários comandos oferecem visões complementares do armazenamento do sistema.
+
+### lsblk: a visão em árvore
+
+O `lsblk` (*list block devices*) é o ponto de partida. Mostra todos os dispositivos de bloco numa estrutura em árvore que torna imediatamente visível a relação entre discos, partições e volumes:
+
+```bash
+$ lsblk
+NAME          MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTS
+sda             8:0    0    50G  0 disk
+├─sda1          8:1    0     1M  0 part
+├─sda2          8:2    0     1G  0 part /boot
+└─sda3          8:3    0    49G  0 part
+  ├─cs-root   253:0    0    44G  0 lvm  /
+  └─cs-swap   253:1    0     5G  0 lvm  [SWAP]
+sdb             8:16   0   100G  0 disk
+sr0            11:0    1  1024M  0 rom
+```
+
+Neste exemplo lê-se de imediato a estrutura: o disco `sda` de 50 GB tem três partições, sendo que a terceira contém volumes LVM montados na raiz e no swap. Existe um segundo disco `sdb` de 100 GB ainda sem partições. E `sr0` é a unidade óptica.
+
+A coluna `TYPE` distingue `disk` (disco físico), `part` (partição) e `lvm` (volume lógico). A coluna `MOUNTPOINTS` mostra onde cada dispositivo está montado.
+
+```bash
+# Incluir os sistemas de ficheiros e UUIDs
+$ lsblk -f
+
+# Incluir informação sobre o modelo e número de série
+$ lsblk -o NAME,SIZE,TYPE,FSTYPE,MODEL,SERIAL
+```
+
+### blkid: identificadores e tipos
+
+O `blkid` (*block ID*) foca-se na identificação: mostra o UUID e o tipo de sistema de ficheiros de cada partição:
+
+```bash
+$ sudo blkid
+/dev/sda2: UUID="a1b2c3d4-..." TYPE="xfs" PARTUUID="c9a5ebb0-01"
+/dev/sda3: UUID="e5f6g7h8-..." TYPE="LVM2_member" PARTUUID="c9a5ebb0-02"
+/dev/mapper/cs-root: UUID="i9j0k1l2-..." TYPE="xfs"
+/dev/mapper/cs-swap: UUID="m3n4o5p6-..." TYPE="swap"
+```
+
+Este comando é essencial quando se prepara uma entrada no `/etc/fstab`, porque fornece o UUID exacto que se deve usar em vez do nome do dispositivo.
+
+### fdisk -l e parted: a tabela de partições
+
+Para ver a tabela de partições em detalhe:
+
+```bash
+$ sudo fdisk -l /dev/sda
+Disk /dev/sda: 50 GiB, 53687091200 bytes, 104857600 sectors
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+Disklabel type: gpt
+Disk identifier: A1B2C3D4-...
+
+Device       Start       End   Sectors Size Type
+/dev/sda1     2048      6143      4096   2M BIOS boot
+/dev/sda2     6144   2103295   2097152   1G Linux filesystem
+/dev/sda3  2103296 104857566 102754271  49G Linux LVM
+```
+
+O `parted` oferece uma alternativa que apresenta os tamanhos de forma mais legível:
+
+```bash
+$ sudo parted /dev/sda print
+Model: ATA VBOX HARDDISK (scsi)
+Disk /dev/sda: 53.7GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+
+Number  Start   End     Size    File system  Name  Flags
+ 1      1049kB  3146kB  2097kB                      bios_grub
+ 2      3146kB  1077MB  1074MB  xfs
+ 3      1077MB  53.7GB  52.6GB                      lvm
+```
+
+> **Cuidado com as unidades.** O `fdisk -l` mostra tamanhos em sectores de 512 bytes, o que pode confundir: um valor pode parecer o dobro do tamanho real do disco. O `parted` mostra tamanhos aproximados numa unidade legível. Quando o valor exacto importa, o `fdisk` é mais fiável; quando importa a leitura rápida, o `parted` é mais claro.
+
+---
+
+## 2.5 Criar partições
+
+Alterar a tabela de partições é uma operação de risco. Antes de começar, dois princípios são inegociáveis.
+
+> **Alterar a tabela de partições pode tornar impossível recuperar os dados das partições afectadas.** Apagar ou redefinir uma partição pode apagar a localização do sistema de ficheiros que lá estava. Confirme sempre que tem uma cópia de segurança se o disco contém dados importantes.
+
+> **Garanta que nenhuma partição do disco alvo está montada.** A maioria das distribuições monta automaticamente qualquer sistema de ficheiros detectado. Verifique com `lsblk` e desmonte tudo antes de continuar.
+
+Existem três ferramentas principais para criar partições, e a escolha entre elas tem uma consequência importante.
+
+### fdisk vs parted: uma diferença crítica
+
+O **fdisk** e o **parted** funcionam de forma fundamentalmente diferente.
+
+Com o `fdisk`, todas as alterações são feitas numa cópia em memória. Nada é escrito no disco até que se dê explicitamente o comando de gravação. Isto significa que se pode planear toda a nova tabela, rever, e desistir sem consequências se algo estiver errado.
+
+Com o `parted`, as alterações são aplicadas ao disco à medida que os comandos são dados. Não há oportunidade de rever a tabela antes de a alterar.
+
+Por esta razão, para criar e alterar partições, o `fdisk` é geralmente preferível: a natureza interactiva e a rede de segurança de não escrever nada até à confirmação tornam-no mais seguro. O `parted` é excelente para consulta e para scripts automatizados, onde o comportamento não-interactivo é uma vantagem.
+
+Existe ainda o **gdisk**, que é ao `fdisk` o que este é para MBR mas especializado em GPT, e o **gparted**, uma interface gráfica sobre o `parted`.
+
+### Criar partições com fdisk
+
+O exemplo seguinte mostra a criação de duas partições num disco novo `/dev/sdb`: uma de 2 GB e outra ocupando o resto do espaço.
+
+Primeiro, confirmar qual o disco e que não está montado:
+
+```bash
+$ lsblk
+$ sudo fdisk /dev/sdb
+```
+
+O `fdisk` entra em modo interactivo. O comando `m` mostra a ajuda, e `p` imprime a tabela actual:
+
+```
+Command (m for help): p
+Disk /dev/sdb: 100 GiB, 107374182400 bytes, 209715200 sectors
+Disklabel type: gpt
+```
+
+Criar a primeira partição com `n`:
+
+```
+Command (m for help): n
+Partition number (1-128, default 1): 1
+First sector (2048-209715199, default 2048): [Enter para aceitar]
+Last sector, +/-sectors or +/-size{K,M,G,T,P} (2048-209715199): +2G
+
+Created a new partition 1 of type 'Linux filesystem' and of size 2 GiB.
+```
+
+Os valores por defeito são quase sempre o que se pretende. O primeiro sector fica no valor por defeito (2048, que garante o alinhamento correcto, como veremos), e o tamanho é definido com a sintaxe `+2G`.
+
+Criar a segunda partição, aceitando os valores por defeito para ocupar todo o espaço restante:
+
+```
+Command (m for help): n
+Partition number (2-128, default 2): 2
+First sector (...): [Enter]
+Last sector (...): [Enter para usar todo o espaço restante]
+
+Created a new partition 2 of type 'Linux filesystem'.
+```
+
+Rever antes de gravar com `p`:
+
+```
+Command (m for help): p
+Device        Start       End   Sectors Size Type
+/dev/sdb1      2048   4196351   4194304   2G Linux filesystem
+/dev/sdb2   4196352 209715199 205518848  98G Linux filesystem
+```
+
+Se algo estiver errado, o comando `q` sai **sem gravar nada**. Se estiver tudo correcto, o comando `w` escreve a tabela no disco:
+
+```
+Command (m for help): w
+The partition table has been altered.
+Calling ioctl() to re-read partition table.
+Syncing disks.
+```
+
+Após gravar, é útil confirmar que o kernel releu a tabela:
+
+```bash
+$ lsblk /dev/sdb
+$ sudo journalctl -k | tail -5
+```
+
+### O tipo de partição
+
+Por defeito, o `fdisk` cria partições do tipo "Linux filesystem". Para certas utilizações é necessário mudar o tipo, o que se faz com o comando `t` dentro do `fdisk`. Os tipos mais relevantes:
+
+| Tipo | Uso |
+|------|-----|
+| Linux filesystem | Partição de dados normal (por defeito) |
+| Linux swap | Espaço de swap |
+| Linux LVM | Partição que será um physical volume do LVM |
+| Linux RAID | Partição que fará parte de um array RAID |
+| EFI System | Partição ESP em sistemas UEFI |
+
+Definir o tipo correcto não é obrigatório para o funcionamento, mas é uma boa prática: ajuda as ferramentas a identificar a função de cada partição e evita erros.
+
+### Alinhamento de partições
+
+Um detalhe que já não exige intervenção manual mas que importa compreender é o **alinhamento**. Nos discos SSD, os dados são lidos em blocos de tamanho fixo (páginas de 4096 ou 8192 bytes), e a leitura tem de começar num múltiplo desse tamanho. Se uma partição começar num ponto desalinhado, operações simples podem exigir duas leituras em vez de uma, degradando o desempenho.
+
+As versões modernas das ferramentas de particionamento resolvem isto automaticamente, alinhando as partições em fronteiras de 1 MiB (o sector 2048). Este valor é um múltiplo de todos os tamanhos de página comuns, pelo que garante alinhamento óptimo sem cálculos. É por isso que o primeiro sector por defeito no `fdisk` é sempre 2048: aceitar o valor por defeito garante o alinhamento correcto.
+
+### Forçar a releitura da tabela
+
+Ocasionalmente, o kernel não relê a tabela de partições após uma alteração, normalmente porque alguma partição do disco ainda está em uso. Nesse caso, força-se a releitura:
+
+```bash
+$ sudo partprobe /dev/sdb
+# ou
+$ sudo blockdev --rereadpt /dev/sdb
+```
+
+Se mesmo assim o kernel não actualizar, a solução definitiva é reiniciar. Concluído o particionamento, as partições existem como dispositivos de bloco mas estão vazias. O passo seguinte, criar um sistema de ficheiros nelas, é o tema da secção 3.
+
+
+
+
