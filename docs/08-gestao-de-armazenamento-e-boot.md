@@ -2113,4 +2113,329 @@ Inclua `status=progress` em qualquer operação longa, para saber que está a pr
 Para operações críticas, considere primeiro fazer um ensaio com um ficheiro de destino em vez de um dispositivo, para confirmar que a lógica do comando está correcta.
  
 > **O `dd` é frequentemente apelidado de *disk destroyer* pela comunidade, meio a brincar, meio a sério.** O nome verdadeiro vem de *data duplicator*, mas a alcunha capta uma verdade: é uma das ferramentas mais úteis e mais impiedosas do Linux. Usado com atenção, resolve problemas que nenhuma outra ferramenta resolve. Usado com pressa, transforma um problema pequeno num desastre. A diferença está inteiramente na atenção de quem o executa.
- 
+
+
+## 7. NFS: Sistemas de Ficheiros em Rede
+
+## 7.1 Conceito e arquitectura
+
+Até agora, todo o armazenamento discutido neste capítulo residia em discos ligados fisicamente à máquina. Mas em qualquer infraestrutura real, é frequente ser necessário que várias máquinas partilhem os mesmos ficheiros: um directório home que acompanha o utilizador seja em que servidor faça login, uma partilha comum de documentos, um repositório central de dados acedido por vários servidores de aplicação.
+
+O **NFS** (*Network File System*) resolve este problema. Permite que um servidor partilhe directórios pela rede, e que os clientes os montem como se fossem sistemas de ficheiros locais. Para o utilizador e para as aplicações, a transparência é quase total: um directório NFS montado em `/dados` comporta-se exactamente como qualquer outro directório, e os comandos `ls`, `cd` ou `cp` funcionam sem qualquer diferença aparente.
+
+O NFS foi introduzido pela Sun Microsystems em 1984, originalmente para servir clientes sem disco próprio, mas o protocolo revelou-se bem concebido e útil como solução geral de partilha de ficheiros. Hoje é um standard aberto, documentado em RFCs, e todas as distribuições Linux o suportam. É esta a ferramenta que junta os dois temas que atravessam este guia: o armazenamento deste capítulo e a rede do Capítulo 7.
+
+### Como funciona
+
+O NFS segue um modelo cliente-servidor. Um **servidor NFS** disponibiliza (*exporta*) um ou mais directórios, definindo quais os clientes autorizados a aceder-lhes e com que permissões. Um **cliente NFS** monta esses directórios exportados num ponto de montagem local, e a partir daí acede-lhes como se fossem locais.
+
+Uma característica importante do NFS é a sua tolerância a falhas. Se o servidor NFS ficar temporariamente indisponível, os clientes podem simplesmente esperar até ele voltar, e continuar como se nada tivesse acontecido, sem perda de dados. Este comportamento depende das opções de montagem, como veremos.
+
+O NFS depende de vários componentes que trabalham em conjunto. O serviço principal é o `nfs-server`. Historicamente, o NFS dependia também do `rpcbind`, um serviço que mapeia os pedidos RPC para as portas correctas, embora o NFSv4 tenha reduzido essa dependência ao concentrar tudo numa única porta bem conhecida, a 2049, o que simplifica significativamente a configuração de firewall.
+
+### Versões do NFS
+
+Existem três versões em uso, e a distinção importa para a configuração.
+
+O **NFSv3** é a versão clássica, ainda amplamente usada. Depende de várias portas e do `rpcbind`, o que complica a configuração de firewall.
+
+O **NFSv4** é a versão moderna e recomendada. Usa uma única porta (2049), tem melhor desempenho, integra-se melhor com mecanismos de segurança como o Kerberos, e introduz o conceito de pseudo-sistema de ficheiros, que organiza todas as exportações sob uma raiz comum. Para instalações novas, é a escolha certa.
+
+---
+
+## 7.2 Configurar o servidor
+
+### Instalação
+
+Em CentOS, o servidor NFS está no pacote `nfs-utils`:
+
+```bash
+$ sudo dnf install nfs-utils -y
+
+# Activar e iniciar o serviço
+$ sudo systemctl enable --now nfs-server
+
+# Verificar o estado
+$ sudo systemctl status nfs-server
+```
+
+### Preparar o directório a exportar
+
+Primeiro, cria-se e prepara-se o directório que será partilhado:
+
+```bash
+# Criar o directório de partilha
+$ sudo mkdir -p /exports/dados
+
+# Definir dono e permissões conforme a necessidade
+$ sudo chown nobody:nobody /exports/dados
+$ sudo chmod 755 /exports/dados
+```
+
+### O ficheiro /etc/exports
+
+O coração da configuração do servidor NFS é o ficheiro `/etc/exports`. Cada linha define um directório a exportar, os clientes autorizados, e as opções que se aplicam a cada um.
+
+A estrutura de uma linha é:
+
+```
+/directorio    cliente(opções)    outro_cliente(opções)
+```
+
+Um exemplo completo:
+
+```
+# /etc/exports
+
+# Exportar para uma rede inteira, leitura e escrita
+/exports/dados        192.168.1.0/24(rw,sync,no_subtree_check)
+
+# Exportar para um cliente específico, apenas leitura
+/exports/publico      192.168.1.50(ro,sync,no_subtree_check)
+
+# Exportar para um domínio inteiro
+/exports/comum        *.empresa.pt(rw,sync,no_subtree_check)
+
+# Exportar para vários clientes com opções diferentes
+/exports/home         192.168.1.10(rw,sync) 192.168.1.11(ro,sync)
+```
+
+A forma de especificar os clientes é flexível: um endereço IP individual, uma rede em notação CIDR, um nome de host, um domínio com wildcard, ou `*` para todos (raramente aconselhável).
+
+>  **Não deve existir espaço entre o cliente e os parênteses das opções.** A diferença entre `192.168.1.0/24(rw)` e `192.168.1.0/24 (rw)` é crítica e silenciosa: no primeiro caso, a rede tem permissão de escrita; no segundo, a rede fica com as opções por defeito (só leitura) e as opções `(rw)` aplicam-se a *todos os outros clientes*. Este erro de um único espaço é uma falha de segurança clássica.
+
+### Opções de exportação
+
+As opções controlam como cada directório é exportado. As mais importantes:
+
+| Opção | Significado |
+|-------|-------------|
+| `ro` | Exportar apenas para leitura |
+| `rw` | Exportar para leitura e escrita |
+| `sync` | Confirmar escritas só depois de gravadas em disco (seguro) |
+| `async` | Confirmar escritas antes de gravar (mais rápido, menos seguro) |
+| `root_squash` | Mapear o root do cliente para um utilizador sem privilégios (defeito) |
+| `no_root_squash` | Permitir acesso de root normal (perigoso) |
+| `all_squash` | Mapear todos os utilizadores para um utilizador anónimo |
+| `subtree_check` | Verificar que cada ficheiro está dentro do subdirectório exportado |
+| `no_subtree_check` | Verificar apenas que o ficheiro está no sistema de ficheiros exportado |
+| `secure` | Exigir que o acesso venha de uma porta privilegiada (defeito) |
+
+Duas destas opções merecem atenção especial pela sua importância de segurança.
+
+O **`root_squash`** é a opção por defeito e deve manter-se assim na maioria dos casos. Sem ela, o utilizador root de um cliente teria privilégios de root sobre os ficheiros exportados, o que significa que qualquer pessoa com root numa máquina cliente teria controlo total sobre os dados partilhados. O `root_squash` "esmaga" o UID 0 do cliente, mapeando-o para um utilizador sem privilégios (`nobody`), removendo esse risco. A opção oposta, `no_root_squash`, é genuinamente perigosa e só se justifica em cenários muito específicos e controlados.
+
+O **`sync` versus `async`** é um compromisso entre segurança e desempenho. Com `sync`, o servidor só confirma uma escrita depois de os dados estarem efectivamente gravados em disco, garantindo que uma falha não perde dados que o cliente julga escritos. Com `async`, o servidor confirma imediatamente e grava depois, o que é mais rápido mas arrisca perda de dados numa falha de energia. Para dados importantes, `sync` é a escolha correcta.
+
+### Aplicar a configuração
+
+Depois de editar o `/etc/exports`, aplicam-se as alterações:
+
+```bash
+# Exportar todos os directórios definidos no /etc/exports
+$ sudo exportfs -ra
+
+# Ver as exportações activas
+$ sudo exportfs -v
+/exports/dados  192.168.1.0/24(rw,sync,no_subtree_check)
+```
+
+A opção `-r` reexporta tudo, e `-a` aplica a todos os directórios. Não é necessário reiniciar o serviço para alterações no `/etc/exports`.
+
+### Configurar o firewall
+
+Como visto no Capítulo 7, o firewall tem de permitir o tráfego NFS. Aqui a versão do NFS faz diferença.
+
+Para NFSv4, que usa apenas a porta 2049, basta:
+
+```bash
+$ sudo firewall-cmd --add-service=nfs --permanent
+$ sudo firewall-cmd --reload
+```
+
+Para NFSv3, que usa portas adicionais para os serviços auxiliares, é necessário abrir também esses serviços:
+
+```bash
+$ sudo firewall-cmd --add-service=nfs --permanent
+$ sudo firewall-cmd --add-service=rpc-bind --permanent
+$ sudo firewall-cmd --add-service=mountd --permanent
+$ sudo firewall-cmd --reload
+```
+
+Esta simplificação é uma das razões pelas quais o NFSv4 é preferível: uma única porta é muito mais fácil de gerir num firewall do que o conjunto variável de portas do NFSv3.
+
+---
+
+## 7.3 Configurar o cliente
+
+Do lado do cliente, é necessário ter as ferramentas NFS instaladas e depois montar a exportação.
+
+```bash
+# Instalar as ferramentas de cliente
+$ sudo dnf install nfs-utils -y
+```
+
+### Descobrir o que o servidor exporta
+
+Antes de montar, pode consultar-se que directórios um servidor disponibiliza:
+
+```bash
+$ showmount -e 192.168.1.100
+Export list for 192.168.1.100:
+/exports/dados    192.168.1.0/24
+/exports/publico  192.168.1.50
+```
+
+### Montar manualmente
+
+A montagem faz-se com o comando `mount`, especificando o tipo `nfs`, o servidor e o directório exportado, e o ponto de montagem local:
+
+```bash
+# Criar o ponto de montagem
+$ sudo mkdir -p /mnt/dados-rede
+
+# Montar a exportação
+$ sudo mount -t nfs 192.168.1.100:/exports/dados /mnt/dados-rede
+
+# Verificar
+$ df -h /mnt/dados-rede
+Filesystem                        Size  Used Avail Use% Mounted on
+192.168.1.100:/exports/dados       98G  1.1G   97G   2% /mnt/dados-rede
+
+$ mount | grep nfs
+192.168.1.100:/exports/dados on /mnt/dados-rede type nfs4 (rw,relatime,...)
+```
+
+A partir deste momento, `/mnt/dados-rede` acede aos ficheiros do servidor de forma transparente.
+
+Para desmontar:
+
+```bash
+$ sudo umount /mnt/dados-rede
+```
+
+---
+
+## 7.4 Montagem persistente e automount
+
+### Montagem persistente com /etc/fstab
+
+Tal como os sistemas de ficheiros locais, uma montagem NFS manual desaparece no reinício. Para a tornar permanente, acrescenta-se ao `/etc/fstab`, com uma diferença importante em relação às montagens locais:
+
+```
+# /etc/fstab
+192.168.1.100:/exports/dados  /mnt/dados-rede  nfs  _netdev,rw,soft,timeo=30  0  0
+```
+
+A opção `_netdev` é essencial e distingue as montagens de rede das locais. Diz ao systemd para esperar que a rede esteja disponível antes de tentar montar. Sem ela, o sistema tentaria montar o NFS antes de a rede estar pronta, a montagem falharia, e o arranque poderia bloquear.
+
+As opções de montagem NFS mais relevantes:
+
+| Opção | Significado |
+|-------|-------------|
+| `_netdev` | Aguardar pela rede antes de montar |
+| `rw` / `ro` | Leitura e escrita / apenas leitura |
+| `soft` | Desistir após timeout se o servidor não responder |
+| `hard` | Tentar indefinidamente até o servidor responder (defeito) |
+| `timeo=n` | Tempo de espera por resposta, em décimos de segundo |
+| `retrans=n` | Número de retransmissões antes de desistir |
+| `noatime` | Não actualizar datas de acesso (melhora desempenho) |
+
+A escolha entre `hard` e `soft` é um compromisso importante. Com `hard`, se o servidor NFS ficar indisponível, os processos que acedem à montagem ficam bloqueados indefinidamente à espera, mas não perdem dados: quando o servidor volta, continuam de onde estavam. Com `soft`, os processos recebem um erro após o timeout, o que evita o bloqueio mas pode causar perda de dados ou erros na aplicação. Para dados importantes, `hard` é mais seguro; para montagens onde a disponibilidade importa mais que a integridade, `soft` evita que uma falha do servidor congele os clientes.
+
+>  **Uma montagem NFS `hard` de um servidor inacessível pode congelar o cliente.** Como visto no Capítulo 5, um processo à espera de I/O de uma montagem NFS `hard` entra em estado de *uninterruptible sleep* (`D`), do qual não pode ser retirado nem com `kill -9`. Se o servidor não voltar, a única saída pode ser reiniciar o cliente. É por isso que a fiabilidade do servidor NFS e da rede entre eles é tão importante.
+
+Validar sempre antes de reiniciar, como para qualquer entrada no fstab:
+
+```bash
+$ sudo mount -a
+```
+
+### Automount
+
+A montagem permanente via `/etc/fstab` tem uma desvantagem: a montagem está sempre activa, mesmo quando ninguém a usa, e se o servidor estiver em baixo no arranque pode causar problemas. O **automount** resolve isto montando o directório NFS apenas quando alguém efectivamente lhe acede, e desmontando-o automaticamente após um período de inactividade.
+
+Isto é particularmente útil para directórios home partilhados: em vez de montar os homes de todos os utilizadores em todos os servidores permanentemente, cada home é montado apenas quando o respectivo utilizador faz login.
+
+```bash
+# Instalar o autofs
+$ sudo dnf install autofs -y
+```
+
+A configuração faz-se em dois ficheiros. O ficheiro mestre `/etc/auto.master` define o directório base e o mapa a usar:
+
+```
+# /etc/auto.master
+/mnt/rede    /etc/auto.dados    --timeout=60
+```
+
+E o mapa `/etc/auto.dados` define o que montar em cada subdirectório:
+
+```
+# /etc/auto.dados
+dados    -rw,soft    192.168.1.100:/exports/dados
+publico  -ro,soft    192.168.1.100:/exports/publico
+```
+
+Com esta configuração, aceder a `/mnt/rede/dados` monta automaticamente a exportação; após 60 segundos sem uso, é desmontada.
+
+```bash
+$ sudo systemctl enable --now autofs
+
+# Aceder ao directório monta-o automaticamente
+$ ls /mnt/rede/dados
+```
+
+---
+
+## 7.5 Segurança
+
+O NFS foi concebido numa época em que as redes eram consideradas ambientes de confiança, e o seu modelo de segurança reflecte essa origem. Um administrador precisa de compreender as suas limitações.
+
+### O modelo de confiança do NFS tradicional
+
+Na sua forma clássica, o NFS confia no cliente para se identificar correctamente. A autorização baseia-se no endereço IP do cliente e nos UIDs que ele reporta. Isto tem implicações importantes.
+
+Os **UIDs têm de coincidir entre servidor e cliente.** Se o utilizador `carlos` tem UID 1001 no servidor mas UID 1005 num cliente, ao aceder aos ficheiros via NFS ele terá as permissões do UID 1005 no servidor, que podem pertencer a outra pessoa. Este é precisamente o problema que a autenticação centralizada com LDAP, vista no Capítulo 7, resolve: com LDAP, todos os sistemas partilham os mesmos UIDs, e o NFS funciona coerentemente.
+
+O **acesso baseia-se no IP**, que pode ser forjado. Um atacante que consiga assumir o endereço IP de um cliente autorizado ganha acesso às exportações.
+
+### Boas práticas de segurança
+
+Dado este modelo, algumas práticas reduzem o risco:
+
+**Manter o `root_squash` activo**, como discutido. Nunca usar `no_root_squash` a não ser que haja uma razão específica e o cliente seja completamente confiável.
+
+**Exportar apenas para os clientes específicos que precisam**, usando endereços IP ou redes concretas em vez de `*`. Quanto mais restrita a lista de clientes, menor a superfície de ataque.
+
+**Exportar em modo `ro` sempre que a escrita não for necessária.** Um directório que só precisa de ser lido não deve ser exportado com `rw`.
+
+**Restringir o acesso no firewall** à rede de gestão ou às sub-redes que legitimamente precisam do NFS, em vez de o deixar acessível a toda a rede.
+
+**Nunca expor NFS à internet.** O NFS tradicional não tem cifragem nem autenticação forte, e expô-lo publicamente é um risco grave. Para partilha de ficheiros pela internet, existem alternativas concebidas para o efeito.
+
+### NFSv4 e Kerberos
+
+Para ambientes que exigem segurança forte, o NFSv4 suporta autenticação Kerberos, que resolve as fraquezas do modelo tradicional. Com Kerberos, a identidade é verificada criptograficamente em vez de assente no IP, e o tráfego pode ser cifrado. As opções de exportação correspondentes são `sec=krb5` (autenticação), `sec=krb5i` (autenticação e integridade) e `sec=krb5p` (autenticação, integridade e privacidade, ou seja, cifragem completa).
+
+Configurar Kerberos está para além do âmbito deste guia, mas é importante saber que existe: quando a partilha de ficheiros envolve dados sensíveis ou redes não confiáveis, o NFS tradicional não é suficiente, e o NFSv4 com Kerberos é a resposta adequada.
+
+### Diagnóstico
+
+```bash
+# Ver as exportações activas no servidor
+$ sudo exportfs -v
+
+# Ver o que um servidor exporta, a partir do cliente
+$ showmount -e 192.168.1.100
+
+# Ver as montagens NFS activas
+$ mount -t nfs4
+$ nfsstat -m
+
+# Estatísticas de operação do NFS
+$ nfsstat
+
+# Ver os clientes actualmente ligados ao servidor
+$ sudo ss -tnp | grep :2049
+```
