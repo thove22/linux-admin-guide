@@ -3,7 +3,6 @@
 ## 1. O Arranque do Sistema
 
 ### 1.1 Da alimentação ao prompt
-
 Ligar um computador é um problema circular. Para carregar o sistema operativo do disco é preciso saber ler o disco, mas o código que sabe ler discos faz parte do sistema operativo que ainda não foi carregado. O sistema tem de se erguer pelos seus próprios atacadores, e é daí que vem o termo **bootstrapping**, hoje abreviado para *boot*.
 
 A solução é uma cadeia de entregas sucessivas. Cada etapa tem apenas o conhecimento suficiente para localizar, carregar e ceder controlo à etapa seguinte, que é mais capaz do que ela. O firmware sabe ler alguns sectores do disco. Esses sectores contêm um gestor de arranque que sabe ler sistemas de ficheiros. O gestor de arranque carrega o kernel. O kernel monta o sistema de ficheiros raiz e arranca o primeiro processo de espaço de utilizador. Esse processo arranca tudo o resto.
@@ -1027,6 +1026,373 @@ $ sudo blockdev --rereadpt /dev/sdb
 
 Se mesmo assim o kernel não actualizar, a solução definitiva é reiniciar. Concluído o particionamento, as partições existem como dispositivos de bloco mas estão vazias. O passo seguinte, criar um sistema de ficheiros nelas, é o tema da secção 3.
 
+## 3. Sistemas de Ficheiros, Montagem e Swap
 
+Uma partição, por si só, não guarda ficheiros. É apenas um intervalo de blocos brutos no disco. Para que possa conter a hierarquia de ficheiros e directórios com que trabalhamos, é preciso instalar nela um **sistema de ficheiros**: a estrutura de dados que organiza os blocos, regista onde cada ficheiro começa e acaba, guarda as permissões, os donos e as datas, e mantém a árvore de directórios.
+
+Esta secção cobre o ciclo completo: criar o sistema de ficheiros na partição, montá-lo para o tornar acessível, garantir que essa montagem persiste após reinícios, verificá-lo e repará-lo quando algo corre mal, e gerir o espaço de swap.
+
+---
+
+## 3.1 Criar sistemas de ficheiros: mkfs
+
+### Escolher o sistema de ficheiros
+
+O Linux suporta muitos sistemas de ficheiros, mas para a esmagadora maioria dos casos a escolha certa é o valor por defeito da distribuição. As ferramentas administrativas e a documentação assumem esse valor, e qualquer ganho de mudar para outro é marginal e dependente do contexto. Apenas três características são verdadeiramente não negociáveis: bom desempenho, tolerância a falhas e cortes de energia sem corrupção, e capacidade para discos e ficheiros do tamanho necessário. Os sistemas de ficheiros modernos por defeito já cobrem estas bases.
+
+Vale a pena conhecer os principais:
+
+**XFS** é o sistema de ficheiros por defeito no CentOS, RHEL e derivados desde o RHEL 7. É de alto desempenho, especialmente com ficheiros grandes e operações paralelas, e escala bem para volumes muito grandes. É o sistema de ficheiros com que se trabalha por defeito neste guia.
+
+**ext4** é o padrão histórico do Linux e continua a ser o valor por defeito em distribuições como o Ubuntu. É a quarta iteração de uma linhagem que começou no ext2. O **ext3** acrescentou ao ext2 a funcionalidade de **journaling**, e o **ext4** acrescentou suporte para ficheiros maiores e para *extents*, que são intervalos contíguos de blocos em vez de blocos individuais.
+
+**Btrfs** é um sistema de ficheiros mais recente, desenhado para escalar para além do ext4, com funcionalidades avançadas como snapshots ao nível do sistema de ficheiros.
+
+**vfat** e **exfat** são os sistemas de ficheiros da Microsoft, usados por defeito na maioria dos suportes amovíveis como cartões SD e pens USB, precisamente por serem legíveis em praticamente todos os sistemas operativos.
+
+### O conceito de journaling
+
+O **journaling** é uma das razões pelas quais os sistemas de ficheiros modernos raramente corrompem após uma falha, e vale a pena compreender o mecanismo.
+
+Sem journal, quando uma operação de escrita é interrompida a meio, por corte de energia por exemplo, o sistema de ficheiros pode ficar num estado inconsistente: um ficheiro que foi parcialmente escrito, uma entrada de directório que aponta para dados que nunca chegaram a ser gravados. Detectar e reparar estas inconsistências exigia percorrer toda a estrutura do disco, o que podia demorar horas.
+
+Um sistema de ficheiros com journal reserva uma área onde regista o que vai fazer **antes** de o fazer. A operação é primeiro escrita no journal, depois é marcada como concluída com um registo de commit, e só então o sistema de ficheiros real é modificado. Se uma falha ocorrer a meio, o sistema recupera consultando o journal: refaz as operações que tinham commit e descarta as que não tinham. A verificação passa de horas para cerca de um segundo por sistema de ficheiros.
+
+### Estruturas fundamentais
+
+Independentemente do tipo, os sistemas de ficheiros partilham alguns conceitos herdados da tradição UNIX.
+
+O **inode** é uma entrada de tabela que guarda toda a informação sobre um ficheiro, excepto o nome: permissões, dono, grupo, datas, tamanho, e a localização dos blocos de dados. O nome do ficheiro está guardado na entrada de directório, que aponta para o inode. É por isso que uma hard link não cria um novo inode: cria apenas uma nova entrada de directório que aponta para o inode existente. Cada inode tem um número, visível com `ls -i`.
+
+O **superbloco** é o registo que descreve as características do próprio sistema de ficheiros: o tamanho dos blocos, a localização das tabelas de inodes, o mapa de blocos livres. É informação tão crítica que o `mkfs` cria várias cópias de segurança espalhadas pelo disco, para o caso de a original ser danificada.
+
+### O comando mkfs
+
+O `mkfs` (*make filesystem*) cria um sistema de ficheiros numa partição. A forma geral especifica o tipo e o dispositivo:
+
+```bash
+# Criar um sistema de ficheiros XFS (padrão no CentOS)
+$ sudo mkfs -t xfs /dev/sdb1
+
+# Criar um sistema de ficheiros ext4
+$ sudo mkfs -t ext4 /dev/sdb1
+
+# Sintaxe alternativa com o comando específico
+$ sudo mkfs.xfs /dev/sdb1
+$ sudo mkfs.ext4 /dev/sdb1
+```
+
+Na prática, o `mkfs` é apenas um invólucro que chama o programa específico de cada sistema de ficheiros. Quando se corre `mkfs -t xfs`, o que executa é o `mkfs.xfs`. Para o XFS, este por sua vez é o `mkfs.xfs`; para o ext4, é uma ligação para o `mke2fs`.
+
+O `mkfs` determina automaticamente o número de blocos do dispositivo e define valores por defeito razoáveis. A não ser que se saiba exactamente o que se está a fazer, esses valores não devem ser alterados.
+
+> **Criar um sistema de ficheiros destrói todos os dados existentes na partição.** O `mkfs` deve ser executado apenas uma vez por partição nova, ou quando se quer deliberadamente apagar o conteúdo. Correr `mkfs` sobre um sistema de ficheiros existente apaga irreversivelmente os dados que lá estavam. Confirme sempre o nome do dispositivo antes de premir Enter.
+
+---
+
+## 3.2 Montar e desmontar
+
+Criar o sistema de ficheiros não o torna acessível. Para que os processos o possam usar, tem de ser **montado**: ligado a um directório da hierarquia do sistema, chamado **ponto de montagem**.
+
+O ponto de montagem é um directório normal. Depois de um sistema de ficheiros ser montado sobre ele, o conteúdo original desse directório fica oculto e é substituído pelo conteúdo do sistema de ficheiros montado. Por convenção, `/mnt` é usado para montagens temporárias e `/media` para suportes amovíveis, mas o ponto de montagem pode ser qualquer directório.
+
+### Montar
+
+```bash
+# Criar o directório que servirá de ponto de montagem
+$ sudo mkdir /mnt/dados
+
+# Montar a partição nesse ponto
+$ sudo mount /dev/sdb1 /mnt/dados
+
+# O tipo é normalmente detectado automaticamente, mas pode ser especificado
+$ sudo mount -t xfs /dev/sdb1 /mnt/dados
+```
+
+Após a montagem, tudo o que for escrito em `/mnt/dados` é gravado na partição `/dev/sdb1`.
+
+### Ver o que está montado
+
+```bash
+# Listar todos os sistemas de ficheiros montados
+$ mount
+
+# Versão mais legível, em árvore
+$ findmnt
+
+# Ver o espaço usado e disponível
+$ df -h
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/mapper/cs-root    44G  8.2G   36G  19% /
+/dev/sda2            1014M  247M  768M  25% /boot
+/dev/sdb1              98G  1.1G   97G   2% /mnt/dados
+```
+
+O comando `df -h` (*disk free*, com a opção `-h` de *human-readable*) é a forma habitual de verificar o espaço. Cada linha mostra o tamanho total, o usado, o disponível, a percentagem de utilização e o ponto de montagem.
+
+### Desmontar
+
+```bash
+# Desmontar pelo ponto de montagem
+$ sudo umount /mnt/dados
+
+# Ou pelo dispositivo
+$ sudo umount /dev/sdb1
+```
+
+Note-se que o comando é `umount`, sem o "n", uma peculiaridade histórica do UNIX.
+
+> **Não se pode desmontar um sistema de ficheiros que esteja em uso.** Se algum processo tiver um ficheiro aberto nesse sistema de ficheiros, ou se a shell actual estiver dentro dele, o `umount` falha com "target is busy". Para descobrir o que está a usar o sistema de ficheiros:
+
+```bash
+# Ver que processos estão a usar o ponto de montagem
+$ sudo lsof /mnt/dados
+$ sudo fuser -m /mnt/dados
+
+# Sair do directório se for esse o problema
+$ cd /
+```
+
+---
+
+## 3.3 UUIDs e montagem persistente com /etc/fstab
+
+### O problema dos nomes de dispositivo
+
+As montagens feitas com o comando `mount` são temporárias: desaparecem no reinício. Para que um sistema de ficheiros seja montado automaticamente no arranque, tem de ser registado no ficheiro `/etc/fstab`.
+
+Mas há um problema, já antecipado na secção 2. Os nomes de dispositivo como `/dev/sdb1` não são estáveis. Dependem da ordem pela qual o kernel detecta os discos, e essa ordem pode mudar quando se acrescenta ou remove hardware. Uma entrada em `/etc/fstab` que referencie `/dev/sdb1` pode, após adicionar um disco novo, passar a montar o disco errado, ou falhar por completo, impedindo o arranque do sistema.
+
+A solução é identificar os sistemas de ficheiros pelo seu **UUID** (*Universally Unique Identifier*), um número de série único gerado no momento da criação do sistema de ficheiros. Ao contrário do nome do dispositivo, o UUID acompanha o sistema de ficheiros independentemente da ordem de detecção.
+
+```bash
+# Ver os UUIDs de todos os sistemas de ficheiros
+$ sudo blkid
+/dev/sda2: UUID="a1b2c3d4-..." TYPE="xfs"
+/dev/sdb1: UUID="f5e6d7c8-9012-3456-abcd-ef1234567890" TYPE="xfs"
+```
+
+### A estrutura do /etc/fstab
+
+O ficheiro `/etc/fstab` (*filesystem table*) tem uma linha por sistema de ficheiros, com seis campos:
+
+```
+# <dispositivo>              <ponto montagem>  <tipo>  <opções>       <dump> <fsck>
+UUID=a1b2c3d4-...            /                 xfs     defaults        0      0
+UUID=e5f6g7h8-...            /boot             xfs     defaults        0      0
+UUID=f5e6d7c8-...            /mnt/dados        xfs     defaults        0      0
+/dev/mapper/cs-swap         swap              swap    defaults        0      0
+```
+
+O significado de cada campo:
+
+| Campo | Função |
+|-------|--------|
+| Dispositivo | O que montar, identificado por UUID (preferível), LABEL ou nome |
+| Ponto de montagem | Onde montar. Para swap, usa-se a palavra `swap` |
+| Tipo | O sistema de ficheiros: `xfs`, `ext4`, `swap`, `nfs` |
+| Opções | Opções de montagem separadas por vírgulas |
+| Dump | Usado por ferramentas de backup antigas. Normalmente `0` |
+| fsck | Ordem de verificação no arranque. `1` para a raiz, `2` para as outras, `0` para não verificar |
+
+O último campo, a ordem de `fsck`, determina que sistemas de ficheiros são verificados no arranque e por que ordem. A raiz leva `1` para ser verificada primeiro; os restantes sistemas de ficheiros locais levam `2`; e sistemas de ficheiros que não devem ser verificados, como swap ou montagens de rede, levam `0`.
+
+### Opções de montagem comuns
+
+O campo de opções controla como o sistema de ficheiros é montado:
+
+| Opção | Efeito |
+|-------|--------|
+| `defaults` | Conjunto padrão razoável (rw, suid, dev, exec, auto, async) |
+| `ro` / `rw` | Montar em leitura apenas / leitura e escrita |
+| `noatime` | Não actualizar a data de último acesso (melhora o desempenho) |
+| `nofail` | Não impedir o arranque se o dispositivo não existir |
+| `noexec` | Impedir a execução de binários a partir deste sistema de ficheiros |
+| `nosuid` | Ignorar bits setuid e setgid |
+| `_netdev` | Aguardar pela rede antes de montar (para sistemas de ficheiros de rede) |
+
+A opção `nofail` merece destaque para discos secundários e amovíveis: sem ela, se o disco não estiver presente no arranque, o systemd espera indefinidamente e o sistema não arranca. Com ela, o arranque prossegue mesmo que o disco falte.
+
+### Adicionar uma entrada permanente
+
+O procedimento completo para tornar uma montagem permanente:
+
+```bash
+# 1. Obter o UUID do sistema de ficheiros
+$ sudo blkid /dev/sdb1
+/dev/sdb1: UUID="f5e6d7c8-9012-3456-abcd-ef1234567890" TYPE="xfs"
+
+# 2. Criar o ponto de montagem
+$ sudo mkdir -p /mnt/dados
+
+# 3. Acrescentar a linha ao /etc/fstab
+$ echo 'UUID=f5e6d7c8-9012-3456-abcd-ef1234567890 /mnt/dados xfs defaults 0 2' | sudo tee -a /etc/fstab
+
+# 4. Validar a configuração SEM reiniciar
+$ sudo mount -a
+```
+
+> **Valide sempre o /etc/fstab com `mount -a` antes de reiniciar.** Como visto na secção 1, um erro no fstab é uma das formas mais fáceis de impedir o arranque de um servidor. O comando `mount -a` tenta montar todas as entradas do fstab que ainda não estão montadas. Se não devolver erros, o arranque também não terá problemas de montagem. Se devolver, corrija antes de reiniciar, enquanto ainda tem acesso ao sistema.
+
+---
+
+## 3.4 Verificação e reparação: fsck e xfs_repair
+
+Sistemas de ficheiros podem tornar-se inconsistentes após falhas de energia, problemas de hardware ou erros do kernel. As ferramentas de verificação detectam e reparam estas inconsistências, mas a ferramenta correcta depende do tipo de sistema de ficheiros, e este é um ponto onde muitos administradores tropeçam.
+
+### fsck para a família ext
+
+O `fsck` (*filesystem check*) é a ferramenta tradicional, e funciona para os sistemas de ficheiros da família ext (ext2, ext3, ext4).
+
+```bash
+# O sistema de ficheiros TEM de estar desmontado
+$ sudo umount /dev/sdb1
+
+# Verificar e reparar interactivamente
+$ sudo fsck /dev/sdb1
+
+# Reparar automaticamente sem perguntar (responder sim a tudo)
+$ sudo fsck -y /dev/sdb1
+
+# Forçar verificação mesmo que o sistema pareça limpo
+$ sudo fsck -f /dev/sdb1
+```
+
+> **Nunca corra `fsck` num sistema de ficheiros montado em modo de escrita.** Fazê-lo pode corromper irreversivelmente o sistema de ficheiros, porque o `fsck` assume que tem controlo exclusivo sobre a estrutura. Desmonte sempre primeiro, ou use o modo de recuperação visto na secção 1 para verificar a própria raiz.
+
+Quando o `fsck` encontra ficheiros cujo directório pai não consegue determinar, coloca-os no directório `lost+found` na raiz de cada sistema de ficheiros. Como o nome do ficheiro estava guardado apenas no directório pai perdido, estes ficheiros recebem o número do inode como nome. O inode preserva o UID do dono, o que facilita devolvê-los. **Este directório não deve ser apagado.**
+
+### xfs_repair para XFS
+
+Aqui está o ponto crítico que a documentação genérica frequentemente ignora: **o `fsck` não repara sistemas de ficheiros XFS.** Como o CentOS usa XFS por defeito, esta é a situação que um administrador de CentOS efectivamente enfrenta.
+
+Se correr `fsck` num sistema de ficheiros XFS, ele não faz praticamente nada: existe um `fsck.xfs` mas é essencialmente um programa vazio que retorna sucesso sem verificar nada. A verificação real do XFS acontece automaticamente quando o sistema de ficheiros é montado, através da recuperação do seu journal interno. Para reparação manual, a ferramenta é o `xfs_repair`.
+
+```bash
+# O sistema de ficheiros TEM de estar desmontado
+$ sudo umount /dev/sdb1
+
+# Verificar sem reparar (dry run)
+$ sudo xfs_repair -n /dev/sdb1
+
+# Reparar
+$ sudo xfs_repair /dev/sdb1
+```
+
+Existe uma diferença importante no fluxo de trabalho do XFS. Se o journal do XFS estiver "sujo" (com transações não concluídas de uma falha), o `xfs_repair` recusa-se a prosseguir e pede que o sistema de ficheiros seja primeiro montado e desmontado para o journal ser reproduzido:
+
+```bash
+# Deixar o journal ser reproduzido montando e desmontando
+$ sudo mount /dev/sdb1 /mnt/dados
+$ sudo umount /dev/sdb1
+
+# Agora o xfs_repair pode prosseguir
+$ sudo xfs_repair /dev/sdb1
+```
+
+Em último recurso, quando o journal está tão danificado que impede a montagem, pode forçar-se o `xfs_repair` a descartá-lo com a opção `-L`. Isto deve ser usado apenas como último recurso, porque descartar o journal pode significar perder as transações que ele continha:
+
+```bash
+$ sudo xfs_repair -L /dev/sdb1
+```
+
+### Resumo: que ferramenta usar
+
+| Sistema de ficheiros | Ferramenta de reparação |
+|---------------------|------------------------|
+| ext2, ext3, ext4 | `fsck` ou `e2fsck` |
+| XFS | `xfs_repair` |
+| Btrfs | `btrfs check` |
+| vfat/exfat | `fsck.vfat` / `fsck.exfat` |
+
+A regra prática para o CentOS: para a raiz e restantes sistemas de ficheiros, que são XFS, a ferramenta é o `xfs_repair`. O `fsck` só é relevante se existirem partições ext no sistema.
+
+---
+
+## 3.5 Gestão de swap
+
+### O que é o swap
+
+O **swap** é espaço em disco usado como extensão da memória RAM. Quando a memória física escasseia, o kernel move páginas de memória menos usadas para o swap, libertando RAM para o que está activo. Ao contrário de um sistema de ficheiros, o swap não guarda ficheiros: o kernel mantém o seu próprio mapeamento simplificado entre páginas de memória e blocos de swap.
+
+O swap pode residir numa partição dedicada ou num ficheiro. A partição dedicada é ligeiramente mais eficiente e é a abordagem tradicional; o ficheiro de swap é mais flexível e útil quando é preciso acrescentar swap rapidamente sem reparticionar.
+
+Sobre a quantidade de swap, a regra tradicional é uma quantidade igual à RAM para sistemas com pouca memória, reduzindo a proporção à medida que a RAM aumenta. Foi esta a lógica por trás da decisão tomada no Capítulo 2, onde se atribuíram 4 GiB de swap a uma máquina com 4 GiB de RAM. Convém lembrar, no entanto, que a melhor opção de todas é não precisar de swap: se um sistema recorre constantemente ao swap, a solução real é acrescentar RAM, porque o disco é ordens de grandeza mais lento que a memória.
+
+### Criar swap numa partição
+
+O processo tem um paralelo directo com a criação de um sistema de ficheiros: onde se usa `mkfs` e `mount`, usa-se `mkswap` e `swapon`.
+
+```bash
+# 1. Marcar o tipo de partição como swap no fdisk (comando t, tipo "Linux swap")
+
+# 2. Inicializar a partição como swap
+$ sudo mkswap /dev/sdb2
+Setting up swapspace version 1, size = 4 GiB
+UUID=1a2b3c4d-...
+
+# 3. Activar o swap
+$ sudo swapon /dev/sdb2
+
+# 4. Verificar
+$ sudo swapon --show
+NAME       TYPE      SIZE USED PRIO
+/dev/sdb2  partition   4G   0B   -2
+
+$ free -h
+              total        used        free      shared  buff/cache   available
+Mem:          3.7Gi       1.2Gi       1.8Gi       12Mi       700Mi       2.3Gi
+Swap:         4.0Gi          0B       4.0Gi
+```
+
+### Criar swap num ficheiro
+
+Quando não há partição disponível, um ficheiro de swap resolve o problema:
+
+```bash
+# 1. Criar o ficheiro (4 GiB neste exemplo)
+$ sudo dd if=/dev/zero of=/swapfile bs=1M count=4096
+# ou, mais rápido:
+$ sudo fallocate -l 4G /swapfile
+
+# 2. Definir permissões restritas (obrigatório)
+$ sudo chmod 600 /swapfile
+
+# 3. Inicializar como swap
+$ sudo mkswap /swapfile
+
+# 4. Activar
+$ sudo swapon /swapfile
+```
+
+As permissões `600` são obrigatórias: o `mkswap` recusa-se a usar um ficheiro de swap legível por outros utilizadores, porque conteria dados de memória potencialmente sensíveis.
+
+### Tornar o swap permanente
+
+Tal como os sistemas de ficheiros, o swap tem de ser registado no `/etc/fstab` para ser activado no arranque:
+
+```
+# Swap em partição, por UUID
+UUID=1a2b3c4d-...    swap    swap    defaults    0    0
+
+# Swap em ficheiro
+/swapfile            swap    swap    defaults    0    0
+```
+
+Após acrescentar a entrada, activar tudo sem reiniciar:
+
+```bash
+$ sudo swapon -a
+```
+
+### Desactivar swap
+
+```bash
+# Desactivar um swap específico
+$ sudo swapoff /dev/sdb2
+
+# Desactivar todo o swap
+$ sudo swapoff -a
+```
 
 
