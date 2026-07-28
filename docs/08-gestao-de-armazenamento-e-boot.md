@@ -1394,5 +1394,301 @@ $ sudo swapoff /dev/sdb2
 # Desactivar todo o swap
 $ sudo swapoff -a
 ```
+---
 
+## 4. LVM: Gestão de Volumes Lógicos
+
+## 4.1 O problema que o LVM resolve
+
+Imagine-se o seguinte cenário, familiar a qualquer administrador. Cria-se uma partição de 50 GB para uma aplicação, calculando generosamente. Seis meses depois, descobre-se que a aplicação usa apenas 10 GB, mas a partição ao lado, que guarda os dados dos utilizadores, está cheia. Com particionamento tradicional, não há saída fácil: as fronteiras das partições estão fixas no disco, e redimensioná-las é uma operação arriscada que frequentemente exige apagar e recriar.
+
+O **LVM** (*Logical Volume Manager*) resolve este problema introduzindo uma camada de abstracção entre os discos físicos e os sistemas de ficheiros. Em vez de criar sistemas de ficheiros directamente sobre partições rígidas, o LVM agrupa o espaço de armazenamento num reservatório flexível de onde se aloca conforme a necessidade, e essa alocação pode ser ajustada dinamicamente, muitas vezes sem sequer desmontar o sistema de ficheiros.
+
+Foi esta flexibilidade que justificou a escolha do LVM na instalação do Capítulo 2. As operações que o LVM torna possíveis incluem redimensionar volumes a quente, mover volumes entre discos físicos sem interrupção, tirar snapshots, e agregar vários discos num único espaço contínuo.
+
+---
+
+## 4.2 Arquitectura: PV, VG e LV
+
+O LVM organiza-se em três camadas, e compreender a relação entre elas é a chave para tudo o resto.
+
+O **PV** (*Physical Volume*) é a base. É um disco ou partição que recebeu uma etiqueta LVM, tornando-o utilizável pelo sistema. Um PV pode ser um disco inteiro, uma partição, ou até um array RAID.
+
+O **VG** (*Volume Group*) é o reservatório. Agrupa um ou mais PVs num único conjunto de espaço. É como juntar vários baldes de água num único tanque: deixa de importar de que balde veio cada litro. O espaço total do VG é a soma do espaço de todos os PVs que o compõem.
+
+O **LV** (*Logical Volume*) é o que se usa. É uma fatia alocada a partir do VG, que se comporta como uma partição: cria-se nele um sistema de ficheiros e monta-se. Mas ao contrário de uma partição, um LV pode ser redimensionado, movido e duplicado com facilidade.
+
+A relação lê-se de baixo para cima: vários discos físicos tornam-se PVs, os PVs juntam-se num VG, e do VG cortam-se os LVs que efectivamente se usam.
+
+```
+Discos/partições físicas   →   PV   →   VG   →   LV   →   sistema de ficheiros
+   /dev/sdb, /dev/sdc         (etiqueta) (reservatório) (fatia)      (xfs, ext4)
+```
+
+Uma nota sobre nomenclatura. Os comandos do LVM começam com um prefixo que indica a camada em que operam: comandos `pv*` manipulam physical volumes, comandos `vg*` manipulam volume groups, e comandos `lv*` manipulam logical volumes. Saber isto torna os dezenas de comandos do LVM imediatamente legíveis.
+
+O VG é subdividido internamente em unidades de alocação chamadas **PE** (*Physical Extents*), tipicamente de 4 MiB. Um LV é na prática um conjunto de PEs. Este detalhe raramente exige atenção directa, mas aparece no output dos comandos de diagnóstico.
+
+---
+
+## 4.3 Construir uma configuração LVM do zero
+
+O exemplo seguinte constrói uma configuração LVM completa a partir de dois discos novos, `/dev/sdb` e `/dev/sdc`, criando um volume group que os agrega e um volume lógico para dados.
+
+### Passo 1: criar os physical volumes
+
+```bash
+# Etiquetar os discos como PVs
+$ sudo pvcreate /dev/sdb /dev/sdc
+  Physical volume "/dev/sdb" successfully created.
+  Physical volume "/dev/sdc" successfully created.
+
+# Verificar
+$ sudo pvs
+  PV         VG   Fmt  Attr PSize    PFree
+  /dev/sdb        lvm2 ---  100.00g 100.00g
+  /dev/sdc        lvm2 ---  100.00g 100.00g
+
+# Ver detalhe completo
+$ sudo pvdisplay
+```
+
+Note-se que se usaram os discos inteiros. Também é possível criar PVs sobre partições (`/dev/sdb1`), o que é preferível quando o disco tem outras utilizações, mas para discos dedicados ao LVM usar o disco inteiro é comum.
+
+### Passo 2: criar o volume group
+
+```bash
+# Criar um VG chamado "dados_vg" agregando os dois PVs
+$ sudo vgcreate dados_vg /dev/sdb /dev/sdc
+  Volume group "dados_vg" successfully created
+
+# Verificar
+$ sudo vgs
+  VG        #PV #LV #SN Attr   VSize   VFree
+  dados_vg    2   0   0 wz--n- 199.99g 199.99g
+
+# Ver detalhe completo
+$ sudo vgdisplay dados_vg
+```
+
+O VG `dados_vg` tem agora praticamente 200 GB, a soma dos dois discos, disponíveis como um único reservatório.
+
+### Passo 3: criar o volume lógico
+
+```bash
+# Criar um LV de 50 GB chamado "web"
+$ sudo lvcreate -L 50G -n web dados_vg
+  Logical volume "web" created.
+
+# Criar um LV que use todo o espaço livre restante
+$ sudo lvcreate -l 100%FREE -n arquivo dados_vg
+
+# Verificar
+$ sudo lvs
+  LV       VG        Attr       LSize
+  web      dados_vg  -wi-a-----  50.00g
+  arquivo  dados_vg  -wi-a----- 149.99g
+```
+
+A opção `-L` especifica um tamanho absoluto; a opção `-l 100%FREE` usa todo o espaço disponível. O LV fica acessível através de um dispositivo em `/dev/dados_vg/web` ou, equivalentemente, `/dev/mapper/dados_vg-web`.
+
+### Passo 4: criar o sistema de ficheiros e montar
+
+A partir daqui, o LV comporta-se como uma partição normal:
+
+```bash
+# Criar o sistema de ficheiros
+$ sudo mkfs -t xfs /dev/dados_vg/web
+
+# Montar
+$ sudo mkdir -p /mnt/web
+$ sudo mount /dev/dados_vg/web /mnt/web
+```
+
+Para tornar a montagem permanente, acrescenta-se ao `/etc/fstab` usando o UUID, exactamente como na secção 3:
+
+```bash
+$ sudo blkid /dev/dados_vg/web
+# Acrescentar a linha correspondente ao fstab
+```
+
+---
+
+## 4.4 Expandir volumes a quente
+
+A funcionalidade mais valiosa do LVM no dia-a-dia é a capacidade de aumentar um volume que está a ficar cheio, frequentemente sem sequer o desmontar. É a resposta directa ao problema que abriu esta secção.
+
+Suponha-se que `/mnt/web` está a ficar sem espaço e precisa de mais 30 GB.
+
+### Passo 1: confirmar que há espaço no VG
+
+```bash
+$ sudo vgs
+  VG        #PV #LV #SN Attr   VSize   VFree
+  dados_vg    2   2   0 wz--n- 199.99g  99.99g
+```
+
+Há praticamente 100 GB livres no VG, mais que suficiente.
+
+### Passo 2: aumentar o volume lógico
+
+```bash
+# Acrescentar 30 GB ao LV
+$ sudo lvextend -L +30G /dev/dados_vg/web
+  Size of logical volume dados_vg/web changed from 50.00 GiB to 80.00 GiB.
+  Logical volume dados_vg/web successfully resized.
+```
+
+A opção `-L +30G` acrescenta 30 GB ao tamanho actual. Também se pode usar `-l +100%FREE` para consumir todo o espaço livre do VG.
+
+### Passo 3: aumentar o sistema de ficheiros
+
+Aumentar o LV apenas alarga o contentor. O sistema de ficheiros dentro dele continua com o tamanho antigo e tem de ser expandido separadamente. Aqui, o comando depende do tipo de sistema de ficheiros.
+
+Para **XFS** (o padrão do CentOS), usa-se o `xfs_growfs`, e crucialmente, **o sistema de ficheiros tem de estar montado**:
+
+```bash
+# O XFS cresce montado; recebe o ponto de montagem, não o dispositivo
+$ sudo xfs_growfs /mnt/web
+```
+
+Para **ext4**, usa-se o `resize2fs`:
+
+```bash
+$ sudo resize2fs /dev/dados_vg/web
+```
+
+Esta é uma diferença conceptual importante entre os dois sistemas de ficheiros: o XFS só pode crescer montado e nunca pode encolher; o ext4 pode ser redimensionado em ambas as direcções, mas encolher exige que esteja desmontado.
+
+Confirmar o resultado:
+
+```bash
+$ df -h /mnt/web
+Filesystem                  Size  Used Avail Use% Mounted on
+/dev/mapper/dados_vg-web     80G  1.1G   79G   2% /mnt/web
+```
+
+Todo este processo, do `lvextend` ao `xfs_growfs`, aconteceu com o sistema de ficheiros montado e em uso. Nenhuma interrupção de serviço, nenhum reinício. É esta a promessa do LVM cumprida na prática.
+
+### Aumentar o VG primeiro, se necessário
+
+Se o VG não tiver espaço livre suficiente, primeiro acrescenta-se-lhe um novo disco:
+
+```bash
+# Etiquetar o novo disco
+$ sudo pvcreate /dev/sdd
+
+# Acrescentá-lo ao VG existente
+$ sudo vgextend dados_vg /dev/sdd
+
+# Agora há mais espaço para expandir os LVs
+$ sudo vgs
+```
+
+Este encadeamento, acrescentar um disco ao VG e depois estender o LV, permite crescer o armazenamento de um servidor indefinidamente, simplesmente adicionando discos.
+
+---
+
+## 4.5 Snapshots
+
+Um **snapshot** é uma imagem congelada de um volume lógico num instante preciso. A sua utilidade principal é permitir uma cópia de segurança consistente: em vez de fazer backup de um sistema de ficheiros que está a ser modificado durante o processo, tira-se um snapshot instantâneo e faz-se o backup a partir dele, com a garantia de que reflecte um único momento coerente.
+
+O LVM implementa snapshots com uma técnica chamada *copy-on-write*. No momento da criação, o snapshot não copia dados: apenas aponta para os mesmos blocos do volume original. Quando um bloco do original é modificado, a versão antiga é primeiro copiada para o espaço do snapshot. Assim, o snapshot preserva a imagem do momento em que foi criado, e só ocupa espaço proporcional à quantidade de alterações feitas depois.
+
+```bash
+# Criar um snapshot de 10 GB do volume web
+$ sudo lvcreate -L 10G -s -n web_snap /dev/dados_vg/web
+  Logical volume "web_snap" created.
+```
+
+A opção `-s` indica que é um snapshot, e o volume de origem é especificado no final. O tamanho de 10 GB não é o tamanho do snapshot: é o espaço reservado para guardar os blocos que forem modificados no original enquanto o snapshot existir.
+
+Este ponto é a armadilha principal dos snapshots do LVM.
+
+> **Um snapshot que fica sem espaço corrompe-se irreversivelmente.** O espaço reservado ao snapshot enche-se à medida que o volume original é modificado. Se se esgotar, o LVM deixa de conseguir manter a imagem coerente e o snapshot torna-se inutilizável. Por isso, os snapshots do LVM devem ser de curta duração (criados, usados para o backup, e removidos) ou ter espaço reservado próximo do tamanho do volume de origem. Não são um mecanismo de versionamento permanente.
+
+O uso típico é fazer o backup e remover o snapshot logo de seguida:
+
+```bash
+# Montar o snapshot para ler o seu conteúdo
+$ sudo mkdir /mnt/snap
+$ sudo mount -o ro,nouuid /dev/dados_vg/web_snap /mnt/snap
+
+# Fazer o backup a partir do snapshot
+$ sudo tar -czf /backup/web-$(date +%F).tar.gz -C /mnt/snap .
+
+# Desmontar e remover o snapshot
+$ sudo umount /mnt/snap
+$ sudo lvremove /dev/dados_vg/web_snap
+```
+
+A opção `nouuid` na montagem é necessária no XFS porque o snapshot tem o mesmo UUID do original, e o XFS recusa montar dois sistemas de ficheiros com o mesmo UUID sem ela.
+
+Verificar o estado de um snapshot:
+
+```bash
+$ sudo lvs
+  LV       VG        Attr       LSize  Origin Data%
+  web      dados_vg  owi-aos--- 80.00g
+  web_snap dados_vg  swi-a-s--- 10.00g web    12.45
+```
+
+A coluna `Data%` mostra quanto do espaço do snapshot já foi consumido. Quando se aproxima dos 100%, o snapshot está prestes a corromper-se.
+
+---
+
+## 4.6 Reduzir e remover volumes
+
+### Reduzir um volume
+
+Reduzir um volume é mais delicado do que aumentá-lo, e a ordem das operações inverte-se. Ao aumentar, alarga-se primeiro o contentor (LV) e depois o conteúdo (sistema de ficheiros). Ao reduzir, encolhe-se primeiro o conteúdo e só depois o contentor, caso contrário o LV ficaria mais pequeno que o sistema de ficheiros e os dados seriam truncados.
+
+>**O XFS não pode ser reduzido.** Esta é uma limitação de design do XFS: cresce mas nunca encolhe. Se precisar de reduzir um volume XFS, a única via é fazer backup dos dados, recriar o volume menor, criar um novo sistema de ficheiros e restaurar. Só os sistemas de ficheiros ext podem ser reduzidos.
+
+Para um volume **ext4**, o processo é:
+
+```bash
+# 1. Desmontar
+$ sudo umount /mnt/web
+
+# 2. Verificar o sistema de ficheiros (obrigatório antes de redimensionar)
+$ sudo e2fsck -f /dev/dados_vg/web
+
+# 3. Reduzir o sistema de ficheiros para 40 GB
+$ sudo resize2fs /dev/dados_vg/web 40G
+
+# 4. Reduzir o volume lógico para o mesmo tamanho
+$ sudo lvreduce -L 40G /dev/dados_vg/web
+
+# 5. Remontar
+$ sudo mount /dev/dados_vg/web /mnt/web
+```
+
+A ordem é crítica: o sistema de ficheiros é reduzido para 40 GB **antes** de o LV. Inverter estes passos destrói dados.
+
+### Remover volumes
+
+Para desmontar e remover permanentemente um volume lógico:
+
+```bash
+# Desmontar primeiro
+$ sudo umount /mnt/web
+
+# Remover a entrada correspondente do /etc/fstab
+
+# Remover o volume lógico
+$ sudo lvremove /dev/dados_vg/web
+Do you really want to remove active logical volume dados_vg/web? [y/n]: y
+  Logical volume "web" successfully removed
+```
+
+Para remover as camadas superiores, quando já não são necessárias:
+
+```bash
+# Remover o volume group (remove também todos os LVs que contém)
+$ sudo vgremove dados_vg
+
+# Remover a etiqueta LVM dos discos, devolvendo-os a discos normais
+$ sudo pvremove /dev/sdb /dev/sdc
+```
 
