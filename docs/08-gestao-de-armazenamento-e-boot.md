@@ -1930,3 +1930,187 @@ Durante a reconstrução, o array volta a estar completo assim que o processo te
 
 ---
 
+## 6. Operações ao Nível de Blocos com dd
+ 
+## 6.1 O que é o dd e por que é perigoso
+ 
+O `dd` é uma ferramenta de cópia de dados ao nível dos blocos brutos. Ao contrário de ferramentas como `cp` ou `rsync`, que copiam ficheiros e compreendem a estrutura do sistema de ficheiros, o `dd` não sabe nem quer saber o que é um ficheiro: copia bytes, um bloco de cada vez, de uma origem para um destino, exactamente como os encontra.
+ 
+Esta indiferença ao conteúdo é o que torna o `dd` tão poderoso e tão perigoso. Poderoso, porque pode copiar qualquer coisa: um disco inteiro incluindo a tabela de partições e o gestor de arranque, uma partição, o registo de arranque, ou uma imagem ISO para uma pen USB. Perigoso, porque escreve exactamente onde lhe mandam, sem verificações, sem confirmação, e sem forma de desfazer. Uma troca entre a origem e o destino, ou uma letra de dispositivo errada, apaga irreversivelmente um disco inteiro num instante.
+ 
+Por esta razão, o `dd` é tratado numa secção própria, separado das outras ferramentas de armazenamento. Merece a atenção isolada que se dá a um instrumento afiado.
+ 
+---
+ 
+## 6.2 Sintaxe
+ 
+A sintaxe do `dd` é distinta da maioria dos comandos Unix. Usa pares de `opção=valor` em vez de flags:
+ 
+```bash
+dd if=<origem> of=<destino> bs=<tamanho_bloco> [opções]
+```
+ 
+Os parâmetros principais:
+ 
+| Parâmetro | Significado |
+|-----------|-------------|
+| `if=` | *input file*: a origem de onde ler |
+| `of=` | *output file*: o destino para onde escrever |
+| `bs=` | *block size*: tamanho de cada bloco lido e escrito |
+| `count=` | número de blocos a copiar (limita a cópia) |
+| `status=progress` | mostra o progresso durante a operação |
+| `conv=` | conversões e opções de comportamento |
+ 
+O parâmetro `bs` afecta o desempenho. Valores pequenos como o defeito de 512 bytes são lentos para cópias grandes; um valor de `4M` (4 mebibytes) é um bom equilíbrio para a maioria das operações de disco.
+ 
+>  **Os parâmetros `if` e `of` são a origem de quase todos os desastres com o `dd`.** `if` é de onde se lê, `of` é para onde se escreve. Trocá-los, ou enganar-se na letra do dispositivo, sobrescreve o alvo errado. Antes de premir Enter num comando `dd` que escreve para um dispositivo, verifique o comando duas vezes, e confirme os dispositivos com `lsblk` imediatamente antes.
+ 
+O `status=progress` merece ser sempre incluído em operações longas. Sem ele, o `dd` não mostra qualquer indicação de progresso e parece estar bloqueado, quando na verdade pode estar a meio de uma cópia de horas.
+ 
+---
+ 
+## 6.3 Clonagem de discos e partições
+ 
+### Clonar um disco inteiro
+ 
+Copiar um disco inteiro para outro, incluindo tabela de partições, gestores de arranque e todos os dados:
+ 
+```bash
+# Desmontar ambos os discos primeiro
+$ sudo umount /dev/sdb* 2>/dev/null
+ 
+# Clonar sda para sdb na íntegra
+$ sudo dd if=/dev/sda of=/dev/sdb bs=4M status=progress conv=fsync
+```
+ 
+A opção `conv=fsync` garante que todos os dados são efectivamente escritos no disco antes de o `dd` terminar, evitando perda de dados se a energia falhar logo após a cópia.
+ 
+>  **O disco de destino tem de ter pelo menos o mesmo tamanho do de origem.** E todo o conteúdo do destino é apagado. Confirme que `/dev/sdb` é realmente o disco que pretende sobrescrever, e não, por exemplo, o disco do sistema.
+ 
+### Clonar uma partição
+ 
+```bash
+$ sudo dd if=/dev/sda1 of=/dev/sdb1 bs=4M status=progress conv=fsync
+```
+ 
+### Criar uma imagem de disco num ficheiro
+ 
+Em vez de clonar directamente para outro disco, é frequentemente mais útil criar uma imagem num ficheiro, que pode ser guardada, comprimida e restaurada mais tarde:
+ 
+```bash
+# Criar uma imagem do disco
+$ sudo dd if=/dev/sda of=/backup/sda.img bs=4M status=progress
+ 
+# Criar uma imagem comprimida, poupando espaço
+$ sudo dd if=/dev/sda bs=4M | gzip > /backup/sda.img.gz
+ 
+# Restaurar a partir da imagem
+$ sudo dd if=/backup/sda.img of=/dev/sda bs=4M status=progress
+ 
+# Restaurar a partir de uma imagem comprimida
+$ gunzip -c /backup/sda.img.gz | sudo dd of=/dev/sda bs=4M status=progress
+```
+ 
+### Clonar entre máquinas pela rede
+ 
+Combinando o `dd` com o SSH, é possível clonar um disco directamente para outra máquina, sem armazenamento intermédio:
+ 
+```bash
+# Clonar um disco local para um disco na máquina remota
+$ sudo dd if=/dev/sda bs=4M | ssh admin@servidor-backup "sudo dd of=/dev/sdb bs=4M"
+ 
+# Guardar uma imagem comprimida num servidor remoto
+$ sudo dd if=/dev/sda bs=4M | gzip | ssh admin@backup "cat > /backup/sda-$(date +%F).img.gz"
+```
+ 
+---
+ 
+## 6.4 Backup da tabela de partições e do registo de arranque
+ 
+Uma das utilizações mais valiosas do `dd` é preservar as estruturas de arranque de um disco, que ocupam pouco espaço mas cuja perda impede o sistema de arrancar.
+ 
+### Discos MBR
+ 
+Como visto na secção 1, o MBR ocupa os primeiros 512 bytes do disco, contendo o código de arranque e a tabela de partições. Fazer uma cópia dele é trivial:
+ 
+```bash
+# Backup do MBR (512 bytes)
+$ sudo dd if=/dev/sda of=/backup/mbr.img bs=512 count=1
+ 
+# Restaurar o MBR
+$ sudo dd if=/backup/mbr.img of=/dev/sda bs=512 count=1
+```
+ 
+O `count=1` limita a cópia a um único bloco de 512 bytes, exactamente o tamanho do MBR.
+ 
+### Discos GPT
+ 
+Aqui há uma diferença importante. O truque do `dd` com 512 bytes aplica-se apenas a discos MBR. Os discos GPT, usados em sistemas UEFI modernos e na instalação do Capítulo 2, guardam a tabela de partições de forma diferente, com uma cópia no início e outra no fim do disco. Para estes, a ferramenta correcta não é o `dd`, mas o `sgdisk` do pacote `gdisk`:
+ 
+```bash
+# Backup da tabela de partições GPT
+$ sudo sgdisk --backup=/backup/gpt-sda.bin /dev/sda
+ 
+# Restaurar a tabela de partições GPT
+$ sudo sgdisk --load-backup=/backup/gpt-sda.bin /dev/sda
+```
+ 
+Usar o truque do MBR num disco GPT preservaria apenas parte da estrutura e daria uma falsa sensação de segurança. Convém saber qual o esquema em uso, o que se verifica com `parted /dev/sda print` ou `fdisk -l`.
+ 
+---
+ 
+## 6.5 Outras utilizações
+ 
+### Criar ficheiros de tamanho conhecido
+ 
+O `dd` é útil para criar ficheiros de teste ou reservar espaço, lendo da fonte especial `/dev/zero`, que produz bytes nulos indefinidamente:
+ 
+```bash
+# Criar um ficheiro de 100 MB cheio de zeros
+$ dd if=/dev/zero of=/tmp/teste.img bs=1M count=100
+ 
+# Criar um ficheiro de swap, como visto na secção 3
+$ sudo dd if=/dev/zero of=/swapfile bs=1M count=2048 status=progress
+```
+ 
+### Criar suportes de arranque
+ 
+Escrever uma imagem ISO para uma pen USB, criando um suporte de instalação arrancável:
+ 
+```bash
+$ sudo dd if=/caminho/centos-stream.iso of=/dev/sdX bs=4M status=progress && sync
+```
+ 
+>  **Confirme que `/dev/sdX` é a pen USB e não um disco do sistema.** Este é um dos erros mais catastróficos e mais comuns com o `dd`: escrever uma ISO sobre o disco do sistema em vez da pen. Execute `lsblk` imediatamente antes para confirmar o dispositivo, e nunca use um nome de dispositivo de memória em vez de o verificar.
+ 
+### Recuperar dados de discos danificados
+ 
+O `dd` normal pára ao encontrar um erro de leitura. Para discos em falha, existe uma variante mais robusta, o `ddrescue`, concebida especificamente para recuperar o máximo de dados possível de um disco moribundo:
+ 
+```bash
+$ sudo dnf install ddrescue -y
+ 
+# Recuperar um disco danificado para uma imagem, com log de progresso
+$ sudo ddrescue /dev/sda /backup/recuperacao.img /backup/recuperacao.log
+```
+ 
+O `ddrescue` tenta primeiro ler as zonas boas rapidamente, e só depois insiste nas zonas problemáticas, mantendo um log que lhe permite retomar de onde parou. É a ferramenta certa quando um disco está a falhar e cada leitura conta.
+ 
+---
+ 
+## 6.6 Precauções ao usar dd
+ 
+O `dd` não tem rede de segurança. Não pede confirmação, não avisa antes de sobrescrever, e não há forma de desfazer. Alguns hábitos que evitam desastres:
+ 
+Verifique sempre os dispositivos com `lsblk` imediatamente antes de correr o comando. A letra de um disco pode ter mudado desde a última vez que verificou.
+ 
+Leia o comando da direita para a esquerda antes de o executar, confirmando que `of=` aponta para o destino correcto. O `of` é o que vai ser destruído.
+ 
+Nunca corra `dd` em dispositivos montados quando o objectivo é clonar. Desmonte primeiro para garantir consistência.
+ 
+Inclua `status=progress` em qualquer operação longa, para saber que está a progredir e não bloqueada.
+ 
+Para operações críticas, considere primeiro fazer um ensaio com um ficheiro de destino em vez de um dispositivo, para confirmar que a lógica do comando está correcta.
+ 
+> **O `dd` é frequentemente apelidado de *disk destroyer* pela comunidade, meio a brincar, meio a sério.** O nome verdadeiro vem de *data duplicator*, mas a alcunha capta uma verdade: é uma das ferramentas mais úteis e mais impiedosas do Linux. Usado com atenção, resolve problemas que nenhuma outra ferramenta resolve. Usado com pressa, transforma um problema pequeno num desastre. A diferença está inteiramente na atenção de quem o executa.
+ 
