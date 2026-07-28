@@ -1692,3 +1692,241 @@ $ sudo vgremove dados_vg
 $ sudo pvremove /dev/sdb /dev/sdc
 ```
 
+## 5. RAID: Redundância e Desempenho
+
+## 5.1 O problema que o RAID resolve
+
+Um disco físico vai falhar. Não é uma questão de "se", mas de "quando". Discos são componentes mecânicos ou electrónicos com uma vida útil finita, e a sua falha é uma das causas mais comuns de perda de dados e de indisponibilidade em servidores. As cópias de segurança protegem contra a perda de dados, mas não contra o tempo de paragem: restaurar um servidor a partir de backups pode demorar horas ou dias, durante os quais o serviço está indisponível.
+
+O **RAID** (*Redundant Array of Inexpensive Disks*) aborda este problema distribuindo ou replicando os dados por vários discos. Consoante a configuração, o RAID pode reduzir a zero o tempo de paragem associado a uma falha de disco, e em muitos casos aumentar também o desempenho. A ideia central é que um conjunto de discos passe a comportar-se como uma única unidade lógica, mais fiável ou mais rápida do que qualquer disco individual.
+
+É importante ser claro sobre uma coisa desde o início: **o RAID não substitui as cópias de segurança.** O RAID protege contra a falha física de um disco, mas não contra a eliminação acidental de ficheiros, corrupção de dados, ataques de ransomware ou desastres que afectem toda a máquina. Um administrador que confie apenas no RAID e negligencie os backups está a pedir problemas.
+
+---
+
+## 5.2 RAID por hardware e por software
+
+Existem duas formas de implementar RAID.
+
+O **RAID por hardware** usa uma controladora dedicada que apresenta ao sistema operativo um conjunto de discos como se fosse um único disco composto. O sistema operativo nem sequer sabe que existe RAID: vê apenas um disco.
+
+O **RAID por software** é implementado pelo próprio sistema operativo, que lê e escreve em vários discos de acordo com as regras do RAID. No Linux, isto faz-se com o `mdadm`.
+
+Poderia parecer que o RAID por hardware é sempre superior, mas a realidade é mais matizada. Como o gargalo de desempenho num sistema RAID são quase sempre os próprios discos, não há razão para assumir que uma implementação por hardware seja mais rápida. O RAID por hardware predominou no passado por duas razões: a falta de suporte no sistema operativo, e a capacidade de algumas controladoras guardarem escritas em memória não volátil, o que melhora o desempenho e protege contra certos problemas de corrupção.
+
+Mas há uma armadilha importante. Muitas das "placas RAID" vendidas para PCs não têm memória não volátil nenhuma: são apenas interfaces SATA com algum software de RAID embutido. As implementações de RAID nas motherboards de PC caem nesta categoria. Nestes casos, é preferível usar o RAID por software do Linux.
+
+Há ainda um risco menos óbvio do RAID por hardware que vale a pena considerar. Se a controladora RAID falhar, pode levar consigo o acesso a todos os discos, mesmo que os discos em si estejam intactos, porque os dados foram escritos num formato específico daquela controladora. Substituir uma controladora avariada por um modelo diferente pode tornar os dados ilegíveis. O RAID por software não tem este problema: os discos podem ser movidos para qualquer máquina Linux e o array reconstruído.
+
+---
+
+## 5.3 Os níveis de RAID e os seus compromissos
+
+O RAID faz essencialmente duas coisas. Pode melhorar o desempenho distribuindo os dados por vários discos (*striping*), permitindo que vários discos trabalhem em simultâneo para servir um único fluxo de dados. E pode replicar dados por vários discos, reduzindo o risco associado à falha de um disco individual.
+
+A replicação assume duas formas. No **espelhamento** (*mirroring*), os blocos de dados são reproduzidos bit a bit em vários discos. Nos **esquemas de paridade**, um ou mais discos contêm uma soma de verificação (checksum) dos blocos dos restantes discos, que permite reconstruir os dados perdidos. O espelhamento é mais rápido mas consome mais espaço; os esquemas de paridade são mais eficientes em espaço mas têm desempenho inferior.
+
+O RAID descreve-se tradicionalmente em "níveis", mas o termo é enganador: níveis mais altos não são necessariamente melhores. São apenas configurações diferentes, e usa-se a que servir a necessidade.
+
+### JBOD (linear)
+
+O JBOD (*Just a Bunch Of Disks*) não é sequer um nível de RAID verdadeiro, mas quase todas as controladoras o implementam. Concatena os endereços de vários discos para criar um único disco virtual maior. Não oferece nem redundância nem ganho de desempenho. Hoje, esta funcionalidade obtém-se melhor com um gestor de volumes lógicos como o LVM, visto na secção anterior.
+
+### RAID 0 (striping)
+
+O **RAID 0** existe estritamente para aumentar o desempenho. Combina dois ou mais discos do mesmo tamanho, mas em vez de os empilhar um a seguir ao outro, distribui os dados alternadamente entre eles. Leituras e escritas sequenciais são assim espalhadas por vários discos, reduzindo os tempos de acesso.
+
+O preço é a fiabilidade. O RAID 0 é **menos fiável** do que discos separados: se qualquer um dos discos falhar, todos os dados do array se perdem, porque cada ficheiro está espalhado por todos os discos. Um array de dois discos tem aproximadamente o dobro da taxa de falha anual de um disco individual.
+
+```
+RAID 0 — striping por 2 discos
+Disco 1:  [bloco a] [bloco c] [bloco e]
+Disco 2:  [bloco b] [bloco d] [bloco f]
+Capacidade útil: 100% (soma dos discos)
+Tolerância a falhas: NENHUMA
+```
+
+Usa-se RAID 0 apenas quando o desempenho é crítico e os dados são descartáveis ou replicados noutro sítio: cache, ficheiros temporários de processamento, dados que podem ser regenerados.
+
+### RAID 1 (mirroring)
+
+O **RAID 1** é o espelhamento. As escritas são duplicadas para dois ou mais discos em simultâneo. Isto torna as escritas ligeiramente mais lentas do que num disco único, mas oferece velocidade de leitura comparável ao RAID 0, porque as leituras podem ser distribuídas pelos vários discos com a mesma informação.
+
+A vantagem é a redundância directa: se um disco falhar, o outro tem uma cópia completa e o sistema continua a funcionar sem interrupção. O custo é o espaço: dois discos de 1 TB em RAID 1 oferecem apenas 1 TB de capacidade útil, porque tudo é guardado em duplicado.
+
+```
+RAID 1 — mirroring de 2 discos
+Disco 1:  [bloco a] [bloco b] [bloco c]
+Disco 2:  [bloco a] [bloco b] [bloco c]   (cópia idêntica)
+Capacidade útil: 50%
+Tolerância a falhas: 1 disco
+```
+
+O RAID 1 é a escolha comum para os discos do sistema operativo, onde a fiabilidade importa mais do que a capacidade.
+
+### RAID 5 (striping com paridade)
+
+O **RAID 5** procura um equilíbrio entre desempenho, capacidade e redundância. Distribui os dados por três ou mais discos como o RAID 0, mas reserva o equivalente a um disco para informação de paridade, distribuída por todos os discos. Se um disco falhar, os dados que continha podem ser reconstruídos a partir da paridade dos restantes.
+
+O custo em espaço é apenas de um disco, independentemente do número total: num array de cinco discos de 1 TB, a capacidade útil é de 4 TB. Isto torna o RAID 5 muito mais eficiente que o espelhamento para arrays grandes.
+
+```
+RAID 5 — striping com paridade distribuída, 3 discos
+Disco 1:  [bloco a] [bloco c] [paridade]
+Disco 2:  [bloco b] [paridade] [bloco e]
+Disco 3:  [paridade] [bloco d] [bloco f]
+Capacidade útil: (N-1)/N
+Tolerância a falhas: 1 disco
+```
+
+A desvantagem é o desempenho de escrita: cada escrita exige recalcular e actualizar a paridade, o que introduz uma penalização. O RAID 5 também sofre de uma vulnerabilidade conhecida como *write hole*, em que uma falha de energia a meio de uma escrita pode deixar os dados e a paridade dessincronizados.
+
+### RAID 6 (dupla paridade)
+
+O **RAID 6** é como o RAID 5 mas com dois blocos de paridade em vez de um, tolerando a falha de **dois** discos em simultâneo. Isto responde a um problema real: em arrays grandes, a reconstrução após a falha de um disco pode demorar horas, e durante esse período um segundo disco pode falhar. O RAID 6 protege contra esse cenário, ao custo de sacrificar dois discos de capacidade e de um desempenho de escrita ainda menor.
+
+### RAID 10 (espelho de stripes)
+
+O **RAID 10** (também escrito 1+0) combina os dois mundos: espelha conjuntos de discos em stripe. Obtém o desempenho do striping e a redundância do espelhamento em simultâneo. O custo é o mesmo do RAID 1, metade da capacidade, mas oferece melhor desempenho que o RAID 5 e reconstrução mais rápida após falha. É a escolha comum para bases de dados e cargas de trabalho exigentes onde tanto o desempenho como a fiabilidade importam.
+
+### Comparação
+
+| Nível | Mínimo de discos | Capacidade útil | Tolerância a falhas | Uso típico |
+|-------|-----------------|-----------------|--------------------|--------------------|
+| RAID 0 | 2 | 100% | Nenhuma | Dados descartáveis, desempenho puro |
+| RAID 1 | 2 | 50% | 1 disco | Discos de sistema |
+| RAID 5 | 3 | (N-1)/N | 1 disco | Armazenamento geral, bom equilíbrio |
+| RAID 6 | 4 | (N-2)/N | 2 discos | Arrays grandes |
+| RAID 10 | 4 | 50% | 1 por espelho | Bases de dados, alto desempenho |
+
+---
+
+## 5.4 RAID por software com mdadm
+
+O `mdadm` (*multiple device administration*) é a ferramenta de RAID por software do Linux. Cria e gere arrays que aparecem como dispositivos `/dev/md0`, `/dev/md1`, e assim por diante.
+
+```bash
+$ sudo dnf install mdadm -y
+```
+
+### Criar um array
+
+O exemplo seguinte cria um array RAID 5 com três discos.
+
+```bash
+# Criar o array RAID 5 com 3 discos
+$ sudo mdadm --create /dev/md0 --level=5 --raid-devices=3 /dev/sdb /dev/sdc /dev/sdd
+mdadm: array /dev/md0 started.
+
+# Acompanhar a construção inicial do array
+$ cat /proc/mdstat
+Personalities : [raid6] [raid5] [raid4]
+md0 : active raid5 sdd[3] sdc[1] sdb[0]
+      209584128 blocks super 1.2 level 5, 512k chunk, algorithm 2 [3/3] [UUU]
+      [====>................]  recovery = 21.4% (finish=8.2min speed=95000K/sec)
+```
+
+A construção inicial (sincronização) demora, mas o array já é utilizável durante esse processo. O indicador `[UUU]` mostra que os três discos estão presentes e saudáveis (`U` de *up*); um `_` indicaria um disco em falta.
+
+### Criar o sistema de ficheiros e montar
+
+O array comporta-se como um dispositivo de bloco normal:
+
+```bash
+$ sudo mkfs -t xfs /dev/md0
+$ sudo mkdir -p /mnt/raid
+$ sudo mount /dev/md0 /mnt/raid
+```
+
+Em muitos cenários, o RAID e o LVM são combinados: cria-se o array com `mdadm`, e depois usa-se `/dev/md0` como physical volume do LVM, obtendo tanto a redundância do RAID como a flexibilidade do LVM.
+
+### Tornar o array permanente
+
+A configuração do array tem de ser guardada para sobreviver a reinícios:
+
+```bash
+# Guardar a configuração do array
+$ sudo mdadm --detail --scan | sudo tee -a /etc/mdadm.conf
+
+# Regenerar o initramfs para incluir a configuração (ver secção 1)
+$ sudo dracut --force
+
+# Acrescentar a montagem ao /etc/fstab pelo UUID, como na secção 3
+```
+
+---
+
+## 5.5 Monitorização e substituição de discos
+
+A redundância do RAID só tem valor se as falhas forem detectadas e corrigidas. Um array RAID 5 que perdeu um disco continua a funcionar, mas perdeu a sua redundância: uma segunda falha destrói tudo. Detectar a primeira falha rapidamente é, portanto, crítico.
+
+### Ver o estado do array
+
+```bash
+# Estado resumido de todos os arrays
+$ cat /proc/mdstat
+
+# Detalhe completo de um array
+$ sudo mdadm --detail /dev/md0
+/dev/md0:
+        Version : 1.2
+     Raid Level : raid5
+     Array Size : 209584128 (199.87 GiB)
+   Raid Devices : 3
+  Total Devices : 3
+          State : clean
+ Active Devices : 3
+Working Devices : 3
+ Failed Devices : 0
+
+    Number   Major   Minor   RaidDevice State
+       0       8       16        0      active sync   /dev/sdb
+       1       8       32        1      active sync   /dev/sdc
+       3       8       48        2      active sync   /dev/sdd
+```
+
+O campo `State` deve indicar `clean`. Um estado `degraded` significa que um disco falhou e o array está a funcionar sem redundância.
+
+### Monitorização automática
+
+Deixar a verificação do estado para inspecção manual é insuficiente: uma falha pode passar despercebida durante dias. O `mdadm` pode monitorizar os arrays e enviar um email quando algo corre mal:
+
+```bash
+# Configurar o destinatário dos alertas em /etc/mdadm.conf
+MAILADDR admin@empresa.pt
+
+# Activar o serviço de monitorização
+$ sudo systemctl enable --now mdmonitor
+```
+
+Este alerta, combinado com o servidor de email configurado no Capítulo 7, garante que a falha de um disco chega ao conhecimento do administrador imediatamente.
+
+### Substituir um disco avariado
+
+Quando um disco falha, o processo de substituição faz-se com o array em funcionamento, sem interrupção de serviço.
+
+```bash
+# 1. Marcar o disco como falhado (se ainda não o estiver automaticamente)
+$ sudo mdadm --manage /dev/md0 --fail /dev/sdc
+
+# 2. Remover o disco do array
+$ sudo mdadm --manage /dev/md0 --remove /dev/sdc
+
+# 3. Substituir fisicamente o disco avariado pelo novo
+
+# 4. Adicionar o novo disco ao array
+$ sudo mdadm --manage /dev/md0 --add /dev/sdc
+
+# 5. Acompanhar a reconstrução
+$ cat /proc/mdstat
+md0 : active raid5 sdc[4] sdd[3] sdb[0]
+      209584128 blocks super 1.2 level 5 [3/2] [UU_]
+      [=========>...........]  recovery = 47.8% (finish=4.2min speed=98000K/sec)
+```
+
+Durante a reconstrução, o array volta a estar completo assim que o processo termina. O indicador passa de `[UU_]` (um disco em falta) de volta a `[UUU]` (todos presentes).
+
+> **A reconstrução é o momento de maior risco de um array RAID.** Durante a reconstrução, todos os discos restantes são lidos intensivamente para recalcular os dados do disco substituído. Se um segundo disco estiver no limite da vida útil, este esforço pode precipitar a sua falha. É por isso que o RAID 6, que tolera duas falhas, é preferido em arrays grandes onde a reconstrução demora horas. E é mais uma razão pela qual o RAID não dispensa backups.
+
+---
+
