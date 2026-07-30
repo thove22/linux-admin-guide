@@ -165,5 +165,49 @@ A sua criação é feita com o comando:
 
 ```bash
     $ ln -s [caminho_do_alvo] [caminho_do_link]
+
 ```
+#### F. Pipes Nomeados (Símbolo: p)
+
+Um pipe nomeado (também designado FIFO, de *First In, First Out*) é um ficheiro especial que estabelece um canal de comunicação unidireccional entre dois processos independentes. Ao contrário de um ficheiro regular, um pipe nomeado não armazena dados de forma persistente no disco: funciona como uma conduta, onde aquilo que um processo escreve numa extremidade é lido por outro processo na extremidade oposta, pela ordem exacta em que foi introduzido.
+
+A sua utilidade reside em permitir que programas que não têm qualquer relação de parentesco directo troquem dados sem recorrer a ficheiros intermédios. A criação faz-se com o comando `mkfifo`.
+
+#### G. Sockets (Símbolo: s)
+
+Os sockets representam o mecanismo mais sofisticado de comunicação entre processos, permitindo a troca de dados bidireccional. Enquanto os pipes nomeados estabelecem um canal simples num único sentido, os sockets suportam diálogos complexos, sendo a base sobre a qual assentam inúmeros serviços do sistema.
+
+Um socket de domínio UNIX permite a comunicação entre processos na mesma máquina através de um ficheiro no sistema de ficheiros. Serviços como bases de dados e o próprio daemon de gestão do sistema expõem sockets para que os clientes lhes enviem pedidos localmente, sem necessidade de atravessar a pilha de rede.
+
+### Ligações Físicas e Simbólicas (Hard e Soft Links)
+
+A introdução do link simbólico levanta uma questão natural: existirá uma outra forma de referenciar um mesmo ficheiro a partir de vários pontos da árvore de directórios? A resposta reside na distinção entre os dois tipos de ligações que o Linux disponibiliza, e compreendê-la exige um breve olhar sobre a forma como o sistema de ficheiros identifica internamente os seus objectos.
+
+Cada ficheiro num sistema de ficheiros Linux é representado, ao nível interno, por uma estrutura chamada **inode**. O inode contém todos os metadados do ficheiro (permissões, dono, tamanho, datas e a localização dos dados no disco) com uma única excepção notável: o nome. O nome do ficheiro não pertence ao inode, mas sim à entrada de directório que aponta para ele. Esta separação entre o nome e a identidade real do ficheiro é a chave para compreender os dois tipos de ligação. Uma análise mais aprofundada dos inodes será apresentada no capítulo dedicado ao armazenamento.
+
+#### Ligação Física (Hard Link)
+
+Uma ligação física é uma segunda entrada de directório que aponta para o **mesmo inode** de um ficheiro existente. Na prática, o ficheiro passa a ter dois nomes, ambos com estatuto idêntico: nenhum é o "original" e nenhum é a "cópia". Ambos referenciam exactamente os mesmos dados no disco, e alterações feitas através de um nome são imediatamente visíveis através do outro.
+
+O ficheiro só é efectivamente removido do disco quando a última entrada de directório que aponta para o seu inode é eliminada. Enquanto existir pelo menos uma ligação, os dados permanecem acessíveis.
+
+```bash
+    $ ln [ficheiro_alvo] [nome_da_ligacao]
+```
+
+As ligações físicas têm duas limitações estruturais importantes: não podem atravessar diferentes sistemas de ficheiros (porque um inode só tem significado dentro do sistema de ficheiros a que pertence) e não podem referenciar directórios.
+
+#### Ligação Simbólica (Soft Link)
+
+A ligação simbólica, já apresentada anteriormente, opera num nível diferente. Não partilha o inode do alvo: é um ficheiro autónomo, com o seu próprio inode, cujo conteúdo é meramente uma string de texto com o caminho para o alvo. Por esta razão, a ligação simbólica é flexível o suficiente para apontar para alvos noutros sistemas de ficheiros ou para directórios, mas fica inutilizável (*broken link*) se o alvo for removido ou movido.
+
+A distinção prática resume-se ao seguinte: a ligação física é um segundo nome para os mesmos dados, robusto mas limitado ao sistema de ficheiros local; a ligação simbólica é um apontador para um caminho, flexível mas dependente da existência contínua do alvo.
+
+| Característica | Ligação Física | Ligação Simbólica |
+|----------------|----------------|-------------------|
+| Partilha o inode do alvo | Sim | Não (tem inode próprio) |
+| Atravessa sistemas de ficheiros | Não | Sim |
+| Pode referenciar directórios | Não | Sim |
+| Sobrevive à remoção do alvo | Sim | Não (fica quebrada) |
+| Comando de criação | `ln` | `ln -s` |
 
