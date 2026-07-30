@@ -441,3 +441,174 @@ O `find` é indispensável quando o ficheiro é recente e pode ainda não estar 
 | Ficheiros recentes | Encontra sempre | Só após actualização do índice |
 | Critérios de procura | Nome, tamanho, data, dono, tipo, permissões | Apenas nome/caminho |
 | Disponibilidade | Sempre presente | Requer instalação e índice actualizado |
+
+## Gestão de Pacotes: rpm, yum e dnf
+
+Instalar software é uma das primeiras necessidades ao administrar um sistema. Num sistema Linux, isto raramente se faz descarregando executáveis avulsos de sítios na internet, como é hábito noutros sistemas operativos. Em vez disso, o software distribui-se em **pacotes**, geridos por um sistema centralizado que resolve dependências, verifica autenticidade e mantém um registo rigoroso de tudo o que está instalado.
+
+### O conceito de gestor de pacotes e repositórios
+
+Um **pacote** é um arquivo que contém não só os ficheiros de um programa, mas também os seus metadados: a versão, a descrição, a lista de outros pacotes de que depende para funcionar, e assinaturas que garantem a sua autenticidade.
+
+Este modelo resolve um problema que noutros sistemas é fonte constante de dificuldades: as **dependências**. Um programa raramente funciona isolado; precisa de bibliotecas e componentes que outros pacotes fornecem. Um gestor de pacotes, ao instalar um programa, identifica automaticamente tudo aquilo de que ele depende e instala-o também, garantindo que o sistema fica num estado coerente.
+
+Os pacotes não são procurados individualmente na internet. São obtidos a partir de **repositórios**: colecções organizadas de pacotes, mantidas pela distribuição ou por terceiros de confiança, alojadas em servidores espelhados por todo o mundo. O sistema conhece uma lista de repositórios e sabe onde procurar quando lhe é pedido um programa. Esta centralização traz três vantagens decisivas: o software vem de uma fonte confiável e assinada, as actualizações de segurança chegam a todo o sistema de forma coordenada, e a instalação resume-se a um único comando.
+
+Na família do CentOS e do Red Hat, este sistema assenta em três camadas: o formato base `rpm`, e as ferramentas de alto nível `yum` e `dnf` que o gerem.
+
+### rpm: o formato base
+
+O **RPM** (*RPM Package Manager*) é simultaneamente o formato dos pacotes (ficheiros com extensão `.rpm`) e a ferramenta de baixo nível que os manipula. É a fundação sobre a qual tudo o resto assenta.
+
+A característica que define o `rpm` é também a sua limitação: **não resolve dependências**. O `rpm` instala, remove e consulta ficheiros de pacote individuais, mas se um pacote precisar de outro que não está presente, o `rpm` limita-se a recusar e a indicar o que falta, sem tentar obter o que é necessário. Este comportamento é deliberado: o `rpm` é uma ferramenta determinística e de baixo nível, e a resolução de dependências é tarefa das camadas superiores.
+
+Por esta razão, o `rpm` raramente é usado para instalar software no dia-a-dia. A sua utilidade reside sobretudo na **consulta**: interrogar a base de dados de pacotes para saber o que está instalado.
+
+```bash
+    # Ver todos os pacotes instalados
+    $ rpm -qa
+
+    # Verificar se um pacote específico está instalado
+    $ rpm -q httpd
+
+    # Descobrir a que pacote pertence um determinado ficheiro
+    $ rpm -qf /usr/sbin/sshd
+
+    # Listar todos os ficheiros que um pacote instalou
+    $ rpm -ql httpd
+
+    # Ver informação detalhada sobre um pacote
+    $ rpm -qi httpd
+```
+
+A opção `-q` significa *query* (consulta), e combina-se com as restantes: `-qa` para todos (*all*), `-qf` por ficheiro (*file*), `-ql` para listar (*list*), `-qi` para informação (*info*). Estas consultas são ferramentas de diagnóstico valiosas, sobretudo o `rpm -qf`, que responde à pergunta frequente "de onde veio este ficheiro?".
+
+### dnf e yum: gestão completa
+
+Se o `rpm` é a fundação, o **dnf** é a ferramenta com que efectivamente se trabalha. O `dnf` (*Dandified YUM*) opera por cima do `rpm` e acrescenta precisamente aquilo que lhe falta: consulta os repositórios, resolve dependências automaticamente, descarrega os pacotes necessários, verifica as suas assinaturas, e executa a transacção de forma segura.
+
+Uma nota sobre a nomenclatura, que é fonte de confusão. O **yum** (*Yellowdog Updater, Modified*) foi durante muitos anos a ferramenta padrão nas distribuições Red Hat. A partir do CentOS 8 e RHEL 8, foi substituído pelo `dnf`, que oferece melhor desempenho e uma resolução de dependências mais robusta, assente na biblioteca `libsolv`. Para manter a compatibilidade, o comando `yum` continua a existir, mas é hoje apenas uma ligação para o `dnf`: escrever `yum` ou `dnf` produz exactamente o mesmo resultado. No CentOS Stream, `dnf` é a forma correcta e recomendada, e é a que usaremos.
+
+#### Actualizar o sistema
+
+Antes de instalar software, é boa prática garantir que a informação dos repositórios e os pacotes instalados estão actualizados.
+
+```bash
+    # Actualizar a lista de pacotes disponíveis e instalar as actualizações
+    $ sudo dnf update
+
+    # Ver que actualizações estão disponíveis sem as instalar
+    $ sudo dnf check-update
+```
+
+O comando `dnf update` refresca os metadados dos repositórios e actualiza todos os pacotes instalados para as versões mais recentes disponíveis. É um comando que aparece no início de quase todos os guias de instalação, e a sua execução regular é a base da manutenção de segurança do sistema, como visto no Capítulo 7.
+
+#### Instalar pacotes
+
+```bash
+    # Instalar um pacote (pede confirmação)
+    $ sudo dnf install httpd
+
+    # Instalar sem pedir confirmação (útil em scripts)
+    $ sudo dnf install httpd -y
+
+    # Instalar vários pacotes de uma vez
+    $ sudo dnf install httpd mariadb-server php
+```
+
+Ao instalar, o `dnf` apresenta primeiro um resumo da transacção: o pacote pedido, todas as dependências que serão instaladas com ele, e o espaço em disco necessário. Só depois da confirmação procede. A opção `-y` responde "sim" automaticamente, o que é conveniente em scripts mas deve ser usado com atenção em comandos interactivos, para não saltar a revisão do que vai ser instalado.
+
+#### Procurar pacotes
+
+Quando não se sabe o nome exacto de um pacote, o `dnf` permite procurá-lo.
+
+```bash
+    # Procurar pacotes por palavra-chave no nome ou descrição
+    $ dnf search apache
+
+    # Ver informação detalhada sobre um pacote antes de o instalar
+    $ dnf info httpd
+
+    # Descobrir que pacote fornece um determinado ficheiro ou comando
+    $ dnf provides /usr/sbin/httpd
+```
+
+O `dnf provides` é particularmente útil: quando um comando não existe no sistema, permite descobrir qual o pacote que o fornece, para depois o instalar.
+
+#### Remover pacotes
+
+```bash
+    # Remover um pacote
+    $ sudo dnf remove httpd
+
+    # Remover pacotes que foram instalados como dependências e já não são necessários
+    $ sudo dnf autoremove
+```
+
+Ao remover um pacote, o `dnf` verifica se outros pacotes dependem dele e avisa em conformidade. O `dnf autoremove` limpa dependências órfãs: pacotes que foram instalados automaticamente para satisfazer outro pacote e que deixaram de ser necessários após a remoção deste.
+
+#### Listar e consultar
+
+```bash
+    # Listar todos os pacotes instalados
+    $ dnf list installed
+
+    # Listar pacotes disponíveis mas não instalados
+    $ dnf list available
+
+    # Ver o histórico de transacções (instalações, remoções, actualizações)
+    $ sudo dnf history
+```
+
+O `dnf history` mantém um registo de todas as operações realizadas, o que é valioso para auditoria e para perceber o que mudou no sistema ao longo do tempo.
+
+### Instalar um pacote .rpm local
+
+Ocasionalmente, é necessário instalar um pacote obtido directamente como ficheiro `.rpm`, fora dos repositórios. Embora o `rpm -i` o consiga fazer, não resolve dependências. A abordagem correcta é usar o `dnf`, que instala o ficheiro local **e** resolve as suas dependências a partir dos repositórios:
+
+```bash
+    $ sudo dnf install ./pacote-exemplo.rpm
+```
+
+### Repositórios e os ficheiros .repo
+
+O `dnf` sabe onde procurar pacotes porque consulta uma lista de repositórios definida em ficheiros de configuração. Estes ficheiros, com extensão `.repo`, residem no directório `/etc/yum.repos.d/`.
+
+```bash
+    # Ver os repositórios configurados
+    $ ls /etc/yum.repos.d/
+
+    # Listar os repositórios activos e a sua situação
+    $ dnf repolist
+```
+
+Cada ficheiro `.repo` pode definir um ou mais repositórios. A estrutura de uma definição é a seguinte:
+
+```ini
+[nome-do-repositorio]
+name=Descrição legível do repositório
+baseurl=https://servidor.exemplo.com/centos/9/x86_64/
+enabled=1
+gpgcheck=1
+gpgkey=https://servidor.exemplo.com/RPM-GPG-KEY-exemplo
+```
+
+Os campos principais:
+
+| Campo | Significado |
+|-------|-------------|
+| `[nome]` | Identificador curto e único do repositório |
+| `name` | Descrição legível |
+| `baseurl` | O endereço onde os pacotes estão alojados |
+| `enabled` | `1` para activo, `0` para desactivado |
+| `gpgcheck` | `1` para verificar assinaturas dos pacotes (segurança) |
+| `gpgkey` | Localização da chave usada para verificar as assinaturas |
+
+O campo `gpgcheck=1` merece destaque. Activa a verificação criptográfica das assinaturas de cada pacote antes da instalação, garantindo que o pacote vem realmente da fonte que alega e que não foi adulterado em trânsito. **Não deve ser desactivado**, pois é uma protecção fundamental contra a instalação de software comprometido.
+
+Muitas ferramentas de terceiros fornecem o seu próprio ficheiro `.repo`, e um repositório muito comum no ecossistema CentOS é o **EPEL** (*Extra Packages for Enterprise Linux*), mantido pela comunidade Fedora, que disponibiliza software adicional não incluído nos repositórios base:
+
+```bash
+    # Instalar o repositório EPEL
+    $ sudo dnf install epel-release
+```
