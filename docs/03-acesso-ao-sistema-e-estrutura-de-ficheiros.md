@@ -211,3 +211,82 @@ A distinção prática resume-se ao seguinte: a ligação física é um segundo 
 | Sobrevive à remoção do alvo | Sim | Não (fica quebrada) |
 | Comando de criação | `ln` | `ln -s` |
 
+
+## Navegação no Sistema de Ficheiros
+ 
+Compreendida a estrutura estática da árvore de directórios, resta dominar o movimento através dela. A interacção com o sistema de ficheiros a partir da linha de comandos assenta num pequeno conjunto de comandos fundamentais e na noção de caminho.
+ 
+### Caminhos Absolutos e Relativos
+ 
+Sempre que se faz referência a um ficheiro ou directório, indica-se o seu **caminho** (*path*). Existem duas formas de o expressar, e a distinção é permanente no trabalho diário.
+ 
+Um **caminho absoluto** descreve a localização de um objecto a partir da raiz do sistema, começando sempre pelo caractere `/`. O caminho `/usr/lib` é absoluto: identifica de forma inequívoca aquele directório, independentemente de onde o utilizador se encontre. Um caminho absoluto é como uma morada completa: válida a partir de qualquer ponto de partida.
+ 
+Um **caminho relativo** descreve a localização de um objecto a partir do directório actual, e nunca começa por `/`. Se o utilizador estiver em `/usr`, o caminho relativo `lib` refere-se a `/usr/lib`. O mesmo caminho relativo, escrito a partir de outro directório, apontaria para outro sítio. Na prática, trabalha-se a maior parte do tempo com caminhos relativos, porque normalmente já se está no directório de interesse ou perto dele.
+ 
+### Os Atalhos de Navegação
+ 
+O sistema disponibiliza quatro símbolos que abreviam referências comuns e que aparecem constantemente em comandos e scripts.
+ 
+| Símbolo | Referência |
+|---------|-----------|
+| `.` | O directório actual |
+| `..` | O directório pai (o nível imediatamente acima) |
+| `~` | O directório pessoal do utilizador (*home*) |
+| `-` | O directório anterior (aquele onde se estava antes do último `cd`) |
+ 
+O ponto único (`.`) refere-se ao directório actual. Se o utilizador estiver em `/usr/lib`, o caminho `.` continua a ser `/usr/lib`, e `./X11` equivale a `/usr/lib/X11`. Na maioria dos casos não é necessário usar o `.` explicitamente, uma vez que os comandos assumem por omissão o directório actual quando o caminho não começa por `/`.
+ 
+Os dois pontos (`..`) referem-se ao directório pai. A partir de `/usr/lib`, o caminho `..` aponta para `/usr`, e `../bin` aponta para `/usr/bin`. Na raiz do sistema, por não existir um nível superior, tanto `.` como `..` apontam para a própria raiz.
+ 
+### pwd: identificar o directório actual
+ 
+Cada processo, incluindo a shell, mantém a noção de um **directório de trabalho actual** (*current working directory*): o directório em que se encontra num dado momento. O comando `pwd` (*print working directory*) revela esse directório, expresso como caminho absoluto.
+ 
+```bash
+    $ pwd
+    /home/estudante
+```
+ 
+Ainda que o prompt da maioria das distribuições já indique o directório actual, o `pwd` fornece sempre o caminho absoluto completo e inequívoco, o que é útil em scripts e quando o prompt está configurado para mostrar apenas o nome curto do directório.
+ 
+### cd: mudar de directório
+ 
+O comando `cd` (*change directory*) altera o directório de trabalho actual da shell.
+ 
+```bash
+    $ cd /etc/systemd          # navegar para um caminho absoluto
+    $ cd documentos            # navegar para um subdirectório (caminho relativo)
+    $ cd ..                    # subir um nível
+    $ cd                       # regressar ao directório pessoal (home)
+    $ cd -                     # regressar ao directório anterior
+```
+ 
+Executado sem qualquer argumento, o `cd` devolve o utilizador ao seu directório pessoal, o mesmo que `cd ~`. O `cd -` alterna para o directório onde se estava imediatamente antes, o que é prático para saltar repetidamente entre dois locais de trabalho.
+ 
+Convém notar um detalhe técnico: o `cd` é um comando interno da própria shell (*built-in*), e não um programa autónomo. A razão é estrutural. Se o `cd` fosse um programa externo, correria como um subprocesso da shell, e um subprocesso não pode, em circunstâncias normais, alterar o directório de trabalho do processo que o invocou. A mudança de directório teria efeito no subprocesso e desapareceria com ele, deixando a shell exactamente onde estava. Por isso, a capacidade de mudar de directório tem de residir na própria shell.
+ 
+### mkdir e rmdir: criar e remover directórios
+ 
+O comando `mkdir` (*make directory*) cria um novo directório:
+ 
+```bash
+    $ mkdir projectos
+    $ mkdir -p projectos/2025/relatorios    # criar toda a hierarquia de uma vez
+```
+ 
+A opção `-p` cria os directórios intermédios em falta, permitindo construir uma estrutura completa num único comando em vez de criar cada nível separadamente.
+ 
+O comando `rmdir` (*remove directory*) remove um directório, mas apenas se este estiver vazio:
+ 
+```bash
+    $ rmdir projectos
+```
+ 
+Se o directório contiver ficheiros ou subdirectórios, o `rmdir` falha. Esta recusa é uma protecção deliberada. Para remover um directório e todo o seu conteúdo de uma vez, recorre-se ao `rm` com a opção de remoção recursiva `-r`, que apaga repetidamente tudo o que se encontra no interior.
+ 
+```bash
+    $ rm -r projectos
+```
+ 
+> **O `rm -r` é um dos poucos comandos capazes de causar danos graves e irreversíveis**, sobretudo quando executado com privilégios de superutilizador. Não existe lixeira nem forma de desfazer. Deve-se verificar sempre o comando antes de o executar, e evitar em absoluto combinar o `-r` com wildcards como o asterisco (`*`), uma combinação que pode apagar muito mais do que se pretendia num instante.
