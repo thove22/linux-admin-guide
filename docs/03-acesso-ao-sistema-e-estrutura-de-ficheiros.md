@@ -290,3 +290,69 @@ Se o directório contiver ficheiros ou subdirectórios, o `rmdir` falha. Esta re
 ```
  
 > **O `rm -r` é um dos poucos comandos capazes de causar danos graves e irreversíveis**, sobretudo quando executado com privilégios de superutilizador. Não existe lixeira nem forma de desfazer. Deve-se verificar sempre o comando antes de o executar, e evitar em absoluto combinar o `-r` com wildcards como o asterisco (`*`), uma combinação que pode apagar muito mais do que se pretendia num instante.
+
+# Wildcards (Globbing)
+ 
+Ao trabalhar na linha de comandos, é frequente querer aplicar uma operação a um conjunto de ficheiros em vez de a um único. Listar todos os ficheiros de texto de um directório, apagar todos os ficheiros de registo antigos, ou copiar todas as imagens de uma pasta são tarefas em que especificar cada ficheiro individualmente seria impraticável. Os **wildcards** (ou *globbing*) resolvem este problema, permitindo descrever padrões que a shell expande para os nomes de ficheiros correspondentes.
+ 
+### O mecanismo: expansão pela shell
+ 
+O ponto fundamental, e a origem de muita confusão, é que **os wildcards são processados pela shell, não pelo comando**. Antes de executar qualquer comando, a shell examina os argumentos, substitui os padrões pelos nomes de ficheiros que lhes correspondem, e só depois entrega ao comando a linha já expandida. O comando nunca chega a ver o wildcard: recebe apenas a lista de nomes que a shell encontrou.
+ 
+Esta substituição designa-se por **expansão**. Um exemplo simples torna o mecanismo visível:
+ 
+```bash
+    $ echo *
+```
+ 
+O comando `echo` limita-se a imprimir os seus argumentos. No entanto, ao correr `echo *`, o que aparece no ecrã é a lista de todos os ficheiros do directório actual. Isto acontece porque a shell expandiu o `*` para os nomes dos ficheiros antes de invocar o `echo`, que recebeu já a lista completa e se limitou a imprimi-la.
+ 
+### Os caracteres de correspondência
+ 
+#### O asterisco (`*`)
+ 
+O asterisco corresponde a qualquer sequência de caracteres, incluindo nenhum. É o wildcard mais usado.
+ 
+```bash
+    $ ls at*        # nomes que começam por "at"
+    $ ls *at        # nomes que terminam em "at"
+    $ ls *at*       # nomes que contêm "at" em qualquer posição
+    $ ls *.txt      # todos os ficheiros com extensão .txt
+```
+ 
+Se nenhum ficheiro corresponder ao padrão, a shell não faz qualquer expansão e o comando recebe o wildcard literal. Correr `echo *dfkdsafh` num directório sem ficheiros correspondentes imprime a própria string `*dfkdsafh`, porque não houve nada para substituir.
+
+#### O ponto de interrogação (`?`)
+ 
+O ponto de interrogação corresponde a exactamente um caractere arbitrário, nem mais nem menos.
+ 
+```bash
+    $ ls b?at       # corresponde a "boat" e "brat", mas não a "bat" nem a "boueat"
+    $ ls ficheiro?.txt   # ficheiro1.txt, ficheiro2.txt, mas não ficheiro10.txt
+```
+ 
+#### Os parênteses rectos (`[ ]`)
+ 
+Os parênteses rectos correspondem a um único caractere de entre um conjunto especificado. Permitem maior precisão do que o `?`.
+ 
+```bash
+    $ ls ficheiro[123].txt      # ficheiro1.txt, ficheiro2.txt, ficheiro3.txt
+    $ ls relatorio[a-z].pdf     # qualquer letra minúscula: relatorioa.pdf ... relatorioz.pdf
+    $ ls log[0-9].txt           # qualquer dígito: log0.txt ... log9.txt
+```
+ 
+Dentro dos parênteses, um hífen define um intervalo (`a-z`, `0-9`), e a correspondência aplica-se a um único caractere que esteja dentro desse conjunto.
+ 
+### Proteger os wildcards da expansão
+ 
+Por vezes é necessário que o wildcard chegue intacto ao comando, sem ser expandido pela shell. Isto consegue-se envolvendo o padrão em aspas simples.
+ 
+```bash
+    $ echo '*'      # imprime um asterisco literal, sem expansão
+```
+ 
+Esta técnica é essencial para comandos como o `find`, que fazem a sua própria interpretação de padrões e precisam de receber o wildcard tal como foi escrito, como veremos a seguir.
+ 
+>**Cuidado extremo ao combinar wildcards com comandos destrutivos.** Como a shell expande o padrão antes de o comando correr, um `rm *` apaga todos os ficheiros do directório num instante, sem confirmação. Um erro de digitação, como um espaço acidental em `rm * .txt` em vez de `rm *.txt`, transforma a intenção de apagar ficheiros `.txt` na eliminação de tudo. Verifique sempre o padrão, e em caso de dúvida use primeiro `ls` com o mesmo padrão para ver exactamente o que será afectado.
+
+
