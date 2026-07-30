@@ -353,6 +353,91 @@ Por vezes é necessário que o wildcard chegue intacto ao comando, sem ser expan
  
 Esta técnica é essencial para comandos como o `find`, que fazem a sua própria interpretação de padrões e precisam de receber o wildcard tal como foi escrito, como veremos a seguir.
  
->**Cuidado extremo ao combinar wildcards com comandos destrutivos.** Como a shell expande o padrão antes de o comando correr, um `rm *` apaga todos os ficheiros do directório num instante, sem confirmação. Um erro de digitação, como um espaço acidental em `rm * .txt` em vez de `rm *.txt`, transforma a intenção de apagar ficheiros `.txt` na eliminação de tudo. Verifique sempre o padrão, e em caso de dúvida use primeiro `ls` com o mesmo padrão para ver exactamente o que será afectado.
+> **Cuidado extremo ao combinar wildcards com comandos destrutivos.** Como a shell expande o padrão antes de o comando correr, um `rm *` apaga todos os ficheiros do directório num instante, sem confirmação. Um erro de digitação, como um espaço acidental em `rm * .txt` em vez de `rm *.txt`, transforma a intenção de apagar ficheiros `.txt` na eliminação de tudo. Verifique sempre o padrão, e em caso de dúvida use primeiro `ls` com o mesmo padrão para ver exactamente o que será afectado.
 
-
+## Localizar Ficheiros
+ 
+Saber que um ficheiro existe algures na árvore de directórios mas não saber onde é uma frustração comum. O Linux oferece duas ferramentas para o encontrar, com abordagens fundamentalmente diferentes: o `find`, que procura em tempo real, e o `locate`, que consulta um índice previamente construído.
+ 
+### find: procura em tempo real
+ 
+O `find` percorre efectivamente a árvore de directórios no momento em que é executado, examinando cada ficheiro segundo os critérios indicados. A forma essencial da sua utilização é:
+ 
+```bash
+    $ find [directório] -name [nome]
+```
+ 
+O primeiro argumento é o directório a partir do qual a procura começa, e desce recursivamente por toda a sua subárvore.
+ 
+```bash
+    # Procurar um ficheiro pelo nome, a partir do directório actual
+    $ find . -name relatorio.pdf
+ 
+    # Procurar em todo o sistema (requer privilégios para alguns directórios)
+    $ find / -name sshd_config
+ 
+    # Procurar no directório pessoal
+    $ find ~ -name notas.txt
+```
+ 
+O `find` aceita padrões com wildcards, mas há um cuidado importante. Como a shell expande os wildcards antes de o `find` correr, é necessário protegê-los com aspas simples, para que seja o `find`, e não a shell, a interpretá-los:
+ 
+```bash
+    # As aspas garantem que o find recebe o padrão intacto
+    $ find . -name '*.log'
+    $ find /var -name 'erro*'
+```
+ 
+Sem as aspas, a shell tentaria expandir o `*.log` no directório actual antes de o `find` sequer arrancar, o que produziria resultados errados ou uma mensagem de erro.
+ 
+O `find` é uma ferramenta com muitas capacidades adicionais, incluindo a procura por tamanho, data de modificação, dono ou permissões, e a execução de acções sobre os ficheiros encontrados. No entanto, é aconselhável dominar primeiro a forma essencial acima e compreender bem o papel do `-name` antes de avançar para opções mais complexas.
+ 
+Alguns exemplos do alcance da ferramenta:
+ 
+```bash
+    # Ficheiros modificados nas últimas 24 horas
+    $ find /var/log -mtime -1
+ 
+    # Ficheiros maiores que 100 MB
+    $ find / -size +100M
+ 
+    # Directórios (e não ficheiros) com um determinado nome
+    $ find . -type d -name backup
+```
+ 
+### locate: procura por índice
+ 
+O `locate` resolve o mesmo problema por uma via oposta. Em vez de percorrer o disco em tempo real, consulta uma base de dados que o sistema constrói e actualiza periodicamente. O resultado é uma procura quase instantânea, mesmo em sistemas com milhões de ficheiros.
+ 
+```bash
+    $ locate sshd_config
+    $ locate relatorio.pdf
+```
+ 
+Esta velocidade tem um custo: o `locate` só conhece os ficheiros que existiam quando o índice foi construído pela última vez. Um ficheiro criado há minutos pode ainda não constar do índice, e o `locate` não o encontrará. O índice é normalmente actualizado uma vez por dia por uma tarefa agendada, mas pode ser forçado manualmente:
+ 
+```bash
+    $ sudo updatedb
+```
+ 
+Em muitas distribuições, incluindo o CentOS, o `locate` não vem instalado por omissão e faz parte do pacote `mlocate`:
+ 
+```bash
+    $ sudo dnf install mlocate -y
+```
+ 
+### find ou locate: quando usar cada um
+ 
+A escolha entre as duas ferramentas depende do que se procura e das circunstâncias.
+ 
+O `locate` é a escolha certa para procuras rápidas de ficheiros que existem há algum tempo, sobretudo quando não se sabe sequer em que parte do sistema procurar. É ideal para responder à pergunta "onde está o ficheiro X?" de forma imediata.
+ 
+O `find` é indispensável quando o ficheiro é recente e pode ainda não estar indexado, quando é preciso procurar por critérios que vão além do nome (tamanho, data, dono, permissões), ou quando se quer agir sobre os resultados. É também a única opção quando o `locate` não está disponível ou o seu índice não é de confiança.
+ 
+| Critério | `find` | `locate` |
+|----------|--------|----------|
+| Método | Percorre o disco em tempo real | Consulta um índice pré-construído |
+| Velocidade | Lento em árvores grandes | Quase instantâneo |
+| Ficheiros recentes | Encontra sempre | Só após actualização do índice |
+| Critérios de procura | Nome, tamanho, data, dono, tipo, permissões | Apenas nome/caminho |
+| Disponibilidade | Sempre presente | Requer instalação e índice actualizado |
