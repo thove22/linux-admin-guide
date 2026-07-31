@@ -174,3 +174,89 @@ Hoje, o desenvolvimento do Linux é coordenado pela **Linux Foundation**, uma or
 O facto de gigantes tecnológicos, muitos deles concorrentes ferozes entre si, financiarem em conjunto o desenvolvimento de um sistema operativo livre é, talvez, a melhor prova de que o modelo colaborativo que começou nos Bell Labs há mais de meio século não só funcionou, como se tornou parte essencial da infraestrutura tecnológica mundial.
 
 Compreendida esta história, resta perceber como é que este kernel único dá origem à variedade de sistemas Linux que existem, e qual deles é o objecto deste guia. É o tema da secção seguinte, sobre distribuições.
+
+## 4. Distribuições Linux
+
+### O conceito de distribuição
+
+Como vimos, o Linux é, tecnicamente, apenas o kernel. Ter código-fonte espalhado pela internet, pronto a ser compilado, funcionava bem para técnicos experientes, mas os utilizadores comuns precisavam de uma forma mais simples de montar um sistema Linux funcional. Foi para responder a essa necessidade que surgiram as **distribuições**.
+
+Uma distribuição Linux é o conjunto de tudo o que é necessário para criar um sistema operativo completo e utilizável, mais os procedimentos para o instalar e pôr a funcionar. Antes de o kernel ser útil, é preciso reunir muito mais: os comandos básicos (os utilitários do GNU), os serviços que se querem oferecer (como acesso remoto ou um servidor web), possivelmente uma interface gráfica e aplicações, e uma forma de instalar tudo isso no disco.
+
+Uma distribuição faz precisamente essa reunião. Pega no kernel, junta-lhe o software escolhido, empacota tudo de forma coerente, e fornece um instalador e ferramentas de gestão. É por isso que existem muitas distribuições diferentes: todas partilham o mesmo kernel Linux, mas diferem no software que incluem, na filosofia que seguem, e no público a que se destinam.
+
+### As grandes famílias
+
+Ao longo dos anos surgiram centenas de distribuições, muitas para necessidades específicas. Mas duas tornaram-se a base de onde descendem quase todas as outras: **Red Hat** e **Debian**.
+
+**A família Red Hat.** Quando o Red Hat Linux apareceu no final dos anos 90, tornou-se rapidamente a distribuição mais popular, por várias razões que ainda hoje são relevantes. Introduziu o formato de pacotes **RPM**, que, ao contrário dos simples arquivos comprimidos, guardava informação sobre cada pacote (versão, autor, ficheiros de configuração, dependências) numa base de dados local, tornando fácil descobrir o que estava instalado, actualizá-lo ou removê-lo. Este é o mesmo sistema RPM que o Capítulo 3 detalha. Trouxe também um instalador simples e ferramentas gráficas de administração. Desta família descendem o Red Hat Enterprise Linux, o Fedora, o CentOS, o Rocky Linux, o AlmaLinux e o Oracle Linux, entre outros. É a família a que pertence o sistema usado neste guia.
+
+**A família Debian.** O Debian foi, tal como o Red Hat, uma distribuição pioneira que se destacou na gestão de pacotes, usando o formato **deb** e as suas próprias ferramentas. Ganhou reputação de grande estabilidade. Dele descendem mais de uma centena de distribuições, sendo a mais bem-sucedida o **Ubuntu**, que acrescentou ao Debian um instalador gráfico simples e ferramentas fáceis de usar, focando-se em trazer novos utilizadores para o Linux.
+
+Existem outras famílias e distribuições independentes de nota, como o **SUSE** (de origem alemã, forte no mercado empresarial europeu) e o **Arch Linux** (orientado para utilizadores avançados que querem controlo total sobre o seu sistema).
+
+### Como escolher uma distribuição
+
+Não existe a "melhor" distribuição em abstracto; existe a mais adequada a um propósito. Um utilizador doméstico que quer facilidade pode preferir o Ubuntu. Um programador que quer a tecnologia mais recente pode escolher o Fedora. Uma empresa que precisa de estabilidade e suporte comercial opta pelo Red Hat Enterprise Linux.
+
+Para quem aprende administração de sistemas com vista a uma carreira, a escolha deve orientar-se pelo mercado de trabalho. E aqui, a família Red Hat, e em particular o RHEL e os sistemas compatíveis com ele, domina o segmento empresarial, o que torna essas competências as mais procuradas. É essa a razão pela qual este guia se baseia no CentOS Stream, um sistema da família Red Hat, como veremos de seguida.
+
+## 5. CentOS, RHEL e o Ecossistema Enterprise Linux
+
+Esta secção fecha o capítulo situando com precisão o sistema sobre o qual todo o guia assenta. É um tema que exige cuidado, porque o panorama mudou significativamente nos últimos anos, e muita documentação e muitos guias na internet ainda descrevem uma realidade que já não existe.
+
+### A linhagem RHEL
+
+O **Red Hat Enterprise Linux** (RHEL) é a distribuição Linux empresarial de referência. Enquanto outras distribuições se focavam no ambiente de trabalho ou nas pequenas empresas, o RHEL concentrou-se nas funcionalidades exigidas por aplicações críticas de grandes empresas e governos: sistemas capazes de processar transacções das maiores bolsas financeiras do mundo, de funcionar em clusters e como anfitriões de virtualização.
+
+O modelo de negócio da Red Hat não assenta na venda do software em si, que é livre, mas na venda de **subscrições**: acesso a suporte técnico, actualizações certificadas, garantia de compatibilidade com hardware e software de terceiros, e formação. Em 2012, a Red Hat tornou-se a primeira empresa de software de código aberto a ultrapassar mil milhões de dólares de receita anual, precisamente com base neste modelo. Hoje pertence à IBM.
+
+Para compreender o CentOS, é preciso primeiro compreender três sistemas relacionados que compõem a linhagem RHEL:
+
+O **Fedora** é a distribuição livre e de vanguarda, patrocinada pela Red Hat, onde as novas tecnologias são testadas antes de serem consideradas para o RHEL. É o campo de ensaios: instável por natureza, mas onde o futuro do RHEL é experimentado.
+
+O **RHEL** é o produto comercial, estável e suportado, construído a partir daquilo que amadureceu no Fedora.
+
+O **CentOS** era, tradicionalmente, uma reconstrução livre do RHEL. E é aqui que a história se complica.
+
+### CentOS Linux e CentOS Stream: a mudança de 2020
+
+Durante muitos anos, o **CentOS Linux** foi exactamente aquilo que a maioria dos guias ainda hoje descreve: uma reconstrução comunitária do RHEL. A Red Hat publicava o código-fonte do RHEL, e o projecto CentOS recompilava-o, removendo as marcas registadas da Red Hat, para produzir um sistema **funcionalmente idêntico ao RHEL mas gratuito**. Como era estável, gratuito e essencialmente igual ao RHEL, o CentOS tornou-se a escolha por defeito de inúmeras empresas de alojamento web e organizações que queriam a robustez do RHEL sem o custo da subscrição. Tinha um ciclo de vida longo, de dez anos, como o RHEL.
+
+Em Dezembro de 2020, a Red Hat anunciou uma mudança que abalou a comunidade: o **CentOS Linux seria descontinuado**, e o foco passaria para o **CentOS Stream**. Esta não foi uma simples mudança de nome, mas uma inversão fundamental do papel do CentOS.
+
+A diferença é a seguinte. O CentOS Linux era **downstream** (a jusante) do RHEL: vinha *depois* do RHEL, reconstruindo uma versão já lançada e estável. O CentOS Stream é **upstream** (a montante) do RHEL: vem *antes*, sendo o ramo de desenvolvimento onde as próximas versões do RHEL são preparadas. Situa-se agora entre o Fedora e o RHEL.
+
+```
+Fedora  →  CentOS Stream  →  RHEL
+(vanguarda)  (desenvolvimento)  (estável, comercial)
+```
+
+Na prática, isto significa que o CentOS Stream deixou de ser uma cópia estável do RHEL para passar a ser uma pré-visualização contínua da *próxima* versão do RHEL. Os pacotes são actualizados de forma contínua, à medida que ficam prontos, sem versões menores fixas, e o ciclo de vida encurtou de dez para cinco anos.
+
+A reacção da comunidade foi de forte descontentamento. O anúncio incluiu ainda o encurtamento do ciclo de vida do CentOS Linux 8, que estava previsto durar até 2029 e passou a terminar no final de 2021. O CentOS Linux 7, a última versão do modelo antigo, chegou ao fim de vida em Junho de 2024.
+
+### Rocky Linux e AlmaLinux
+
+O descontentamento com o fim do CentOS Linux criou uma lacuna evidente: milhares de organizações queriam continuar a ter uma reconstrução gratuita, estável e downstream do RHEL, exactamente o que o CentOS Linux era e o CentOS Stream deixou de ser. Em resposta, surgiram quase de imediato duas novas distribuições para ocupar esse lugar.
+
+O **Rocky Linux** foi criado por Gregory Kurtzer, um dos fundadores originais do próprio projecto CentOS. O nome é uma homenagem a Rocky McGaugh, outro co-fundador do CentOS já falecido. É gerido pela Rocky Enterprise Software Foundation, e a sua primeira versão estável saiu em 2021.
+
+O **AlmaLinux** foi criado pela empresa CloudLinux e é gerido pela AlmaLinux OS Foundation, uma organização sem fins lucrativos. A sua primeira versão estável saiu também em 2021.
+
+Ambos são reconstruções gratuitas, estáveis e compatíveis ao nível binário com o RHEL, com ciclos de vida longos de cerca de dez anos. Ambos oferecem ferramentas para migrar sistemas CentOS existentes. São, para todos os efeitos práticos, os sucessores directos daquilo que o CentOS Linux costumava ser, e são hoje escolhas muito populares para produção.
+
+### Implicações práticas para o administrador
+
+O que significa tudo isto para quem aprende administração de sistemas hoje?
+
+Em primeiro lugar, e mais importante: **as competências são transferíveis entre todos estes sistemas.** RHEL, CentOS Stream, Rocky Linux, AlmaLinux e Oracle Linux partilham a mesma base, o mesmo gestor de pacotes (dnf/rpm), a mesma estrutura de ficheiros, as mesmas ferramentas de administração, o mesmo systemd, o mesmo firewalld, o mesmo SELinux. Aprender a administrar um deles é aprender a administrar todos. Tudo o que este guia ensina aplica-se igualmente a qualquer um.
+
+Em segundo lugar, a escolha entre eles depende do contexto:
+
+- **RHEL** é para ambientes de produção empresarial que precisam de suporte comercial certificado e podem pagar a subscrição.
+- **Rocky Linux** ou **AlmaLinux** são a escolha para quem quer um sistema gratuito, estável e compatível com o RHEL em produção, ocupando o papel que o CentOS Linux tinha.
+- **CentOS Stream** é adequado para quem quer acompanhar o desenvolvimento do RHEL, testar funcionalidades futuras, ou aprender, sendo mais recente que os clones mas menos estável que eles.
+- **Fedora** é para quem quer a tecnologia mais recente e não precisa de estabilidade a longo prazo.
+
+Este guia usa o **CentOS Stream** como referência. As razões são pedagógicas: é livre, é directamente ligado ao RHEL, e as competências adquiridas transferem-se sem alteração para o RHEL comercial, para o Rocky Linux, para o AlmaLinux, ou para qualquer sistema da família. Quando um comando ou um conceito for específico do CentOS, será assinalado, mas na prática quase tudo neste guia é comum a toda a família Red Hat.
