@@ -260,3 +260,53 @@ Em segundo lugar, a escolha entre eles depende do contexto:
 - **Fedora** é para quem quer a tecnologia mais recente e não precisa de estabilidade a longo prazo.
 
 Este guia usa o **CentOS Stream** como referência. As razões são pedagógicas: é livre, é directamente ligado ao RHEL, e as competências adquiridas transferem-se sem alteração para o RHEL comercial, para o Rocky Linux, para o AlmaLinux, ou para qualquer sistema da família. Quando um comando ou um conceito for específico do CentOS, será assinalado, mas na prática quase tudo neste guia é comum a toda a família Red Hat.
+
+## 6. Oportunidades Profissionais com Linux
+
+Chegados ao fim deste capítulo introdutório, vale a pena olhar para a frente. Aprender a administrar sistemas Linux não é apenas um exercício técnico: é uma competência com valor concreto no mercado de trabalho, e compreender esse contexto ajuda a manter a motivação ao longo dos capítulos mais exigentes que se seguem.
+
+### O baixo custo de começar
+
+Uma das características mais notáveis do mundo do software livre é o baixíssimo custo de entrada. Para desenvolver uma ideia, criar um projecto tecnológico, ou simplesmente aprender, os custos concretos resumem-se hoje a um computador e uma ligação à internet. O Linux e milhares de pacotes de software estão disponíveis gratuitamente para quem quiser construir alguma coisa.
+
+Muitas das maiores empresas tecnológicas do mundo começaram exactamente assim, com pouco mais do que uma ideia e ferramentas de código aberto. E o mundo do software livre traz consigo algo que o software proprietário não oferece: comunidades de programadores, administradores e utilizadores dispostos a partilhar conhecimento e a ajudar. Qualquer projecto de código aberto está permanentemente à procura de pessoas para escrever código, testar software ou redigir documentação, e é uma forma de aprender rodeado de quem já domina a matéria.
+
+### A procura por competências em Linux
+
+A adopção do Linux no mundo empresarial não pára de crescer, e com ela a procura por profissionais capazes de administrar esses sistemas. Como vimos ao longo deste capítulo, o Linux domina os servidores, a nuvem e a supercomputação, e essa omnipresença traduz-se directamente em oportunidades de emprego.
+
+Os dados de mercado confirmam a tendência. As ofertas de emprego relacionadas com Linux têm crescido de forma consistente, e os salários reflectem a procura: um administrador de sistemas Linux nos mercados mais desenvolvidos aufere valores que vão desde o patamar de entrada até bem acima dos seis dígitos, em dólares, para engenheiros seniores com certificações. Uma das preocupações recorrentes das empresas que adoptam Linux não é sequer o custo ou a compatibilidade, mas a dificuldade em encontrar pessoas com as competências necessárias para suportar esses sistemas.
+
+Por outras palavras: as competências que este guia ensina são, elas próprias, um activo profissional.
+
+### Como se ganha dinheiro com software livre
+
+Uma dúvida natural para quem chega ao Linux é: se o software é livre e gratuito, como é que há empresas que ganham dinheiro com ele? A resposta revela modelos de negócio que se afastam da simples venda de licenças.
+
+O modelo mais importante é o das **subscrições**. A Red Hat, como vimos, não vende o RHEL como um produto avulso, mas sim subscrições que dão acesso a suporte técnico garantido, actualizações certificadas, ferramentas de gestão e a base de conhecimento da empresa. Paga-se não pelo software, que é livre, mas pela garantia e pela tranquilidade que uma grande organização precisa quando corre aplicações críticas.
+
+Existem outros modelos. A **formação e certificação** é um mercado significativo, ajudando profissionais a comprovar as suas competências. As **recompensas** (*bounties*) permitem a quem precisa de uma funcionalidade específica pagar para que ela seja desenvolvida com prioridade, mantendo-se o resultado sob licença livre. E muitos projectos sustentam-se de **donativos** de indivíduos e empresas que dependem do seu código.
+
+### Certificação: RHCSA e RHCE
+
+Para quem procura emprego como profissional de Linux, a certificação é frequentemente um requisito ou, no mínimo, uma preferência dos empregadores. No ecossistema Red Hat, que é o deste guia, as duas certificações de referência são a RHCSA e a RHCE.
+
+A **RHCSA** (*Red Hat Certified System Administrator*, exame EX200) é a certificação fundamental. Cobre as competências essenciais de administração de sistemas, e é a porta de entrada. A **RHCE** (*Red Hat Certified Engineer*, exame EX294) é a certificação avançada, e tem hoje uma característica importante: está inteiramente focada em automação com **Ansible**, refletindo a procura da indústria por competências de infraestrutura como código. A RHCSA é pré-requisito para a RHCE.
+
+O que distingue estas certificações, e as torna respeitadas pelos empregadores, é o facto de serem **práticas**. Não há perguntas de escolha múltipla. O candidato senta-se perante um sistema real e tem de executar tarefas concretas, sob limite de tempo, exactamente como faria no trabalho. É avaliado pelos resultados que consegue obter. Isto torna-as difíceis de contornar e uma prova genuína de capacidade.
+
+O ponto mais relevante para quem usa este guia é o seguinte: **os tópicos do exame RHCSA correspondem, quase na íntegra, à matéria coberta ao longo destes capítulos.** Uma olhadela aos objectivos oficiais do exame torna-o evidente:
+
+| Objectivo do exame RHCSA | Onde é tratado neste guia |
+|--------------------------|---------------------------|
+| Ferramentas essenciais: shell, redirecções, gestão de ficheiros e permissões, man pages | Capítulos 3 e 4 |
+| Operar sistemas: arranque, modos de recuperação, serviços, logs | Capítulos 5 e 8 |
+| Configurar armazenamento local: partições, LVM, swap | Capítulo 8 |
+| Criar e configurar sistemas de ficheiros, montagem, NFS | Capítulo 8 |
+| Implementar e manter sistemas: rede, cron, pacotes, kernel | Capítulos 3, 5 e 7 |
+| Gerir utilizadores e grupos, autenticação por LDAP | Capítulos 5 e 7 |
+| Gerir segurança: firewall e SELinux | Capítulo 7 |
+
+De forma semelhante, os tópicos da RHCE, que se concentram na configuração e segurança de servidores (Apache, DNS, NFS, correio, SSH, NTP, tudo protegido com firewall e SELinux), são precisamente os serviços que o Capítulo 7 aborda em detalhe.
+
+Isto não é coincidência. Este guia foi construído em torno das competências que definem um administrador de sistemas Linux competente, e essas são as mesmas competências que as certificações procuram validar. Ainda que o objectivo imediato não seja obter uma certificação, dominar a matéria destes capítulos coloca o leitor no caminho certo, tanto para o exame como, mais importante, para o trabalho real que a certificação representa.
