@@ -16,7 +16,7 @@ O foco principal da administração de sistemas moderna, no entanto, é a virtua
 
 ## 2. O Monitor de Máquina Virtual (VMM) e os Princípios Fundamentais
 
-Na sua essência, um hypervisor é um árbitro de recursos. Historicamente conhecido como **Monitor de Máquina Virtual (VMM)**, este software atua como a camada intermediária entre o hardware físico de um servidor e as máquinas virtuais (VMs) que nele operam. Sem um hypervisor, múltiplos sistemas operativos a tentar aceder simultaneamente aos mesmos recursos de hardware — como disco ou memória — resultariam em conflitos imediatos e falhas críticas do sistema.
+Na sua essência, um hypervisor é um árbitro de recursos. Historicamente conhecido como **Monitor de Máquina Virtual (VMM)**, este software atua como a camada intermediária entre o hardware físico de um servidor e as máquinas virtuais (VMs) que nele operam. Sem um hypervisor, múltiplos sistemas operativos a tentar aceder simultaneamente aos mesmos recursos de hardware, como disco ou memória, resultariam em conflitos imediatos e falhas críticas do sistema.
 O hypervisor desempenha duas funções vitais para garantir a estabilidade do ambiente:
 - **O "Simulador de Realidade" (Abstração de Hardware)**: Tal como um simulador de realidade virtual engana os sentidos humanos, o hypervisor engana o sistema operativo convidado (Guest OS). Ele cria a ilusão de que a máquina virtual tem acesso exclusivo e direto a componentes físicos (CPU, RAM, Discos), quando, na verdade, esta está a interagir com frações de recursos abstratos geridos pelo hypervisor.
 - **O "Controlador de Tráfego" (Alocação de Recursos)**: O hypervisor interseta todas as solicitações de Entrada/Saída (I/O) geradas pelas VMs. Quer seja um pedido de leitura no disco ou o envio de um pacote de rede, o hypervisor organiza, prioriza e encaminha esses pedidos para o hardware físico real de forma eficiente e justa, garantindo que nenhuma VM monopoliza o sistema.
@@ -24,14 +24,14 @@ O hypervisor desempenha duas funções vitais para garantir a estabilidade do am
 
 <figure align="center">
   <img src="../assets/img/vmm2.png" alt="Arquitetura VMM" width="500">
-  <figcaption><b>img 1:</b> Arquitetura de camadas: a hierarquia entre o hardware físico, o hypervisor e as VMs.</figcaption>
+  <figcaption><b>img 1:</b> Hierarquia entre hardware físico, hypervisor e VMs.</figcaption>
 </figure>
 
 
 ### 2.1 Os Requisitos de Popek e Goldberg
 A primeira iteração de virtualização ocorreu nos mainframes da IBM na década de 1960. Contudo, em 1974, Gerald J. Popek e Robert P. Goldberg formalizaram os requisitos arquitetónicos da virtualização num artigo fundamental.
 
-Segundo a sua definição, para um **Monitor de Máquina Virtual (VMM)** — ou **Hypervisor** — ser considerado eficiente, deve exibir três propriedades cruciais:
+Segundo a sua definição, para um **Monitor de Máquina Virtual (VMM)**, ou **Hypervisor**, ser considerado eficiente, deve exibir três propriedades cruciais:
 
 - **Fidelidade (Fidelity):** o ambiente criado para a VM tem de ser essencialmente idêntico à máquina física original.
 - **Isolamento e Segurança (Isolation/Safety):** o VMM deve manter o controlo absoluto dos recursos do sistema, garantindo que as VMs não interferem umas com as outras nem acedem a áreas de memória não autorizadas.
@@ -122,11 +122,11 @@ O processo de instalação é o alicerce sobre o qual a estabilidade do sistema 
 
 <figure align="center">
   <img src="../assets/img/anaconda.png" alt="Instalador Anaconda" width="800">
-  <figcaption><b>img 2:</b>Interface principal do instalador Anaconda no estado inicial, aguardando a definição dos parâmetros de configuração e arquitetura do sistema.</figcaption>
+  <figcaption><b>img 2:</b> Ecrã inicial do instalador Anaconda (Installation Summary).</figcaption>
 </figure>
 
 
-A imagem acima ilustra o Resumo da Instalação (Installation Summary) do instalador Anaconda. Esta interface atua como o painel de controlo central e não-linear do provisionamento, onde o administrador deve orquestrar a convergência de diversas variáveis críticas — localização, software, rede e armazenamento — antes de consolidar a escrita de dados no disco persistente. É a partir desta consola que se definem as diretrizes estruturais que transformarão o hardware virtualizado num sistema operacional servidor resiliente e funcional.
+A imagem acima ilustra o Resumo da Instalação (Installation Summary) do instalador Anaconda. Esta interface atua como o painel de controlo central e não-linear do provisionamento, onde o administrador deve orquestrar a convergência de diversas variáveis críticas (localização, software, rede e armazenamento) antes de consolidar a escrita de dados no disco persistente. É a partir desta consola que se definem as diretrizes estruturais que transformarão o hardware virtualizado num sistema operacional servidor resiliente e funcional.
 
 
 ### 7.1 Seleção de Software e Paradigma de Operação
@@ -152,7 +152,7 @@ A topologia proposta para o vDisk de 40 GB segue um modelo de alta disponibilida
 
 <figure align="center">
   <img src="../assets/img/partables.drawio.png" alt="tabela de particoes" width="800">
-  <figcaption><b>img 3:</b>tabela de particoes</figcaption>
+  <figcaption><b>img 3:</b> Topologia de partições recomendada.</figcaption>
 </figure>
 
 
@@ -170,7 +170,7 @@ O sistema de ficheiros XFS foi selecionado como padrão para as partições de d
 
 <figure align="center">
   <img src="../assets/img/centsuspart.png" alt="tabela de particoes" width="800">
-  <figcaption><b>img 4:</b>Particionamento manual no instalador Anaconda</figcaption>
+  <figcaption><b>img 4:</b> Particionamento manual no instalador Anaconda.</figcaption>
 </figure>
 
 
@@ -182,7 +182,7 @@ Na fase final do provisionamento, através da secção "Definições de Utilizad
 
 No ecossistema Unix e nas distribuições Linux (como o CentOS), a conta root (cujo Identificador de Utilizador ou UID é invariavelmente 0) representa a entidade de autoridade suprema.
 
-A diferença arquitetural fundamental entre o root e um utilizador comum reside no mecanismo de controlo de acessos do kernel. Enquanto os utilizadores padrão estão estritamente submetidos ao Discretionary Access Control (DAC) — o que restringe as suas ações às permissões explícitas de leitura, escrita e execução dos ficheiros que lhes pertencem —, o utilizador root atua com isenção total do DAC.
+A diferença arquitetural fundamental entre o root e um utilizador comum reside no mecanismo de controlo de acessos do kernel. Enquanto os utilizadores padrão estão estritamente submetidos ao Discretionary Access Control (DAC), o que restringe as suas ações às permissões explícitas de leitura, escrita e execução dos ficheiros que lhes pertencem, o utilizador root atua com isenção total do DAC.
 Isto significa que o root tem a capacidade de contornar qualquer restrição de permissão, podendo alterar ficheiros de sistema cruciais, carregar ou descarregar módulos de kernel, abrir portas de rede privilegiadas (abaixo de 1024) e interagir diretamente com o hardware.
 
 ##### Privilégios e o Princípio do Privilégio Mínimo

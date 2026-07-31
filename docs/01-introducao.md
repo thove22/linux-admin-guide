@@ -91,7 +91,7 @@ Tudo começa com uma mensagem publicada por um estudante finlandês num grupo de
 
 > Olá a todos os que usam minix. Estou a fazer um sistema operativo (livre) (apenas um passatempo, não vai ser grande e profissional como o gnu) para clones AT 386(486). [...] Quaisquer sugestões são bem-vindas, mas não prometo que as implemente.
 >
-> — Linus Torvalds
+> Linus Torvalds
 
 Aquilo que Torvalds descreveu modestamente como um passatempo viria a tornar-se um dos sistemas operativos mais importantes do mundo. Mas para entender o que ele estava a construir, e porque conseguiu construí-lo, é preciso recuar mais de duas décadas, até às origens do Unix.
 

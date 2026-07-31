@@ -30,7 +30,7 @@ Antes de analisar a origem ou a categoria de um comando, é necessário compreen
 
 Para fundamentar a aplicação prática desta estrutura, analisam-se dois cenários de execução no terminal:
 
-#### Listagem Detalhada de Diretórios
+### Listagem Detalhada de Diretórios
 
 ```bash
     $ ls -l /home
@@ -41,7 +41,7 @@ Nesta linha de comandos, identificam-se os seguintes componentes:
 - -l: A opção aplicada para modificar a saída do comando, instruindo o utilitário a exibir os dados num formato longo (long listing), detalhando metadados como permissões, tamanho e datas de modificação.
 - /home: O argumento que define o local físico do sistema que deve ser alvo da listagem.
 
-#### Criação Recursiva de Estruturas
+### Criação Recursiva de Estruturas
 
 ```bash
     $ mkdir -p projetos/aula4
@@ -303,9 +303,9 @@ No modelo de segurança do ecossistema Linux, a atribuição de permissões asse
 
 Cada um desses grupos pode ter combinações de:
 
-- r — leitura;
-- w — escrita;
-- x — execução.
+- r: leitura;
+- w: escrita;
+- x: execução.
 
 Para mapear e auditar os parâmetros de identidade da sessão em execução, utiliza-se o comando **id**.
 
@@ -482,7 +482,7 @@ Enquanto o comando chmod permite a um proprietário gerir as permissões de aces
 
 É crucial notar que a utilização do chown exige estritamente privilégios de superutilizador (root ou através do sudo). O sistema operativo impõe esta restrição para evitar que utilizadores comuns burlem as quotas de disco (transferindo a posse de ficheiros pesados para outros utilizadores) ou criem falhas de segurança.
 
-##### Sintaxe de Invocação:
+#### Sintaxe de Invocação:
 
 ```bash
     chown [proprietário][:[grupo]] ficheiro...
@@ -668,7 +668,7 @@ Suponhamos que, no meio dos milhares de binários do sistema, queremos encontrar
     zip
     zipcloak
 ```
-##### Opções de Controlo do grep:
+#### Opções de Controlo do grep:
 
 - - -i: Ignora a distinção entre maiúsculas e minúsculas (case-insensitive).
 
@@ -686,7 +686,7 @@ Muitas vezes, a saída de um comando é massiva e o nosso interesse reside apena
     zonetab2pot.pyo
     zsoelim
 ```
-##### Monitorização em Tempo Real (tail -f):
+#### Monitorização em Tempo Real (tail -f):
 
 O utilitário tail possui uma funcionalidade singular e indispensável para a administração de sistemas: a opção -f (follow). Em vez de ler as últimas linhas e terminar a execução, o tail -f mantém o ficheiro aberto e monitoriza-o continuamente. Sempre que um processo do sistema escreve uma nova linha no ficheiro, o tail atualiza imediatamente o ecrã.
 
@@ -771,7 +771,7 @@ análise comparativa revela que o bzip2 comprimiu o mesmo conjunto de dados de $
 
 No ecossistema UNIX/Linux, é importante distinguir dois conceitos que muitas vezes aparecem juntos: arquivamento e compressão. Embora sejam frequentemente utilizados em sequência, tratam-se de operações diferentes.
 
-##### Arquivamento (Archiving)
+#### Arquivamento (Archiving)
 
 Arquivamento é o processo de reunir vários ficheiros e diretórios num único ficheiro contentor, preservando a estrutura original, os nomes, permissões, proprietários e datas. Nesta etapa, os dados não são reduzidos nem alterados; eles apenas são agrupados.
 O objetivo principal do arquivamento é facilitar:
@@ -780,7 +780,7 @@ O objetivo principal do arquivamento é facilitar:
 - preservação da estrutura de diretórios.
 No Linux, esta função é normalmente realizada pelo comando tar.
 
-##### Compressão
+#### Compressão
 
 Compressão é o processo de reduzir o tamanho dos dados através de algoritmos matemáticos. Diferente do arquivamento, a compressão trabalha sobre um fluxo de dados e tenta eliminar redundâncias para economizar espaço.
 
@@ -813,7 +813,7 @@ Tabela 5 : Modos de Funcionamento do Comando `tar`
 
 #### Demonstração Prática: Operações Fundamentais do tar
 
-ara ilustrar a utilidade primária do utilitário tar — o arquivamento estrito e a restauração de dados — vamos focar-nos nas operações mais essenciais do dia a dia. Consideremos um cenário basilar: possui um diretório de trabalho denominado projeto_web, que contém os ficheiros de código e a documentação de uma aplicação, e necessita de consolidar esta estrutura para efeitos de partilha ou cópia de segurança.
+Para ilustrar a utilidade primária do utilitário tar (o arquivamento estrito e a restauração de dados) vamos focar-nos nas operações mais essenciais do dia a dia. Consideremos um cenário basilar: possui um diretório de trabalho denominado projeto_web, que contém os ficheiros de código e a documentação de uma aplicação, e necessita de consolidar esta estrutura para efeitos de partilha ou cópia de segurança.
 
 1. Criação de um Arquivo Simples
 

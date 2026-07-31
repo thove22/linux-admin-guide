@@ -1,10 +1,10 @@
-# Capítulo 6 — Automação com Shell Scripting
+# Automação com Shell Scripting
  
 ## 1. O Kernel, a Shell e o Terminal
  
 ### 1.1 O papel do kernel
  
-O kernel é o núcleo do sistema operativo Linux. É o componente que arranca primeiro quando o sistema liga, que gere directamente o hardware  CPU, memória, discos, interfaces de rede — e que serve de árbitro entre todos os programas que precisam de aceder a esses recursos. Nenhum programa de utilizador comunica directamente com o hardware: tudo passa pelo kernel, através de um mecanismo controlado chamado chamadas de sistema (*system calls*).
+O kernel é o núcleo do sistema operativo Linux. É o componente que arranca primeiro quando o sistema liga, que gere directamente o hardware (CPU, memória, discos, interfaces de rede) e que serve de árbitro entre todos os programas que precisam de aceder a esses recursos. Nenhum programa de utilizador comunica directamente com o hardware: tudo passa pelo kernel, através de um mecanismo controlado chamado chamadas de sistema (*system calls*).
  
 Um sistema Linux completo é composto por várias camadas: o kernel em baixo, as bibliotecas e utilitários GNU em cima, e no topo um shell que une tudo e o expõe ao utilizador de forma utilizável. Sem o kernel, nada corre. Sem o shell, o utilizador não tem forma prática de interagir com o que o kernel oferece.
  
@@ -106,7 +106,7 @@ Um exemplo mínimo e funcional:
  
 ```bash
 #!/bin/bash
-# primeiro_script.sh — verificar se o sistema está acessível
+# primeiro_script.sh: verificar se o sistema está acessível
  
 echo "Sistema: $(hostname)"
 echo "Data e hora: $(date)"
@@ -122,7 +122,7 @@ As variáveis em Bash armazenam valores que podem ser referenciados e modificado
 ```bash
 #!/bin/bash
  
-# Atribuição — sem espaços à volta do =
+# Atribuição: sem espaços à volta do =
 SERVIDOR="servidor-01"
 PORTA=8080
 LIMITE=85
@@ -159,10 +159,10 @@ Olá, $NOME
 Esta distinção é crítica em scripts que constroem comandos ou strings dinamicamente. Como regra geral, use sempre aspas duplas à volta de variáveis para evitar problemas com espaços e caracteres especiais:
  
 ```bash
-# Sem aspas — pode falhar se $FICHEIRO tiver espaços no nome
+# Sem aspas: pode falhar se $FICHEIRO tiver espaços no nome
 cp $FICHEIRO /backup/
  
-# Com aspas duplas — seguro
+# Com aspas duplas: seguro
 cp "$FICHEIRO" /backup/
 ```
  
@@ -348,7 +348,7 @@ A estrutura `if` executa um bloco de código se uma condição for verdadeira:
  
 ```bash
 #!/bin/bash
-# verificar_servico.sh — verifica se um serviço está activo
+# verificar_servico.sh: verifica se um serviço está activo
  
 SERVICO="$1"
  
@@ -424,7 +424,7 @@ O `case` é mais adequado do que `if/elif` quando há muitos valores possíveis 
  
 ```bash
 #!/bin/bash
-# gerir_servico.sh — script de gestão de serviços
+# gerir_servico.sh: script de gestão de serviços
  
 SERVICO="$1"
 ACCAO="$2"
@@ -827,7 +827,7 @@ $ source ~/.bashrc
 $ . ~/.bashrc
 ```
  
-> ⚠️ **Aliases em scripts:** os aliases definidos no `~/.bashrc` não estão disponíveis dentro de scripts shell, porque scripts correm numa shell não-interactiva que não carrega o `~/.bashrc`. Se precisar de reutilizar lógica dentro de scripts, use funções, não aliases.
+> **Aliases em scripts:** os aliases definidos no `~/.bashrc` não estão disponíveis dentro de scripts shell, porque scripts correm numa shell não-interactiva que não carrega o `~/.bashrc`. Se precisar de reutilizar lógica dentro de scripts, use funções, não aliases.
  
 ### 6.2 Gestão do histórico de comandos
  
