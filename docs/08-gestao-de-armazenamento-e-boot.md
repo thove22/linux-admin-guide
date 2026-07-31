@@ -359,7 +359,7 @@ Por compatibilidade, existem targets que correspondem aos runlevels tradicionais
 | `multi-user.target` | 2, 3, 4 | Multiutilizador com rede, sem gráfico |
 | `graphical.target` | 5 | Multiutilizador com interface gráfica |
 | `reboot.target` | 6 | Reiniciar |
-| `emergency.target` | — | Shell mínima, apenas raiz montada em leitura |
+| `emergency.target` | - | Shell mínima, apenas raiz montada em leitura |
 
 ```bash
 # Ver o target por defeito
@@ -489,7 +489,7 @@ $ sudo vi /etc/motd
 
 ```
 =========================================================
-  SERVIDOR DE PRODUÇÃO — empresa.pt
+  SERVIDOR DE PRODUÇÃO - empresa.pt
 =========================================================
   Este sistema é monitorizado e todas as sessões
   são registadas.
@@ -734,7 +734,7 @@ O aviso enviado aos utilizadores com sessão activa usa o mecanismo `wall` visto
 
 ## 2. Fundamentos de Armazenamento e Particionamento
 
-## 2.1 Como o Linux vê o armazenamento
+### 2.1 Como o Linux vê o armazenamento
 
 Antes de particionar um disco, é preciso perceber como o Linux organiza o armazenamento em camadas. Cada camada resolve um problema específico, e conhecê-las evita a confusão que surge quando os comandos mostram coisas que não parecem corresponder ao que se espera.
 
@@ -754,7 +754,7 @@ O **LVM** (*Logical Volume Manager*), que veremos na secção 4, insere-se entre
 
 ---
 
-## 2.2 Dispositivos de bloco e nomenclatura
+### 2.2 Dispositivos de bloco e nomenclatura
 
 Os nomes dos dispositivos de bloco seguem convenções que revelam o tipo de hardware e a sua ordem de detecção.
 
@@ -779,11 +779,11 @@ Existem também interfaces especiais que representam armazenamento sem ser um di
 
 ---
 
-## 2.3 Tabelas de partições: MBR e GPT
+### 2.3 Tabelas de partições: MBR e GPT
 
 A tabela de partições não tem nada de mágico. É apenas um bloco de dados no início do disco que descreve como os blocos estão divididos. Existem dois formatos em uso, e a diferença entre eles tem consequências práticas.
 
-### MBR
+#### MBR
 
 O **MBR** (*Master Boot Record*) é o formato tradicional, que remonta aos primeiros PCs. Como visto na secção 1, os primeiros 512 bytes do disco contêm tanto o código de arranque como a tabela de partições, e é essa herança que impõe as suas limitações.
 
@@ -804,7 +804,7 @@ As partições lógicas começam sempre a numeração no 5, independentemente de
 
 O MBR tem duas limitações que o tornam obsoleto para hardware moderno. Não suporta discos maiores que 2 TiB, porque usa endereços de 32 bits para localizar os blocos. E o esquema de partições primárias e estendidas é desajeitado. Por estas razões, o MBR foi substituído pelo GPT.
 
-### GPT
+#### GPT
 
 O **GPT** (*GUID Partition Table*) é o formato moderno, associado ao firmware UEFI mas utilizável também com BIOS. Resolve as limitações do MBR de forma directa.
 
@@ -812,7 +812,7 @@ Suporta discos até tamanhos que na prática não têm limite relevante (na orde
 
 O GPT guarda ainda uma cópia da tabela de partições no final do disco, além da cópia no início, o que oferece resistência a corrupção: se a tabela principal for danificada, a cópia de segurança permite recuperá-la.
 
-### Qual usar
+#### Qual usar
 
 Para qualquer instalação nova em hardware moderno, GPT é a escolha correcta. A instalação do CentOS no Capítulo 2 usou GPT, e é por isso que a tabela de partições incluía a partição `biosboot`, necessária apenas quando se usa GPT com firmware em modo BIOS, como explicado na secção 1.
 
@@ -820,11 +820,11 @@ O MBR mantém relevância apenas em dois cenários: hardware muito antigo que n�
 
 ---
 
-## 2.4 Inspeccionar o armazenamento
+### 2.4 Inspeccionar o armazenamento
 
 Antes de alterar seja o que for, é preciso saber o que existe. Vários comandos oferecem visões complementares do armazenamento do sistema.
 
-### lsblk: a visão em árvore
+#### lsblk: a visão em árvore
 
 O `lsblk` (*list block devices*) é o ponto de partida. Mostra todos os dispositivos de bloco numa estrutura em árvore que torna imediatamente visível a relação entre discos, partições e volumes:
 
@@ -853,7 +853,7 @@ $ lsblk -f
 $ lsblk -o NAME,SIZE,TYPE,FSTYPE,MODEL,SERIAL
 ```
 
-### blkid: identificadores e tipos
+#### blkid: identificadores e tipos
 
 O `blkid` (*block ID*) foca-se na identificação: mostra o UUID e o tipo de sistema de ficheiros de cada partição:
 
@@ -867,7 +867,7 @@ $ sudo blkid
 
 Este comando é essencial quando se prepara uma entrada no `/etc/fstab`, porque fornece o UUID exacto que se deve usar em vez do nome do dispositivo.
 
-### fdisk -l e parted: a tabela de partições
+#### fdisk -l e parted: a tabela de partições
 
 Para ver a tabela de partições em detalhe:
 
@@ -904,7 +904,7 @@ Number  Start   End     Size    File system  Name  Flags
 
 ---
 
-## 2.5 Criar partições
+### 2.5 Criar partições
 
 Alterar a tabela de partições é uma operação de risco. Antes de começar, dois princípios são inegociáveis.
 
@@ -914,7 +914,7 @@ Alterar a tabela de partições é uma operação de risco. Antes de começar, d
 
 Existem três ferramentas principais para criar partições, e a escolha entre elas tem uma consequência importante.
 
-### fdisk vs parted: uma diferença crítica
+#### fdisk vs parted: uma diferença crítica
 
 O **fdisk** e o **parted** funcionam de forma fundamentalmente diferente.
 
@@ -926,7 +926,7 @@ Por esta razão, para criar e alterar partições, o `fdisk` é geralmente prefe
 
 Existe ainda o **gdisk**, que é ao `fdisk` o que este é para MBR mas especializado em GPT, e o **gparted**, uma interface gráfica sobre o `parted`.
 
-### Criar partições com fdisk
+#### Criar partições com fdisk
 
 O exemplo seguinte mostra a criação de duas partições num disco novo `/dev/sdb`: uma de 2 GB e outra ocupando o resto do espaço.
 
@@ -994,7 +994,7 @@ $ lsblk /dev/sdb
 $ sudo journalctl -k | tail -5
 ```
 
-### O tipo de partição
+#### O tipo de partição
 
 Por defeito, o `fdisk` cria partições do tipo "Linux filesystem". Para certas utilizações é necessário mudar o tipo, o que se faz com o comando `t` dentro do `fdisk`. Os tipos mais relevantes:
 
@@ -1008,13 +1008,13 @@ Por defeito, o `fdisk` cria partições do tipo "Linux filesystem". Para certas 
 
 Definir o tipo correcto não é obrigatório para o funcionamento, mas é uma boa prática: ajuda as ferramentas a identificar a função de cada partição e evita erros.
 
-### Alinhamento de partições
+#### Alinhamento de partições
 
 Um detalhe que já não exige intervenção manual mas que importa compreender é o **alinhamento**. Nos discos SSD, os dados são lidos em blocos de tamanho fixo (páginas de 4096 ou 8192 bytes), e a leitura tem de começar num múltiplo desse tamanho. Se uma partição começar num ponto desalinhado, operações simples podem exigir duas leituras em vez de uma, degradando o desempenho.
 
 As versões modernas das ferramentas de particionamento resolvem isto automaticamente, alinhando as partições em fronteiras de 1 MiB (o sector 2048). Este valor é um múltiplo de todos os tamanhos de página comuns, pelo que garante alinhamento óptimo sem cálculos. É por isso que o primeiro sector por defeito no `fdisk` é sempre 2048: aceitar o valor por defeito garante o alinhamento correcto.
 
-### Forçar a releitura da tabela
+#### Forçar a releitura da tabela
 
 Ocasionalmente, o kernel não relê a tabela de partições após uma alteração, normalmente porque alguma partição do disco ainda está em uso. Nesse caso, força-se a releitura:
 
@@ -1034,9 +1034,9 @@ Esta secção cobre o ciclo completo: criar o sistema de ficheiros na partição
 
 ---
 
-## 3.1 Criar sistemas de ficheiros: mkfs
+### 3.1 Criar sistemas de ficheiros: mkfs
 
-### Escolher o sistema de ficheiros
+#### Escolher o sistema de ficheiros
 
 O Linux suporta muitos sistemas de ficheiros, mas para a esmagadora maioria dos casos a escolha certa é o valor por defeito da distribuição. As ferramentas administrativas e a documentação assumem esse valor, e qualquer ganho de mudar para outro é marginal e dependente do contexto. Apenas três características são verdadeiramente não negociáveis: bom desempenho, tolerância a falhas e cortes de energia sem corrupção, e capacidade para discos e ficheiros do tamanho necessário. Os sistemas de ficheiros modernos por defeito já cobrem estas bases.
 
@@ -1050,7 +1050,7 @@ Vale a pena conhecer os principais:
 
 **vfat** e **exfat** são os sistemas de ficheiros da Microsoft, usados por defeito na maioria dos suportes amovíveis como cartões SD e pens USB, precisamente por serem legíveis em praticamente todos os sistemas operativos.
 
-### O conceito de journaling
+#### O conceito de journaling
 
 O **journaling** é uma das razões pelas quais os sistemas de ficheiros modernos raramente corrompem após uma falha, e vale a pena compreender o mecanismo.
 
@@ -1058,7 +1058,7 @@ Sem journal, quando uma operação de escrita é interrompida a meio, por corte 
 
 Um sistema de ficheiros com journal reserva uma área onde regista o que vai fazer **antes** de o fazer. A operação é primeiro escrita no journal, depois é marcada como concluída com um registo de commit, e só então o sistema de ficheiros real é modificado. Se uma falha ocorrer a meio, o sistema recupera consultando o journal: refaz as operações que tinham commit e descarta as que não tinham. A verificação passa de horas para cerca de um segundo por sistema de ficheiros.
 
-### Estruturas fundamentais
+#### Estruturas fundamentais
 
 Independentemente do tipo, os sistemas de ficheiros partilham alguns conceitos herdados da tradição UNIX.
 
@@ -1066,7 +1066,7 @@ O **inode** é uma entrada de tabela que guarda toda a informação sobre um fic
 
 O **superbloco** é o registo que descreve as características do próprio sistema de ficheiros: o tamanho dos blocos, a localização das tabelas de inodes, o mapa de blocos livres. É informação tão crítica que o `mkfs` cria várias cópias de segurança espalhadas pelo disco, para o caso de a original ser danificada.
 
-### O comando mkfs
+#### O comando mkfs
 
 O `mkfs` (*make filesystem*) cria um sistema de ficheiros numa partição. A forma geral especifica o tipo e o dispositivo:
 
@@ -1090,13 +1090,13 @@ O `mkfs` determina automaticamente o número de blocos do dispositivo e define v
 
 ---
 
-## 3.2 Montar e desmontar
+### 3.2 Montar e desmontar
 
 Criar o sistema de ficheiros não o torna acessível. Para que os processos o possam usar, tem de ser **montado**: ligado a um directório da hierarquia do sistema, chamado **ponto de montagem**.
 
 O ponto de montagem é um directório normal. Depois de um sistema de ficheiros ser montado sobre ele, o conteúdo original desse directório fica oculto e é substituído pelo conteúdo do sistema de ficheiros montado. Por convenção, `/mnt` é usado para montagens temporárias e `/media` para suportes amovíveis, mas o ponto de montagem pode ser qualquer directório.
 
-### Montar
+#### Montar
 
 ```bash
 # Criar o directório que servirá de ponto de montagem
@@ -1111,7 +1111,7 @@ $ sudo mount -t xfs /dev/sdb1 /mnt/dados
 
 Após a montagem, tudo o que for escrito em `/mnt/dados` é gravado na partição `/dev/sdb1`.
 
-### Ver o que está montado
+#### Ver o que está montado
 
 ```bash
 # Listar todos os sistemas de ficheiros montados
@@ -1130,7 +1130,7 @@ Filesystem            Size  Used Avail Use% Mounted on
 
 O comando `df -h` (*disk free*, com a opção `-h` de *human-readable*) é a forma habitual de verificar o espaço. Cada linha mostra o tamanho total, o usado, o disponível, a percentagem de utilização e o ponto de montagem.
 
-### Desmontar
+#### Desmontar
 
 ```bash
 # Desmontar pelo ponto de montagem
@@ -1155,9 +1155,9 @@ $ cd /
 
 ---
 
-## 3.3 UUIDs e montagem persistente com /etc/fstab
+### 3.3 UUIDs e montagem persistente com /etc/fstab
 
-### O problema dos nomes de dispositivo
+#### O problema dos nomes de dispositivo
 
 As montagens feitas com o comando `mount` são temporárias: desaparecem no reinício. Para que um sistema de ficheiros seja montado automaticamente no arranque, tem de ser registado no ficheiro `/etc/fstab`.
 
@@ -1172,7 +1172,7 @@ $ sudo blkid
 /dev/sdb1: UUID="f5e6d7c8-9012-3456-abcd-ef1234567890" TYPE="xfs"
 ```
 
-### A estrutura do /etc/fstab
+#### A estrutura do /etc/fstab
 
 O ficheiro `/etc/fstab` (*filesystem table*) tem uma linha por sistema de ficheiros, com seis campos:
 
@@ -1197,7 +1197,7 @@ O significado de cada campo:
 
 O último campo, a ordem de `fsck`, determina que sistemas de ficheiros são verificados no arranque e por que ordem. A raiz leva `1` para ser verificada primeiro; os restantes sistemas de ficheiros locais levam `2`; e sistemas de ficheiros que não devem ser verificados, como swap ou montagens de rede, levam `0`.
 
-### Opções de montagem comuns
+#### Opções de montagem comuns
 
 O campo de opções controla como o sistema de ficheiros é montado:
 
@@ -1213,7 +1213,7 @@ O campo de opções controla como o sistema de ficheiros é montado:
 
 A opção `nofail` merece destaque para discos secundários e amovíveis: sem ela, se o disco não estiver presente no arranque, o systemd espera indefinidamente e o sistema não arranca. Com ela, o arranque prossegue mesmo que o disco falte.
 
-### Adicionar uma entrada permanente
+#### Adicionar uma entrada permanente
 
 O procedimento completo para tornar uma montagem permanente:
 
@@ -1236,11 +1236,11 @@ $ sudo mount -a
 
 ---
 
-## 3.4 Verificação e reparação: fsck e xfs_repair
+### 3.4 Verificação e reparação: fsck e xfs_repair
 
 Sistemas de ficheiros podem tornar-se inconsistentes após falhas de energia, problemas de hardware ou erros do kernel. As ferramentas de verificação detectam e reparam estas inconsistências, mas a ferramenta correcta depende do tipo de sistema de ficheiros, e este é um ponto onde muitos administradores tropeçam.
 
-### fsck para a família ext
+#### fsck para a família ext
 
 O `fsck` (*filesystem check*) é a ferramenta tradicional, e funciona para os sistemas de ficheiros da família ext (ext2, ext3, ext4).
 
@@ -1262,7 +1262,7 @@ $ sudo fsck -f /dev/sdb1
 
 Quando o `fsck` encontra ficheiros cujo directório pai não consegue determinar, coloca-os no directório `lost+found` na raiz de cada sistema de ficheiros. Como o nome do ficheiro estava guardado apenas no directório pai perdido, estes ficheiros recebem o número do inode como nome. O inode preserva o UID do dono, o que facilita devolvê-los. **Este directório não deve ser apagado.**
 
-### xfs_repair para XFS
+#### xfs_repair para XFS
 
 Aqui está o ponto crítico que a documentação genérica frequentemente ignora: **o `fsck` não repara sistemas de ficheiros XFS.** Como o CentOS usa XFS por defeito, esta é a situação que um administrador de CentOS efectivamente enfrenta.
 
@@ -1296,7 +1296,7 @@ Em último recurso, quando o journal está tão danificado que impede a montagem
 $ sudo xfs_repair -L /dev/sdb1
 ```
 
-### Resumo: que ferramenta usar
+#### Resumo: que ferramenta usar
 
 | Sistema de ficheiros | Ferramenta de reparação |
 |---------------------|------------------------|
@@ -1309,9 +1309,9 @@ A regra prática para o CentOS: para a raiz e restantes sistemas de ficheiros, q
 
 ---
 
-## 3.5 Gestão de swap
+### 3.5 Gestão de swap
 
-### O que é o swap
+#### O que é o swap
 
 O **swap** é espaço em disco usado como extensão da memória RAM. Quando a memória física escasseia, o kernel move páginas de memória menos usadas para o swap, libertando RAM para o que está activo. Ao contrário de um sistema de ficheiros, o swap não guarda ficheiros: o kernel mantém o seu próprio mapeamento simplificado entre páginas de memória e blocos de swap.
 
@@ -1319,7 +1319,7 @@ O swap pode residir numa partição dedicada ou num ficheiro. A partição dedic
 
 Sobre a quantidade de swap, a regra tradicional é uma quantidade igual à RAM para sistemas com pouca memória, reduzindo a proporção à medida que a RAM aumenta. Foi esta a lógica por trás da decisão tomada no Capítulo 2, onde se atribuíram 4 GiB de swap a uma máquina com 4 GiB de RAM. Convém lembrar, no entanto, que a melhor opção de todas é não precisar de swap: se um sistema recorre constantemente ao swap, a solução real é acrescentar RAM, porque o disco é ordens de grandeza mais lento que a memória.
 
-### Criar swap numa partição
+#### Criar swap numa partição
 
 O processo tem um paralelo directo com a criação de um sistema de ficheiros: onde se usa `mkfs` e `mount`, usa-se `mkswap` e `swapon`.
 
@@ -1345,7 +1345,7 @@ Mem:          3.7Gi       1.2Gi       1.8Gi       12Mi       700Mi       2.3Gi
 Swap:         4.0Gi          0B       4.0Gi
 ```
 
-### Criar swap num ficheiro
+#### Criar swap num ficheiro
 
 Quando não há partição disponível, um ficheiro de swap resolve o problema:
 
@@ -1367,7 +1367,7 @@ $ sudo swapon /swapfile
 
 As permissões `600` são obrigatórias: o `mkswap` recusa-se a usar um ficheiro de swap legível por outros utilizadores, porque conteria dados de memória potencialmente sensíveis.
 
-### Tornar o swap permanente
+#### Tornar o swap permanente
 
 Tal como os sistemas de ficheiros, o swap tem de ser registado no `/etc/fstab` para ser activado no arranque:
 
@@ -1385,7 +1385,7 @@ Após acrescentar a entrada, activar tudo sem reiniciar:
 $ sudo swapon -a
 ```
 
-### Desactivar swap
+#### Desactivar swap
 
 ```bash
 # Desactivar um swap específico
@@ -1398,7 +1398,7 @@ $ sudo swapoff -a
 
 ## 4. LVM: Gestão de Volumes Lógicos
 
-## 4.1 O problema que o LVM resolve
+### 4.1 O problema que o LVM resolve
 
 Imagine-se o seguinte cenário, familiar a qualquer administrador. Cria-se uma partição de 50 GB para uma aplicação, calculando generosamente. Seis meses depois, descobre-se que a aplicação usa apenas 10 GB, mas a partição ao lado, que guarda os dados dos utilizadores, está cheia. Com particionamento tradicional, não há saída fácil: as fronteiras das partições estão fixas no disco, e redimensioná-las é uma operação arriscada que frequentemente exige apagar e recriar.
 
@@ -1408,7 +1408,7 @@ Foi esta flexibilidade que justificou a escolha do LVM na instalação do Capít
 
 ---
 
-## 4.2 Arquitectura: PV, VG e LV
+### 4.2 Arquitectura: PV, VG e LV
 
 O LVM organiza-se em três camadas, e compreender a relação entre elas é a chave para tudo o resto.
 
@@ -1431,11 +1431,11 @@ O VG é subdividido internamente em unidades de alocação chamadas **PE** (*Phy
 
 ---
 
-## 4.3 Construir uma configuração LVM do zero
+### 4.3 Construir uma configuração LVM do zero
 
 O exemplo seguinte constrói uma configuração LVM completa a partir de dois discos novos, `/dev/sdb` e `/dev/sdc`, criando um volume group que os agrega e um volume lógico para dados.
 
-### Passo 1: criar os physical volumes
+#### Passo 1: criar os physical volumes
 
 ```bash
 # Etiquetar os discos como PVs
@@ -1455,7 +1455,7 @@ $ sudo pvdisplay
 
 Note-se que se usaram os discos inteiros. Também é possível criar PVs sobre partições (`/dev/sdb1`), o que é preferível quando o disco tem outras utilizações, mas para discos dedicados ao LVM usar o disco inteiro é comum.
 
-### Passo 2: criar o volume group
+#### Passo 2: criar o volume group
 
 ```bash
 # Criar um VG chamado "dados_vg" agregando os dois PVs
@@ -1473,7 +1473,7 @@ $ sudo vgdisplay dados_vg
 
 O VG `dados_vg` tem agora praticamente 200 GB, a soma dos dois discos, disponíveis como um único reservatório.
 
-### Passo 3: criar o volume lógico
+#### Passo 3: criar o volume lógico
 
 ```bash
 # Criar um LV de 50 GB chamado "web"
@@ -1492,7 +1492,7 @@ $ sudo lvs
 
 A opção `-L` especifica um tamanho absoluto; a opção `-l 100%FREE` usa todo o espaço disponível. O LV fica acessível através de um dispositivo em `/dev/dados_vg/web` ou, equivalentemente, `/dev/mapper/dados_vg-web`.
 
-### Passo 4: criar o sistema de ficheiros e montar
+#### Passo 4: criar o sistema de ficheiros e montar
 
 A partir daqui, o LV comporta-se como uma partição normal:
 
@@ -1514,13 +1514,13 @@ $ sudo blkid /dev/dados_vg/web
 
 ---
 
-## 4.4 Expandir volumes a quente
+### 4.4 Expandir volumes a quente
 
 A funcionalidade mais valiosa do LVM no dia-a-dia é a capacidade de aumentar um volume que está a ficar cheio, frequentemente sem sequer o desmontar. É a resposta directa ao problema que abriu esta secção.
 
 Suponha-se que `/mnt/web` está a ficar sem espaço e precisa de mais 30 GB.
 
-### Passo 1: confirmar que há espaço no VG
+#### Passo 1: confirmar que há espaço no VG
 
 ```bash
 $ sudo vgs
@@ -1530,7 +1530,7 @@ $ sudo vgs
 
 Há praticamente 100 GB livres no VG, mais que suficiente.
 
-### Passo 2: aumentar o volume lógico
+#### Passo 2: aumentar o volume lógico
 
 ```bash
 # Acrescentar 30 GB ao LV
@@ -1541,7 +1541,7 @@ $ sudo lvextend -L +30G /dev/dados_vg/web
 
 A opção `-L +30G` acrescenta 30 GB ao tamanho actual. Também se pode usar `-l +100%FREE` para consumir todo o espaço livre do VG.
 
-### Passo 3: aumentar o sistema de ficheiros
+#### Passo 3: aumentar o sistema de ficheiros
 
 Aumentar o LV apenas alarga o contentor. O sistema de ficheiros dentro dele continua com o tamanho antigo e tem de ser expandido separadamente. Aqui, o comando depende do tipo de sistema de ficheiros.
 
@@ -1570,7 +1570,7 @@ Filesystem                  Size  Used Avail Use% Mounted on
 
 Todo este processo, do `lvextend` ao `xfs_growfs`, aconteceu com o sistema de ficheiros montado e em uso. Nenhuma interrupção de serviço, nenhum reinício. É esta a promessa do LVM cumprida na prática.
 
-### Aumentar o VG primeiro, se necessário
+#### Aumentar o VG primeiro, se necessário
 
 Se o VG não tiver espaço livre suficiente, primeiro acrescenta-se-lhe um novo disco:
 
@@ -1589,7 +1589,7 @@ Este encadeamento, acrescentar um disco ao VG e depois estender o LV, permite cr
 
 ---
 
-## 4.5 Snapshots
+### 4.5 Snapshots
 
 Um **snapshot** é uma imagem congelada de um volume lógico num instante preciso. A sua utilidade principal é permitir uma cópia de segurança consistente: em vez de fazer backup de um sistema de ficheiros que está a ser modificado durante o processo, tira-se um snapshot instantâneo e faz-se o backup a partir dele, com a garantia de que reflecte um único momento coerente.
 
@@ -1637,9 +1637,9 @@ A coluna `Data%` mostra quanto do espaço do snapshot já foi consumido. Quando 
 
 ---
 
-## 4.6 Reduzir e remover volumes
+### 4.6 Reduzir e remover volumes
 
-### Reduzir um volume
+#### Reduzir um volume
 
 Reduzir um volume é mais delicado do que aumentá-lo, e a ordem das operações inverte-se. Ao aumentar, alarga-se primeiro o contentor (LV) e depois o conteúdo (sistema de ficheiros). Ao reduzir, encolhe-se primeiro o conteúdo e só depois o contentor, caso contrário o LV ficaria mais pequeno que o sistema de ficheiros e os dados seriam truncados.
 
@@ -1666,7 +1666,7 @@ $ sudo mount /dev/dados_vg/web /mnt/web
 
 A ordem é crítica: o sistema de ficheiros é reduzido para 40 GB **antes** de o LV. Inverter estes passos destrói dados.
 
-### Remover volumes
+#### Remover volumes
 
 Para desmontar e remover permanentemente um volume lógico:
 
@@ -1694,7 +1694,7 @@ $ sudo pvremove /dev/sdb /dev/sdc
 
 ## 5. RAID: Redundância e Desempenho
 
-## 5.1 O problema que o RAID resolve
+### 5.1 O problema que o RAID resolve
 
 Um disco físico vai falhar. Não é uma questão de "se", mas de "quando". Discos são componentes mecânicos ou electrónicos com uma vida útil finita, e a sua falha é uma das causas mais comuns de perda de dados e de indisponibilidade em servidores. As cópias de segurança protegem contra a perda de dados, mas não contra o tempo de paragem: restaurar um servidor a partir de backups pode demorar horas ou dias, durante os quais o serviço está indisponível.
 
@@ -1704,7 +1704,7 @@ O **RAID** (*Redundant Array of Inexpensive Disks*) aborda este problema distrib
 
 ---
 
-## 5.2 RAID por hardware e por software
+### 5.2 RAID por hardware e por software
 
 Existem duas formas de implementar RAID.
 
@@ -1720,7 +1720,7 @@ Há ainda um risco menos óbvio do RAID por hardware que vale a pena considerar.
 
 ---
 
-## 5.3 Os níveis de RAID e os seus compromissos
+### 5.3 Os níveis de RAID e os seus compromissos
 
 O RAID faz essencialmente duas coisas. Pode melhorar o desempenho distribuindo os dados por vários discos (*striping*), permitindo que vários discos trabalhem em simultâneo para servir um único fluxo de dados. E pode replicar dados por vários discos, reduzindo o risco associado à falha de um disco individual.
 
@@ -1728,18 +1728,18 @@ A replicação assume duas formas. No **espelhamento** (*mirroring*), os blocos 
 
 O RAID descreve-se tradicionalmente em "níveis", mas o termo é enganador: níveis mais altos não são necessariamente melhores. São apenas configurações diferentes, e usa-se a que servir a necessidade.
 
-### JBOD (linear)
+#### JBOD (linear)
 
 O JBOD (*Just a Bunch Of Disks*) não é sequer um nível de RAID verdadeiro, mas quase todas as controladoras o implementam. Concatena os endereços de vários discos para criar um único disco virtual maior. Não oferece nem redundância nem ganho de desempenho. Hoje, esta funcionalidade obtém-se melhor com um gestor de volumes lógicos como o LVM, visto na secção anterior.
 
-### RAID 0 (striping)
+#### RAID 0 (striping)
 
 O **RAID 0** existe estritamente para aumentar o desempenho. Combina dois ou mais discos do mesmo tamanho, mas em vez de os empilhar um a seguir ao outro, distribui os dados alternadamente entre eles. Leituras e escritas sequenciais são assim espalhadas por vários discos, reduzindo os tempos de acesso.
 
 O preço é a fiabilidade. O RAID 0 é **menos fiável** do que discos separados: se qualquer um dos discos falhar, todos os dados do array se perdem, porque cada ficheiro está espalhado por todos os discos. Um array de dois discos tem aproximadamente o dobro da taxa de falha anual de um disco individual.
 
 ```
-RAID 0 — striping por 2 discos
+RAID 0: striping por 2 discos
 Disco 1:  [bloco a] [bloco c] [bloco e]
 Disco 2:  [bloco b] [bloco d] [bloco f]
 Capacidade útil: 100% (soma dos discos)
@@ -1748,14 +1748,14 @@ Tolerância a falhas: NENHUMA
 
 Usa-se RAID 0 apenas quando o desempenho é crítico e os dados são descartáveis ou replicados noutro sítio: cache, ficheiros temporários de processamento, dados que podem ser regenerados.
 
-### RAID 1 (mirroring)
+#### RAID 1 (mirroring)
 
 O **RAID 1** é o espelhamento. As escritas são duplicadas para dois ou mais discos em simultâneo. Isto torna as escritas ligeiramente mais lentas do que num disco único, mas oferece velocidade de leitura comparável ao RAID 0, porque as leituras podem ser distribuídas pelos vários discos com a mesma informação.
 
 A vantagem é a redundância directa: se um disco falhar, o outro tem uma cópia completa e o sistema continua a funcionar sem interrupção. O custo é o espaço: dois discos de 1 TB em RAID 1 oferecem apenas 1 TB de capacidade útil, porque tudo é guardado em duplicado.
 
 ```
-RAID 1 — mirroring de 2 discos
+RAID 1: mirroring de 2 discos
 Disco 1:  [bloco a] [bloco b] [bloco c]
 Disco 2:  [bloco a] [bloco b] [bloco c]   (cópia idêntica)
 Capacidade útil: 50%
@@ -1764,14 +1764,14 @@ Tolerância a falhas: 1 disco
 
 O RAID 1 é a escolha comum para os discos do sistema operativo, onde a fiabilidade importa mais do que a capacidade.
 
-### RAID 5 (striping com paridade)
+#### RAID 5 (striping com paridade)
 
 O **RAID 5** procura um equilíbrio entre desempenho, capacidade e redundância. Distribui os dados por três ou mais discos como o RAID 0, mas reserva o equivalente a um disco para informação de paridade, distribuída por todos os discos. Se um disco falhar, os dados que continha podem ser reconstruídos a partir da paridade dos restantes.
 
 O custo em espaço é apenas de um disco, independentemente do número total: num array de cinco discos de 1 TB, a capacidade útil é de 4 TB. Isto torna o RAID 5 muito mais eficiente que o espelhamento para arrays grandes.
 
 ```
-RAID 5 — striping com paridade distribuída, 3 discos
+RAID 5: striping com paridade distribuída, 3 discos
 Disco 1:  [bloco a] [bloco c] [paridade]
 Disco 2:  [bloco b] [paridade] [bloco e]
 Disco 3:  [paridade] [bloco d] [bloco f]
@@ -1781,15 +1781,15 @@ Tolerância a falhas: 1 disco
 
 A desvantagem é o desempenho de escrita: cada escrita exige recalcular e actualizar a paridade, o que introduz uma penalização. O RAID 5 também sofre de uma vulnerabilidade conhecida como *write hole*, em que uma falha de energia a meio de uma escrita pode deixar os dados e a paridade dessincronizados.
 
-### RAID 6 (dupla paridade)
+#### RAID 6 (dupla paridade)
 
 O **RAID 6** é como o RAID 5 mas com dois blocos de paridade em vez de um, tolerando a falha de **dois** discos em simultâneo. Isto responde a um problema real: em arrays grandes, a reconstrução após a falha de um disco pode demorar horas, e durante esse período um segundo disco pode falhar. O RAID 6 protege contra esse cenário, ao custo de sacrificar dois discos de capacidade e de um desempenho de escrita ainda menor.
 
-### RAID 10 (espelho de stripes)
+#### RAID 10 (espelho de stripes)
 
 O **RAID 10** (também escrito 1+0) combina os dois mundos: espelha conjuntos de discos em stripe. Obtém o desempenho do striping e a redundância do espelhamento em simultâneo. O custo é o mesmo do RAID 1, metade da capacidade, mas oferece melhor desempenho que o RAID 5 e reconstrução mais rápida após falha. É a escolha comum para bases de dados e cargas de trabalho exigentes onde tanto o desempenho como a fiabilidade importam.
 
-### Comparação
+#### Comparação
 
 | Nível | Mínimo de discos | Capacidade útil | Tolerância a falhas | Uso típico |
 |-------|-----------------|-----------------|--------------------|--------------------|
@@ -1801,7 +1801,7 @@ O **RAID 10** (também escrito 1+0) combina os dois mundos: espelha conjuntos de
 
 ---
 
-## 5.4 RAID por software com mdadm
+### 5.4 RAID por software com mdadm
 
 O `mdadm` (*multiple device administration*) é a ferramenta de RAID por software do Linux. Cria e gere arrays que aparecem como dispositivos `/dev/md0`, `/dev/md1`, e assim por diante.
 
@@ -1809,7 +1809,7 @@ O `mdadm` (*multiple device administration*) é a ferramenta de RAID por softwar
 $ sudo dnf install mdadm -y
 ```
 
-### Criar um array
+#### Criar um array
 
 O exemplo seguinte cria um array RAID 5 com três discos.
 
@@ -1828,7 +1828,7 @@ md0 : active raid5 sdd[3] sdc[1] sdb[0]
 
 A construção inicial (sincronização) demora, mas o array já é utilizável durante esse processo. O indicador `[UUU]` mostra que os três discos estão presentes e saudáveis (`U` de *up*); um `_` indicaria um disco em falta.
 
-### Criar o sistema de ficheiros e montar
+#### Criar o sistema de ficheiros e montar
 
 O array comporta-se como um dispositivo de bloco normal:
 
@@ -1840,7 +1840,7 @@ $ sudo mount /dev/md0 /mnt/raid
 
 Em muitos cenários, o RAID e o LVM são combinados: cria-se o array com `mdadm`, e depois usa-se `/dev/md0` como physical volume do LVM, obtendo tanto a redundância do RAID como a flexibilidade do LVM.
 
-### Tornar o array permanente
+#### Tornar o array permanente
 
 A configuração do array tem de ser guardada para sobreviver a reinícios:
 
@@ -1856,11 +1856,11 @@ $ sudo dracut --force
 
 ---
 
-## 5.5 Monitorização e substituição de discos
+### 5.5 Monitorização e substituição de discos
 
 A redundância do RAID só tem valor se as falhas forem detectadas e corrigidas. Um array RAID 5 que perdeu um disco continua a funcionar, mas perdeu a sua redundância: uma segunda falha destrói tudo. Detectar a primeira falha rapidamente é, portanto, crítico.
 
-### Ver o estado do array
+#### Ver o estado do array
 
 ```bash
 # Estado resumido de todos os arrays
@@ -1887,7 +1887,7 @@ Working Devices : 3
 
 O campo `State` deve indicar `clean`. Um estado `degraded` significa que um disco falhou e o array está a funcionar sem redundância.
 
-### Monitorização automática
+#### Monitorização automática
 
 Deixar a verificação do estado para inspecção manual é insuficiente: uma falha pode passar despercebida durante dias. O `mdadm` pode monitorizar os arrays e enviar um email quando algo corre mal:
 
@@ -1901,7 +1901,7 @@ $ sudo systemctl enable --now mdmonitor
 
 Este alerta, combinado com o servidor de email configurado no Capítulo 7, garante que a falha de um disco chega ao conhecimento do administrador imediatamente.
 
-### Substituir um disco avariado
+#### Substituir um disco avariado
 
 Quando um disco falha, o processo de substituição faz-se com o array em funcionamento, sem interrupção de serviço.
 
@@ -1932,7 +1932,7 @@ Durante a reconstrução, o array volta a estar completo assim que o processo te
 
 ## 6. Operações ao Nível de Blocos com dd
  
-## 6.1 O que é o dd e por que é perigoso
+### 6.1 O que é o dd e por que é perigoso
  
 O `dd` é uma ferramenta de cópia de dados ao nível dos blocos brutos. Ao contrário de ferramentas como `cp` ou `rsync`, que copiam ficheiros e compreendem a estrutura do sistema de ficheiros, o `dd` não sabe nem quer saber o que é um ficheiro: copia bytes, um bloco de cada vez, de uma origem para um destino, exactamente como os encontra.
  
@@ -1942,7 +1942,7 @@ Por esta razão, o `dd` é tratado numa secção própria, separado das outras f
  
 ---
  
-## 6.2 Sintaxe
+### 6.2 Sintaxe
  
 A sintaxe do `dd` é distinta da maioria dos comandos Unix. Usa pares de `opção=valor` em vez de flags:
  
@@ -1969,9 +1969,9 @@ O `status=progress` merece ser sempre incluído em operações longas. Sem ele, 
  
 ---
  
-## 6.3 Clonagem de discos e partições
+### 6.3 Clonagem de discos e partições
  
-### Clonar um disco inteiro
+#### Clonar um disco inteiro
  
 Copiar um disco inteiro para outro, incluindo tabela de partições, gestores de arranque e todos os dados:
  
@@ -1987,13 +1987,13 @@ A opção `conv=fsync` garante que todos os dados são efectivamente escritos no
  
 >  **O disco de destino tem de ter pelo menos o mesmo tamanho do de origem.** E todo o conteúdo do destino é apagado. Confirme que `/dev/sdb` é realmente o disco que pretende sobrescrever, e não, por exemplo, o disco do sistema.
  
-### Clonar uma partição
+#### Clonar uma partição
  
 ```bash
 $ sudo dd if=/dev/sda1 of=/dev/sdb1 bs=4M status=progress conv=fsync
 ```
  
-### Criar uma imagem de disco num ficheiro
+#### Criar uma imagem de disco num ficheiro
  
 Em vez de clonar directamente para outro disco, é frequentemente mais útil criar uma imagem num ficheiro, que pode ser guardada, comprimida e restaurada mais tarde:
  
@@ -2011,7 +2011,7 @@ $ sudo dd if=/backup/sda.img of=/dev/sda bs=4M status=progress
 $ gunzip -c /backup/sda.img.gz | sudo dd of=/dev/sda bs=4M status=progress
 ```
  
-### Clonar entre máquinas pela rede
+#### Clonar entre máquinas pela rede
  
 Combinando o `dd` com o SSH, é possível clonar um disco directamente para outra máquina, sem armazenamento intermédio:
  
@@ -2025,11 +2025,11 @@ $ sudo dd if=/dev/sda bs=4M | gzip | ssh admin@backup "cat > /backup/sda-$(date 
  
 ---
  
-## 6.4 Backup da tabela de partições e do registo de arranque
+### 6.4 Backup da tabela de partições e do registo de arranque
  
 Uma das utilizações mais valiosas do `dd` é preservar as estruturas de arranque de um disco, que ocupam pouco espaço mas cuja perda impede o sistema de arrancar.
  
-### Discos MBR
+#### Discos MBR
  
 Como visto na secção 1, o MBR ocupa os primeiros 512 bytes do disco, contendo o código de arranque e a tabela de partições. Fazer uma cópia dele é trivial:
  
@@ -2043,7 +2043,7 @@ $ sudo dd if=/backup/mbr.img of=/dev/sda bs=512 count=1
  
 O `count=1` limita a cópia a um único bloco de 512 bytes, exactamente o tamanho do MBR.
  
-### Discos GPT
+#### Discos GPT
  
 Aqui há uma diferença importante. O truque do `dd` com 512 bytes aplica-se apenas a discos MBR. Os discos GPT, usados em sistemas UEFI modernos e na instalação do Capítulo 2, guardam a tabela de partições de forma diferente, com uma cópia no início e outra no fim do disco. Para estes, a ferramenta correcta não é o `dd`, mas o `sgdisk` do pacote `gdisk`:
  
@@ -2059,9 +2059,9 @@ Usar o truque do MBR num disco GPT preservaria apenas parte da estrutura e daria
  
 ---
  
-## 6.5 Outras utilizações
+### 6.5 Outras utilizações
  
-### Criar ficheiros de tamanho conhecido
+#### Criar ficheiros de tamanho conhecido
  
 O `dd` é útil para criar ficheiros de teste ou reservar espaço, lendo da fonte especial `/dev/zero`, que produz bytes nulos indefinidamente:
  
@@ -2073,7 +2073,7 @@ $ dd if=/dev/zero of=/tmp/teste.img bs=1M count=100
 $ sudo dd if=/dev/zero of=/swapfile bs=1M count=2048 status=progress
 ```
  
-### Criar suportes de arranque
+#### Criar suportes de arranque
  
 Escrever uma imagem ISO para uma pen USB, criando um suporte de instalação arrancável:
  
@@ -2083,7 +2083,7 @@ $ sudo dd if=/caminho/centos-stream.iso of=/dev/sdX bs=4M status=progress && syn
  
 >  **Confirme que `/dev/sdX` é a pen USB e não um disco do sistema.** Este é um dos erros mais catastróficos e mais comuns com o `dd`: escrever uma ISO sobre o disco do sistema em vez da pen. Execute `lsblk` imediatamente antes para confirmar o dispositivo, e nunca use um nome de dispositivo de memória em vez de o verificar.
  
-### Recuperar dados de discos danificados
+#### Recuperar dados de discos danificados
  
 O `dd` normal pára ao encontrar um erro de leitura. Para discos em falha, existe uma variante mais robusta, o `ddrescue`, concebida especificamente para recuperar o máximo de dados possível de um disco moribundo:
  
@@ -2098,7 +2098,7 @@ O `ddrescue` tenta primeiro ler as zonas boas rapidamente, e só depois insiste 
  
 ---
  
-## 6.6 Precauções ao usar dd
+### 6.6 Precauções ao usar dd
  
 O `dd` não tem rede de segurança. Não pede confirmação, não avisa antes de sobrescrever, e não há forma de desfazer. Alguns hábitos que evitam desastres:
  
@@ -2117,7 +2117,7 @@ Para operações críticas, considere primeiro fazer um ensaio com um ficheiro d
 
 ## 7. NFS: Sistemas de Ficheiros em Rede
 
-## 7.1 Conceito e arquitectura
+### 7.1 Conceito e arquitectura
 
 Até agora, todo o armazenamento discutido neste capítulo residia em discos ligados fisicamente à máquina. Mas em qualquer infraestrutura real, é frequente ser necessário que várias máquinas partilhem os mesmos ficheiros: um directório home que acompanha o utilizador seja em que servidor faça login, uma partilha comum de documentos, um repositório central de dados acedido por vários servidores de aplicação.
 
@@ -2125,7 +2125,7 @@ O **NFS** (*Network File System*) resolve este problema. Permite que um servidor
 
 O NFS foi introduzido pela Sun Microsystems em 1984, originalmente para servir clientes sem disco próprio, mas o protocolo revelou-se bem concebido e útil como solução geral de partilha de ficheiros. Hoje é um standard aberto, documentado em RFCs, e todas as distribuições Linux o suportam. É esta a ferramenta que junta os dois temas que atravessam este guia: o armazenamento deste capítulo e a rede do Capítulo 7.
 
-### Como funciona
+#### Como funciona
 
 O NFS segue um modelo cliente-servidor. Um **servidor NFS** disponibiliza (*exporta*) um ou mais directórios, definindo quais os clientes autorizados a aceder-lhes e com que permissões. Um **cliente NFS** monta esses directórios exportados num ponto de montagem local, e a partir daí acede-lhes como se fossem locais.
 
@@ -2133,7 +2133,7 @@ Uma característica importante do NFS é a sua tolerância a falhas. Se o servid
 
 O NFS depende de vários componentes que trabalham em conjunto. O serviço principal é o `nfs-server`. Historicamente, o NFS dependia também do `rpcbind`, um serviço que mapeia os pedidos RPC para as portas correctas, embora o NFSv4 tenha reduzido essa dependência ao concentrar tudo numa única porta bem conhecida, a 2049, o que simplifica significativamente a configuração de firewall.
 
-### Versões do NFS
+#### Versões do NFS
 
 Existem três versões em uso, e a distinção importa para a configuração.
 
@@ -2143,9 +2143,9 @@ O **NFSv4** é a versão moderna e recomendada. Usa uma única porta (2049), tem
 
 ---
 
-## 7.2 Configurar o servidor
+### 7.2 Configurar o servidor
 
-### Instalação
+#### Instalação
 
 Em CentOS, o servidor NFS está no pacote `nfs-utils`:
 
@@ -2159,7 +2159,7 @@ $ sudo systemctl enable --now nfs-server
 $ sudo systemctl status nfs-server
 ```
 
-### Preparar o directório a exportar
+#### Preparar o directório a exportar
 
 Primeiro, cria-se e prepara-se o directório que será partilhado:
 
@@ -2172,7 +2172,7 @@ $ sudo chown nobody:nobody /exports/dados
 $ sudo chmod 755 /exports/dados
 ```
 
-### O ficheiro /etc/exports
+#### O ficheiro /etc/exports
 
 O coração da configuração do servidor NFS é o ficheiro `/etc/exports`. Cada linha define um directório a exportar, os clientes autorizados, e as opções que se aplicam a cada um.
 
@@ -2204,7 +2204,7 @@ A forma de especificar os clientes é flexível: um endereço IP individual, uma
 
 >  **Não deve existir espaço entre o cliente e os parênteses das opções.** A diferença entre `192.168.1.0/24(rw)` e `192.168.1.0/24 (rw)` é crítica e silenciosa: no primeiro caso, a rede tem permissão de escrita; no segundo, a rede fica com as opções por defeito (só leitura) e as opções `(rw)` aplicam-se a *todos os outros clientes*. Este erro de um único espaço é uma falha de segurança clássica.
 
-### Opções de exportação
+#### Opções de exportação
 
 As opções controlam como cada directório é exportado. As mais importantes:
 
@@ -2227,7 +2227,7 @@ O **`root_squash`** é a opção por defeito e deve manter-se assim na maioria d
 
 O **`sync` versus `async`** é um compromisso entre segurança e desempenho. Com `sync`, o servidor só confirma uma escrita depois de os dados estarem efectivamente gravados em disco, garantindo que uma falha não perde dados que o cliente julga escritos. Com `async`, o servidor confirma imediatamente e grava depois, o que é mais rápido mas arrisca perda de dados numa falha de energia. Para dados importantes, `sync` é a escolha correcta.
 
-### Aplicar a configuração
+#### Aplicar a configuração
 
 Depois de editar o `/etc/exports`, aplicam-se as alterações:
 
@@ -2242,7 +2242,7 @@ $ sudo exportfs -v
 
 A opção `-r` reexporta tudo, e `-a` aplica a todos os directórios. Não é necessário reiniciar o serviço para alterações no `/etc/exports`.
 
-### Configurar o firewall
+#### Configurar o firewall
 
 Como visto no Capítulo 7, o firewall tem de permitir o tráfego NFS. Aqui a versão do NFS faz diferença.
 
@@ -2266,7 +2266,7 @@ Esta simplificação é uma das razões pelas quais o NFSv4 é preferível: uma 
 
 ---
 
-## 7.3 Configurar o cliente
+### 7.3 Configurar o cliente
 
 Do lado do cliente, é necessário ter as ferramentas NFS instaladas e depois montar a exportação.
 
@@ -2275,7 +2275,7 @@ Do lado do cliente, é necessário ter as ferramentas NFS instaladas e depois mo
 $ sudo dnf install nfs-utils -y
 ```
 
-### Descobrir o que o servidor exporta
+#### Descobrir o que o servidor exporta
 
 Antes de montar, pode consultar-se que directórios um servidor disponibiliza:
 
@@ -2286,7 +2286,7 @@ Export list for 192.168.1.100:
 /exports/publico  192.168.1.50
 ```
 
-### Montar manualmente
+#### Montar manualmente
 
 A montagem faz-se com o comando `mount`, especificando o tipo `nfs`, o servidor e o directório exportado, e o ponto de montagem local:
 
@@ -2316,9 +2316,9 @@ $ sudo umount /mnt/dados-rede
 
 ---
 
-## 7.4 Montagem persistente e automount
+### 7.4 Montagem persistente e automount
 
-### Montagem persistente com /etc/fstab
+#### Montagem persistente com /etc/fstab
 
 Tal como os sistemas de ficheiros locais, uma montagem NFS manual desaparece no reinício. Para a tornar permanente, acrescenta-se ao `/etc/fstab`, com uma diferença importante em relação às montagens locais:
 
@@ -2351,7 +2351,7 @@ Validar sempre antes de reiniciar, como para qualquer entrada no fstab:
 $ sudo mount -a
 ```
 
-### Automount
+#### Automount
 
 A montagem permanente via `/etc/fstab` tem uma desvantagem: a montagem está sempre activa, mesmo quando ninguém a usa, e se o servidor estiver em baixo no arranque pode causar problemas. O **automount** resolve isto montando o directório NFS apenas quando alguém efectivamente lhe acede, e desmontando-o automaticamente após um período de inactividade.
 
@@ -2388,11 +2388,11 @@ $ ls /mnt/rede/dados
 
 ---
 
-## 7.5 Segurança
+### 7.5 Segurança
 
 O NFS foi concebido numa época em que as redes eram consideradas ambientes de confiança, e o seu modelo de segurança reflecte essa origem. Um administrador precisa de compreender as suas limitações.
 
-### O modelo de confiança do NFS tradicional
+#### O modelo de confiança do NFS tradicional
 
 Na sua forma clássica, o NFS confia no cliente para se identificar correctamente. A autorização baseia-se no endereço IP do cliente e nos UIDs que ele reporta. Isto tem implicações importantes.
 
@@ -2400,7 +2400,7 @@ Os **UIDs têm de coincidir entre servidor e cliente.** Se o utilizador `carlos`
 
 O **acesso baseia-se no IP**, que pode ser forjado. Um atacante que consiga assumir o endereço IP de um cliente autorizado ganha acesso às exportações.
 
-### Boas práticas de segurança
+#### Boas práticas de segurança
 
 Dado este modelo, algumas práticas reduzem o risco:
 
@@ -2414,13 +2414,13 @@ Dado este modelo, algumas práticas reduzem o risco:
 
 **Nunca expor NFS à internet.** O NFS tradicional não tem cifragem nem autenticação forte, e expô-lo publicamente é um risco grave. Para partilha de ficheiros pela internet, existem alternativas concebidas para o efeito.
 
-### NFSv4 e Kerberos
+#### NFSv4 e Kerberos
 
 Para ambientes que exigem segurança forte, o NFSv4 suporta autenticação Kerberos, que resolve as fraquezas do modelo tradicional. Com Kerberos, a identidade é verificada criptograficamente em vez de assente no IP, e o tráfego pode ser cifrado. As opções de exportação correspondentes são `sec=krb5` (autenticação), `sec=krb5i` (autenticação e integridade) e `sec=krb5p` (autenticação, integridade e privacidade, ou seja, cifragem completa).
 
 Configurar Kerberos está para além do âmbito deste guia, mas é importante saber que existe: quando a partilha de ficheiros envolve dados sensíveis ou redes não confiáveis, o NFS tradicional não é suficiente, e o NFSv4 com Kerberos é a resposta adequada.
 
-### Diagnóstico
+#### Diagnóstico
 
 ```bash
 # Ver as exportações activas no servidor

@@ -9,9 +9,9 @@
 > |--------|-------------|
 > | `$` | Utilizador comum numa sessão local |
 > | `#` | Superutilizador (root) numa sessão local |
-> | `servidor >` | Sessão activa numa máquina remota via SSH |
+> | `servidor>` | Sessão activa numa máquina remota via SSH |
 >
-> O símbolo do prompt **não faz parte do comando** — nunca deve ser copiado
+> O símbolo do prompt **não faz parte do comando** e nunca deve ser copiado
 > para o terminal. Por exemplo, em `$ ls -l /etc`, o comando real é apenas
 > `ls -l /etc`.
 >

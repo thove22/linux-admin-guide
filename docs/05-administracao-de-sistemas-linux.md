@@ -12,7 +12,7 @@ Aprender a linha de comandos do Linux tem algo em comum com aprender a tocar pia
  
 Numa era de editores gráficos intuitivos e editores de texto em modo texto como o `nano`, a questão é legítima. Há, no entanto, razões concretas para não ignorar o `vi`.
  
-**Está sempre disponível.** Qualquer sistema Unix ou Linux desde um servidor remoto sem interface gráfica até uma instalação mínima de CentOS — tem `vi`. O `nano` é popular mas não é universal. A norma POSIX, que define os requisitos mínimos de compatibilidade entre sistemas Unix, exige explicitamente a presença do `vi`. Se alguma vez precisar de editar um ficheiro de configuração crítico numa máquina em estado degradado, o `vi` será provavelmente a única ferramenta disponível.
+**Está sempre disponível.** Qualquer sistema Unix ou Linux desde um servidor remoto sem interface gráfica até uma instalação mínima de CentOS, tem `vi`. O `nano` é popular mas não é universal. A norma POSIX, que define os requisitos mínimos de compatibilidade entre sistemas Unix, exige explicitamente a presença do `vi`. Se alguma vez precisar de editar um ficheiro de configuração crítico numa máquina em estado degradado, o `vi` será provavelmente a única ferramenta disponível.
  
 **É leve e rápido.** Não há tempo de carregamento, não há dependências gráficas, não há menus para navegar. Para um administrador de sistemas que edita dezenas de ficheiros de configuração por dia em servidores remotos via SSH, `vi` é a diferença entre eficiência e frustração. Um utilizador treinado nunca precisa de levantar os dedos do teclado durante toda a sessão de edição  cada ação, desde a navegação até ao corte de linhas, tem um atalho de teclado.
  
@@ -32,7 +32,7 @@ Deverá aparecer um ecrã semelhante ao seguinte:
 
 <figure align="center">
   <img src="../assets/img/vi_init.png" alt="Ecra Inicial do Vi" width="600">
-  <figcaption><b>img 1:</b> Ecra Inicial do Vi</figcaption>
+  <figcaption><b>img 1:</b> Ecrã inicial do vi.</figcaption>
 </figure>
 
 
@@ -42,7 +42,7 @@ A primeira coisa a aprender  mesmo antes de escrever uma única letra é como **
 :q
 ```
  
-O símbolo `:` activa a linha de comandos do editor na parte inferior do ecrã, e `q` significa *quit*. Se o editor recusar sair — geralmente porque há alterações não guardadas  força-se a saída descartando as alterações:
+O símbolo `:` activa a linha de comandos do editor na parte inferior do ecrã, e `q` significa *quit*. Se o editor recusar sair, geralmente porque há alterações não guardadas, força-se a saída descartando as alterações:
  
 ```bash
 :q!
@@ -50,7 +50,7 @@ O símbolo `:` activa a linha de comandos do editor na parte inferior do ecrã, 
  
 O ponto de exclamação é a forma de dizer ao `vi` "tenho a certeza, sai mesmo assim".
  
-> 💡 **Dica:** Se em algum momento se sentir "perdido" dentro do `vi`  teclas a produzir resultados inesperados, texto a aparecer em lugares errados  prima a tecla `Esc` duas vezes. Isso devolve-o ao modo de comando a partir de qualquer estado.
+> **Dica:** Se em algum momento se sentir "perdido" dentro do `vi` (teclas a produzir resultados inesperados, texto a aparecer em lugares errados) prima a tecla `Esc` duas vezes. Isso devolve-o ao modo de comando a partir de qualquer estado.
  
 ---
 
@@ -79,7 +79,7 @@ O ecrã deverá mostrar algo como:
 
 <figure align="center">
   <img src="../assets/img/vi_empty.png" alt="Ecra inicial do Vi" width="600">
-  <figcaption><b>img 1:</b> ecra inicial do vi </figcaption>
+  <figcaption><b>img 2:</b> Buffer vazio do vi, pronto para edição.</figcaption>
 </figure>
 
  
@@ -248,7 +248,7 @@ Note-se que o `vi` original suporta apenas um nível de desfazer. O Vim (que é 
 
 ##### Cortar, copiar e colar
  
-O comando `d` não apaga apenas texto — corta-o. Cada vez que se usa `d`, o texto eliminado é copiado para um buffer interno (equivalente à área de transferência). O comando `p` cola o conteúdo desse buffer após o cursor, e `P` (maiúsculo) cola antes do cursor.
+O comando `d` não apaga apenas texto, corta-o. Cada vez que se usa `d`, o texto eliminado é copiado para um buffer interno (equivalente à área de transferência). O comando `p` cola o conteúdo desse buffer após o cursor, e `P` (maiúsculo) cola antes do cursor.
  
 O comando `y` (*yank*) copia texto sem o eliminar, usando a mesma lógica combinatória do `d`. A tabela seguinte resume os comandos de cópia disponíveis:
 
@@ -331,8 +331,8 @@ $ vi servidor_notas.txt interfaces.txt
 O editor abre com o primeiro ficheiro visível no ecrã. Para navegar entre os ficheiros abertos, usam-se os seguintes comandos ex:
  
 ```
-:bn        (buffer next — avança para o ficheiro seguinte)
-:bp        (buffer previous — recua para o ficheiro anterior)
+:bn        (buffer next: avança para o ficheiro seguinte)
+:bp        (buffer previous: recua para o ficheiro anterior)
 ```
  
 O `vi` impede a mudança de ficheiro se houver alterações não guardadas no ficheiro actual. Para forçar a mudança descartando as alterações, acrescenta-se `!`:
@@ -405,7 +405,7 @@ O comando `:w` aceita um nome de ficheiro opcional. Isto permite guardar uma ver
  
 O ficheiro original continua aberto e activo na sessão. A cópia fica guardada em disco com o novo nome.
  
-## 1.2 sed — O Editor de Fluxo (Stream Editor)
+### 1.2 sed: O Editor de Fluxo (Stream Editor)
 
 O `vi` é a ferramenta certa quando precisamos de abrir um ficheiro, navegar pelo seu conteúdo e fazer edições de forma interactiva. Mas existe uma classe inteira de tarefas de administração onde abrir um editor interactivo seria a abordagem errada: quando precisamos de alterar a mesma linha em quarenta ficheiros de configuração, quando queremos extrair apenas as linhas de erro de um log com milhares de entradas, ou quando estamos a construir um script que deve modificar ficheiros automaticamente sem qualquer intervenção humana.
 
@@ -415,7 +415,7 @@ Esta diferença de filosofia é fundamental: o `vi` é um editor para humanos le
 
 ---
 
-### Como o sed processa texto
+#### Como o sed processa texto
 
 Para usar o `sed` com confiança, é necessário compreender o ciclo que ele executa internamente para cada linha do ficheiro de entrada:
 
@@ -431,7 +431,7 @@ Existe ainda um segundo espaço de armazenamento chamado **hold space** (espaço
 
 ---
 
-### Sintaxe geral
+#### Sintaxe geral
 
 A estrutura de um comando `sed` segue sempre a mesma lógica:
 
@@ -456,7 +456,7 @@ As opções mais importantes são:
 
 ---
 
-#### O comando de substituição: s
+##### O comando de substituição: s
 
 A operação mais utilizada do `sed` é a substituição, e a sua sintaxe é praticamente idêntica à que já vimos no `vi`:
 
@@ -475,7 +475,7 @@ admin=root
 estado=inactivo
 ```
 
-##### Substituição básica
+###### Substituição básica
 
 Para substituir a primeira ocorrência de um padrão em cada linha:
 
@@ -501,7 +501,7 @@ estado=inactivo
 
 O conteúdo mantém-se igual. O `sed` processou e mostrou o resultado transformado, mas não tocou no ficheiro.
 
-##### O flag global: g
+###### O flag global: g
 
 Por defeito, o `sed` substitui apenas a **primeira** ocorrência do padrão em cada linha. Se uma linha contiver o padrão múltiplas vezes e quisermos substituir todas as ocorrências, é necessário adicionar o flag `g` (*global*):
 
@@ -519,15 +519,15 @@ o servidor-01 substituiu o servidor-antigo temporário
 
 Este é um dos erros mais comuns com `sed`: esquecer o `g` e depois descobrir que algumas instâncias do padrão não foram alteradas.
 
-##### Alterar delimitadores
+###### Alterar delimitadores
 
 O separador utilizado na instrução de substituição é por convenção a barra `/`, mas pode ser qualquer caractere. Isto é útil quando o padrão ou o substituto contém barras, como acontece com caminhos de ficheiros, evitando sequências de escape confusas:
 
 ```bash
-# Com barras — requer escape para os / do caminho
+# Com barras: requer escape para os / do caminho
 $ sed 's/\/etc\/rede\//\/etc\/network\//g' ficheiro.conf
 
-# Com outro delimitador — muito mais legível
+# Com outro delimitador: muito mais legível
 $ sed 's|/etc/rede/|/etc/network/|g' ficheiro.conf
 ```
 
@@ -535,11 +535,11 @@ Ambos os comandos produzem o mesmo resultado. A segunda forma é claramente mais
 
 ---
 
-### Endereçamento: aplicar comandos a linhas específicas
+#### Endereçamento: aplicar comandos a linhas específicas
 
 Por defeito, os comandos do `sed` aplicam-se a todas as linhas do ficheiro. O **endereçamento** permite restringir a actuação a linhas específicas, usando número de linha ou padrão.
 
-#### Por número de linha
+##### Por número de linha
 
 Para aplicar uma substituição apenas na linha 2:
 
@@ -571,7 +571,7 @@ $ sed '3,$s/=/: /' /etc/rede/servidor.conf
 
 Este comando aplica a substituição da linha 3 até ao fim do ficheiro.
 
-#### Por padrão
+##### Por padrão
 
 Em vez de números, pode-se usar um padrão para seleccionar as linhas onde o comando actua. O padrão é delimitado por barras:
 
@@ -588,7 +588,7 @@ O `sed` aplicou a substituição apenas na linha que continha a palavra `admin`.
 
 ---
 
-##### Apagar linhas: d
+###### Apagar linhas: d
 
 O comando `d` (*delete*) elimina as linhas endereçadas do fluxo de saída. O ficheiro original não é modificado, mas as linhas eliminadas não aparecem no resultado.
 
@@ -620,7 +620,7 @@ $ sed '/^$/d' ficheiro.conf
 
 ---
 
-##### Imprimir linhas selectivamente: p com -n
+###### Imprimir linhas selectivamente: p com -n
 
 O comando `p` (*print*) imprime o conteúdo do *pattern space*. Sozinho, produz linhas duplicadas porque o `sed` já imprime cada linha por defeito. A sua utilidade real surge em combinação com a opção `-n`, que suprime a saída automática:
 
@@ -641,7 +641,7 @@ A combinação `-n` com `p` transforma o `sed` numa ferramenta de extracção pr
 
 ---
 
-##### Edição directa de ficheiros: -i
+###### Edição directa de ficheiros: -i
 
 Até agora, todos os exemplos produziram saída no terminal sem modificar os ficheiros originais. Quando queremos que as alterações sejam escritas directamente no ficheiro, usa-se a opção `-i` (*in-place*):
 
@@ -659,11 +659,11 @@ $ sed -i.bak 's/servidor-antigo/servidor-01/g' /etc/rede/servidor.conf
 
 Após este comando existem dois ficheiros: `servidor.conf` com o conteúdo modificado, e `servidor.conf.bak` com o conteúdo original. Se algo correr mal, a recuperação é imediata.
 
-> ⚠️ **Aviso:** A opção `-i` sobrescreve o ficheiro sem confirmação. Nunca a use directamente sobre ficheiros críticos do sistema sem antes testar o comando e garantir que existe uma cópia de segurança.
+> **Aviso:** A opção `-i` sobrescreve o ficheiro sem confirmação. Nunca a use directamente sobre ficheiros críticos do sistema sem antes testar o comando e garantir que existe uma cópia de segurança.
 
 ---
 
-##### Encadear múltiplos comandos: -e
+###### Encadear múltiplos comandos: -e
 
 A opção `-e` permite aplicar várias instruções de edição em sequência, numa única invocação do `sed`. Cada `-e` introduz uma instrução adicional:
 
@@ -683,7 +683,7 @@ As três substituições são aplicadas em sequência, linha a linha, num único
 
 ---
 
-### sed em pipelines
+#### sed em pipelines
 
 Sendo uma ferramenta de fluxo, o `sed` integra-se naturalmente nas pipelines que aprendemos no Capítulo 4. Pode receber dados de outros comandos e passar o resultado transformado para o comando seguinte:
 
@@ -701,7 +701,7 @@ Este pipeline remove linhas de comentário e linhas vazias do log antes de procu
 
 ---
 
-### Caso prático: actualizar um endereço IP em ficheiros de configuração
+#### Caso prático: actualizar um endereço IP em ficheiros de configuração
 
 Um cenário real que ilustra bem o poder do `sed` em administração de sistemas: o servidor de base de dados foi migrado de `10.0.1.5` para `10.0.1.50`, e esse endereço está referenciado em vários ficheiros de configuração. Em vez de abrir cada ficheiro manualmente com o `vi`, um único comando resolve o problema:
 
@@ -713,7 +713,7 @@ Note-se a diferença entre o padrão (`10\.0\.1\.5`) e o substituto (`10.0.1.50`
 
 ---
 
-#### sed vs vi: quando usar cada um
+##### sed vs vi: quando usar cada um
 
 Estas duas ferramentas não são concorrentes, são complementares. A escolha entre elas depende do contexto:
 
@@ -726,7 +726,7 @@ Estas duas ferramentas não são concorrentes, são complementares. A escolha en
 | Reestruturar o conteúdo de um ficheiro com lógica complexa | `vi` |
 | Transformar a saída de um comando antes de a guardar | `sed` em pipeline |
 
-> 💡 **Para aprofundar:** O `sed` suporta expressões regulares completas nos seus padrões, o que multiplica significativamente o seu poder expressivo. As expressões regulares são abordadas em detalhe no Capítulo 6, que cobre automação com shell scripting. Depois de as dominar, os comandos `sed` que hoje parecem complexos tornam-se naturais.
+> **Para aprofundar:** O `sed` suporta expressões regulares completas nos seus padrões, o que multiplica significativamente o seu poder expressivo. As expressões regulares são abordadas em detalhe no Capítulo 6, que cobre automação com shell scripting. Depois de as dominar, os comandos `sed` que hoje parecem complexos tornam-se naturais.
 
 ## 2. Gestão de Identidades e Acessos
  
@@ -736,7 +736,7 @@ No Capítulo 3 estabelecemos os fundamentos do modelo de controlo de acesso do L
  
 ### 2.1 Ciclo de Vida de Contas de Utilizador
  
-Em Linux, cada pessoa que interage com o sistema tem uma identidade formal: uma conta de utilizador. Esta conta não é apenas um nome — é um conjunto de atributos armazenados em ficheiros de sistema que determinam o que esse utilizador pode fazer, onde pode trabalhar e como se autentica. A administração dessas contas é uma das tarefas mais recorrentes de qualquer sysadmin.
+Em Linux, cada pessoa que interage com o sistema tem uma identidade formal: uma conta de utilizador. Esta conta não é apenas um nome, é um conjunto de atributos armazenados em ficheiros de sistema que determinam o que esse utilizador pode fazer, onde pode trabalhar e como se autentica. A administração dessas contas é uma das tarefas mais recorrentes de qualquer sysadmin.
  
 #### Os ficheiros que definem os utilizadores
  
@@ -756,14 +756,14 @@ Os campos são, pela ordem: nome de utilizador, marcador de senha (o `x` indica 
  
 `/etc/gshadow` armazena palavras-passe de grupo e administradores de grupo, raramente manipulado directamente.
  
-> ⚠️ **Nunca edite estes ficheiros directamente com um editor de texto.** Um caractere trocado pode corromper logins em todo o sistema. Use sempre os comandos dedicados, ou `vipw` e `vigr` se precisar mesmo de editar directamente, pois eles bloqueiam o ficheiro e validam a sintaxe antes de guardar.
+> **Nunca edite estes ficheiros directamente com um editor de texto.** Um caractere trocado pode corromper logins em todo o sistema. Use sempre os comandos dedicados, ou `vipw` e `vigr` se precisar mesmo de editar directamente, pois eles bloqueiam o ficheiro e validam a sintaxe antes de guardar.
  
 #### Criar uma conta: useradd
  
 O comando `useradd` cria uma nova conta no sistema. A forma mais simples não é suficiente para uso em produção:
  
 ```bash
-# Forma mínima — evitar em produção
+# Forma mínima: evitar em produção
 $ sudo useradd carlos
 ```
  
@@ -816,10 +816,10 @@ Quando as necessidades de um utilizador mudam, o `usermod` permite alterar prati
 **Adicionar a um grupo suplementar** é a operação mais comum, e tem uma armadilha importante:
  
 ```bash
-# CORRECTO — adiciona ao grupo sem remover dos existentes
+# CORRECTO: adiciona ao grupo sem remover dos existentes
 $ sudo usermod -aG developers carlos
  
-# PERIGOSO — substitui TODOS os grupos suplementares pelo especificado
+# PERIGOSO: substitui TODOS os grupos suplementares pelo especificado
 $ sudo usermod -G developers carlos
 ```
  
@@ -861,9 +861,9 @@ $ sudo find /var /srv /opt -user carlos 2>/dev/null
 $ sudo userdel -r carlos
 ```
  
-A opção `-r` remove o directório home e o correio do utilizador. Sem ela, a conta desaparece mas os ficheiros ficam órfãos no sistema, com o UID numérico visível onde antes estava o nome — o que dificulta auditorias futuras.
+A opção `-r` remove o directório home e o correio do utilizador. Sem ela, a conta desaparece mas os ficheiros ficam órfãos no sistema, com o UID numérico visível onde antes estava o nome, o que dificulta auditorias futuras.
  
-> ⚠️ **Não elimine contas de utilizadores que ainda têm processos em execução.** Identifique e termine esses processos primeiro. Eliminar uma conta com sessões activas pode deixar processos "zumbi" difíceis de gerir.
+> **Não elimine contas de utilizadores que ainda têm processos em execução.** Identifique e termine esses processos primeiro. Eliminar uma conta com sessões activas pode deixar processos "zumbi" difíceis de gerir.
  
 ---
  
@@ -893,7 +893,7 @@ carlos  ALL=(root) /usr/bin/systemctl restart httpd
  
 Aqui, `carlos` só pode reiniciar o serviço Apache, e nada mais.
  
-> ⚠️ **Nunca edite `/etc/sudoers` directamente com `vi` ou `nano`.** Use sempre o comando `visudo`, que bloqueia o ficheiro, valida a sintaxe antes de guardar e avisa se a configuração resultante impossibilitaria o uso futuro do `sudo`. Um ficheiro `sudoers` corrompido pode bloquear o acesso administrativo ao sistema.
+> **Nunca edite `/etc/sudoers` directamente com `vi` ou `nano`.** Use sempre o comando `visudo`, que bloqueia o ficheiro, valida a sintaxe antes de guardar e avisa se a configuração resultante impossibilitaria o uso futuro do `sudo`. Um ficheiro `sudoers` corrompido pode bloquear o acesso administrativo ao sistema.
  
 ```bash
 $ sudo visudo
@@ -1018,7 +1018,7 @@ Para enviar uma mensagem mais longa preparada antecipadamente num ficheiro:
 $ sudo wall < /tmp/aviso_manutencao.txt
 ```
  
-> 💡 **Use o `wall` com critério.** A mensagem aparece de forma abrupta no terminal do utilizador, podendo interromper a visualização de um ficheiro no `vi` ou a saída de um comando em execução. É a ferramenta certa para avisos urgentes, não para comunicação rotineira.
+> **Use o `wall` com critério.** A mensagem aparece de forma abrupta no terminal do utilizador, podendo interromper a visualização de um ficheiro no `vi` ou a saída de um comando em execução. É a ferramenta certa para avisos urgentes, não para comunicação rotineira.
  
 #### write: mensagem para um utilizador específico
  
@@ -1063,7 +1063,7 @@ A solução adoptada pelo Linux foi o PAM  *Pluggable Authentication Modules*, o
  
 A ideia central é simples: em vez de cada programa (login, SSH, sudo, etc.) implementar a sua própria lógica de verificação de credenciais, todos chamam o PAM. O PAM por sua vez consulta a sua própria configuração e chama os módulos específicos que o administrador definiu para aquele contexto.
  
-O resultado é que um administrador pode alterar radicalmente a política de autenticação do sistema — por exemplo, exigir autenticação de dois factores para logins SSH, mas manter senha simples para logins locais — sem tocar no código do SSH ou do `login`. Basta alterar a configuração do PAM.
+O resultado é que um administrador pode alterar radicalmente a política de autenticação do sistema (por exemplo, exigir autenticação de dois factores para logins SSH, mas manter senha simples para logins locais) sem tocar no código do SSH ou do `login`. Basta alterar a configuração do PAM.
  
 #### Estrutura de configuração do PAM
  
@@ -1107,7 +1107,7 @@ Em CentOS, os módulos PAM mais utilizados incluem:
  
 `pam_unix.so` é o módulo base que implementa a autenticação tradicional contra `/etc/shadow`. Está presente em praticamente todas as configurações.
  
-`pam_pwquality.so` impõe políticas de qualidade de senha — comprimento mínimo, requisito de caracteres especiais, rejeição de senhas baseadas no nome do utilizador. É configurado em `/etc/security/pwquality.conf`.
+`pam_pwquality.so` impõe políticas de qualidade de senha: comprimento mínimo, requisito de caracteres especiais, rejeição de senhas baseadas no nome do utilizador. É configurado em `/etc/security/pwquality.conf`.
  
 `pam_faillock.so` bloqueia contas após um número configurável de tentativas de autenticação falhadas, protegendo contra ataques de força bruta:
  
@@ -1120,17 +1120,17 @@ $ sudo faillock --user carlos
  
 #### Por que isto importa para um administrador
  
-O PAM raramente precisa de ser configurado manualmente em operações do dia-a-dia — as distribuições como o CentOS entregam configurações padrão sensatas. Mas compreender a sua existência e estrutura é importante por três razões.
+O PAM raramente precisa de ser configurado manualmente em operações do dia-a-dia, as distribuições como o CentOS entregam configurações padrão sensatas. Mas compreender a sua existência e estrutura é importante por três razões.
  
-Primeiro, quando um utilizador não consegue fazer login e `passwd` confirma que a senha está correcta, o problema está muitas vezes numa regra PAM — conta expirada, número de tentativas falhadas excedido, limite de logins simultâneos atingido.
+Primeiro, quando um utilizador não consegue fazer login e `passwd` confirma que a senha está correcta, o problema está muitas vezes numa regra PAM: conta expirada, número de tentativas falhadas excedido, limite de logins simultâneos atingido.
  
 Segundo, quando se integra o servidor numa infraestrutura de autenticação centralizada (LDAP, Active Directory, Kerberos), a configuração do PAM é exactamente onde essa integração acontece.
  
 Terceiro, as políticas de senha impostas pelo `pam_pwquality.so` são o mecanismo técnico por trás das regras de complexidade de senha que a organização pode exigir. Saber onde essas regras são definidas é necessário para as ajustar ou diagnosticar problemas.
  
-> 💡 **Para aprofundar:** O comando `authselect` no CentOS Stream 8 e versões posteriores oferece uma interface de alto nível para gerir perfis de autenticação comuns (local, LDAP, Kerberos) sem editar os ficheiros PAM directamente. É o ponto de entrada recomendado para a maioria das configurações de autenticação em ambientes RHEL modernos.
+> **Para aprofundar:** O comando `authselect` no CentOS Stream 8 e versões posteriores oferece uma interface de alto nível para gerir perfis de autenticação comuns (local, LDAP, Kerberos) sem editar os ficheiros PAM directamente. É o ponto de entrada recomendado para a maioria das configurações de autenticação em ambientes RHEL modernos.
 
-## Processos e Agendamentos
+## 3. Processos e Agendamentos
  
 ### 3.1 Anatomia de um Processo Linux
  
@@ -1146,9 +1146,9 @@ As estruturas de dados que o kernel mantém internamente para cada processo regi
  
 #### Os atributos mais importantes de um processo
  
-**PID — Process ID.** O kernel atribui um número único a cada processo no momento da sua criação. Os PIDs são atribuídos por ordem crescente, começando do zero. Quase todos os comandos e chamadas de sistema que manipulam processos precisam de um PID para identificar o alvo da operação.
+**PID: Process ID.** O kernel atribui um número único a cada processo no momento da sua criação. Os PIDs são atribuídos por ordem crescente, começando do zero. Quase todos os comandos e chamadas de sistema que manipulam processos precisam de um PID para identificar o alvo da operação.
  
-**PPID — Parent PID.** No Linux não existe uma chamada de sistema que crie directamente um processo a executar um programa diferente. O mecanismo existente é o seguinte: um processo existente clona-se para criar um novo processo. O processo original chama-se **pai** (*parent*) e a cópia chama-se **filho** (*child*). O PPID é o PID do processo pai a partir do qual o processo filho foi criado. Este atributo é muito útil quando se confronta com um processo desconhecido ou com comportamento anómalo: seguir a cadeia de PPIDs até à origem permite perceber quem lançou o processo e em que contexto.
+**PPID: Parent PID.** No Linux não existe uma chamada de sistema que crie directamente um processo a executar um programa diferente. O mecanismo existente é o seguinte: um processo existente clona-se para criar um novo processo. O processo original chama-se **pai** (*parent*) e a cópia chama-se **filho** (*child*). O PPID é o PID do processo pai a partir do qual o processo filho foi criado. Este atributo é muito útil quando se confronta com um processo desconhecido ou com comportamento anómalo: seguir a cadeia de PPIDs até à origem permite perceber quem lançou o processo e em que contexto.
  
 **UID e EUID.** O UID de um processo é o identificador numérico do utilizador que o criou. O EUID (*Effective User ID*) é um identificador adicional que determina a que recursos e ficheiros o processo tem efectivamente permissão de aceder em cada momento. Na maioria dos processos, UID e EUID são iguais. A excepção são programas com o bit *setuid* activado, que correm temporariamente com a identidade do dono do ficheiro executável em vez da do utilizador que os lançou. É exactamente este mecanismo que permite a um utilizador comum alterar a sua própria senha através do comando `passwd`, mesmo que o ficheiro `/etc/shadow` onde as senhas estão armazenadas seja restrito ao root.
  
@@ -1158,7 +1158,7 @@ As estruturas de dados que o kernel mantém internamente para cada processo regi
  
 #### Como um processo nasce e morre
  
-Para criar um novo processo, um processo existente clona-se com a chamada de sistema `fork`. O `fork` cria uma cópia quase idêntica do processo original, com um novo PID e contabilização de recursos própria. Após o `fork`, o processo filho usa normalmente uma das chamadas da família `exec` para começar a executar um programa diferente — é aqui que o programa novo substitui o código e a memória do processo filho.
+Para criar um novo processo, um processo existente clona-se com a chamada de sistema `fork`. O `fork` cria uma cópia quase idêntica do processo original, com um novo PID e contabilização de recursos própria. Após o `fork`, o processo filho usa normalmente uma das chamadas da família `exec` para começar a executar um programa diferente: é aqui que o programa novo substitui o código e a memória do processo filho.
  
 Quando o sistema arranca, o kernel cria autonomamente alguns processos iniciais. O mais importante é o `init` (ou `systemd` nas distribuições modernas), que é sempre o processo número 1. Todos os outros processos do sistema são descendentes do processo 1.
  
@@ -1202,9 +1202,9 @@ Os programas podem pedir que sinais sejam ignorados ou bloqueados. Um sinal igno
 | 17 | STOP | Keyboard stop | Parar | **Não** | **Não** |
 | 18 | TSTP | Keyboard stop (soft) | Parar | Sim | Sim |
 | 19 | CONT | Continue after stop | Ignorar | Sim | Não |
-| — | WINCH | Window changed | Ignorar | Sim | Sim |
-| — | USR1 | User-defined #1 | Terminar | Sim | Sim |
-| — | USR2 | User-defined #2 | Terminar | Sim | Sim |
+| 28 | WINCH | Window changed | Ignorar | Sim | Sim |
+| 10 | USR1 | User-defined #1 | Terminar | Sim | Sim |
+| 12 | USR2 | User-defined #2 | Terminar | Sim | Sim |
 
 Os sinais `KILL` e `STOP` são excepções absolutas: não podem ser interceptados, bloqueados nem ignorados por nenhum processo. O `KILL` é executado directamente pelo kernel sem sequer notificar o processo alvo. O `STOP` suspende a execução do processo até que um sinal `CONT` seja recebido.
  
@@ -1555,19 +1555,19 @@ $ sudo du -sh /var/* | sort -rh | head -10
  
 Identificado e compreendido o problema, a sequência de acção é sempre a mesma: tentar primeiro um `TERM` para dar ao processo a oportunidade de terminar de forma ordenada, aguardar alguns segundos, e usar `KILL` apenas se o processo não responder.
  
-## 3.6 Agendamento de Tarefas: cron e at
+### 3.6 Agendamento de Tarefas: cron e at
  
 A automatização é um dos pilares da administração de sistemas. Tarefas como rotação de logs, backups nocturnos, limpeza de ficheiros temporários ou verificações periódicas de integridade precisam de ser executadas de forma consistente e sem intervenção humana. O Linux oferece dois mecanismos complementares para isso: o `cron`, para tarefas que se repetem de acordo com um horário definido, e o `at`, para tarefas que precisam de ser executadas uma única vez num momento futuro específico.
  
 ---
  
-### cron: o agendador de tarefas recorrentes
+#### cron: o agendador de tarefas recorrentes
  
 O daemon `cron` arranca com o sistema e corre enquanto o sistema estiver activo. A cada minuto, verifica se existe alguma tarefa agendada para aquele momento e, se existir, executa-a. A sua configuração é feita através de ficheiros chamados **crontabs** (*cron tables*), onde cada linha representa uma tarefa e o horário em que deve correr.
  
 O `cron` usa o `sh` para executar os comandos, o que significa que qualquer coisa que se consiga fazer a partir da shell pode ser feita através do `cron`.
  
-#### O formato de uma linha de crontab
+##### O formato de uma linha de crontab
  
 Cada linha activa num ficheiro crontab segue sempre a mesma estrutura: cinco campos de tempo seguidos do comando a executar.
  
@@ -1596,7 +1596,7 @@ Em cada campo pode colocar-se:
 
 > **Nunca coloque um asterisco no primeiro campo a não ser que pretenda que o comando corra todos os minutos.** É o erro mais comum em crontabs de utilizadores novos.
  
-#### Exemplos de entradas crontab
+##### Exemplos de entradas crontab
  
 O melhor caminho para interiorizar a sintaxe é ler exemplos concretos. Cada um dos seguintes representa um cenário real de administração:
  
@@ -1625,7 +1625,7 @@ O melhor caminho para interiorizar a sintaxe é ler exemplos concretos. Cada um 
  
 Uma particularidade importante: se tanto o campo `dom` (dia do mês) como o campo `weekday` (dia da semana) estiverem especificados com valores concretos em vez de asterisco, o `cron` selecciona os dias que satisfaçam **qualquer uma** das condições, não a intersecção das duas. Por exemplo, `0,30 * 13 * 5` não significa "de meia em meia hora às sextas-feiras dia 13" mas sim "de meia em meia hora em todas as sextas-feiras, e também de meia em meia hora em todos os dias 13 do mês".
  
-#### O que acontece quando um cron job produz output
+##### O que acontece quando um cron job produz output
  
 Por defeito, qualquer saída produzida por um cron job (stdout ou stderr) é enviada por email ao dono do crontab. Em servidores sem servidor de email configurado, isto resulta em mensagens acumuladas sem destino. A prática mais comum é redirecionar a saída explicitamente:
  
@@ -1639,7 +1639,7 @@ Por defeito, qualquer saída produzida por um cron job (stdout ou stderr) é env
  
 A notação `2>&1` redireciona o stderr para o mesmo destino que o stdout. Sem ela, apenas a saída normal seria redireccionada e os erros continuariam a ser enviados por email.
  
-#### Gerir o crontab de utilizador
+##### Gerir o crontab de utilizador
  
 Cada utilizador pode ter o seu próprio crontab, armazenado no directório `/var/spool/cron/crontabs/`. Este directório é gerido internamente pelo sistema e não deve ser editado directamente: o cron não detecta alterações feitas directamente aos ficheiros e pode ignorá-las. O mecanismo correcto é sempre o comando `crontab`.
  
@@ -1676,7 +1676,7 @@ $ sudo crontab -l -u carlos
 $ sudo crontab -e -u carlos
 ```
  
-#### O crontab do sistema
+##### O crontab do sistema
  
 Para além dos crontabs individuais de cada utilizador, o Linux tem um ficheiro de crontab do sistema em `/etc/crontab`. O formato é ligeiramente diferente: tem um campo adicional antes do comando que especifica o utilizador sob o qual a tarefa deve correr, o que permite agrupar tarefas de sistema mesmo que corram com identidades diferentes:
  
@@ -1698,7 +1698,7 @@ $ sudo cp limpeza_tmp.sh /etc/cron.daily/
 $ sudo chmod +x /etc/cron.daily/limpeza_tmp.sh
 ```
  
-#### Verificar a execução das tarefas
+##### Verificar a execução das tarefas
  
 O `cron` regista a execução de tarefas no log do sistema. Em CentOS, este registo está em `/var/log/cron`:
  
@@ -1723,7 +1723,7 @@ HOME=/home/carlos
  
 ---
  
-#### Usos comuns do cron em administração de sistemas
+##### Usos comuns do cron em administração de sistemas
  
 Os livros que serviram de base a este capítulo descrevem vários casos de uso padrão que praticamente todos os servidores têm. Vale a pena conhecê-los.
  
@@ -1747,7 +1747,7 @@ A flag `-xdev` é importante: impede o `find` de atravessar para outros sistemas
  
 ---
  
-### Timer units do systemd: a alternativa moderna
+#### Timer units do systemd: a alternativa moderna
  
 As distribuições Linux modernas, incluindo o CentOS Stream, oferecem uma alternativa ao `cron` através dos **timer units** do systemd. Muitas tarefas de manutenção do sistema que eram tradicionalmente geridas pelo `cron` foram migradas para este mecanismo nas versões mais recentes.
  
@@ -1789,7 +1789,7 @@ $ sudo systemctl enable --now loggertest.timer
 $ sudo systemctl list-timers
 ```
  
-#### cron vs timer units: quando usar cada um
+##### cron vs timer units: quando usar cada um
  
 Ambos os mecanismos resolvem o mesmo problema mas têm pontos fortes diferentes:
  
@@ -1806,7 +1806,7 @@ Para a maioria das tarefas de manutenção do dia-a-dia, o `cron` é mais rápid
  
 ---
  
-### at: executar uma tarefa uma única vez no futuro
+#### at: executar uma tarefa uma única vez no futuro
  
 O `at` serve para agendar um comando que deve ser executado uma vez, num momento específico no futuro, sem necessidade de criar uma entrada permanente no crontab. É a ferramenta certa para situações como "reiniciar o serviço daqui a 30 minutos" ou "executar o script de migração amanhã às 23:00" sem que seja necessário estar presente.
  
@@ -1875,7 +1875,7 @@ A principal diferença prática é que o `systemd-run` cria um timer unit transi
  
 ---
  
-### Comparação final: cron vs at
+#### Comparação final: cron vs at
  
 | Característica | cron | at |
 |----------------|------|----|
@@ -1886,7 +1886,7 @@ A principal diferença prática é que o `systemd-run` cria um timer unit transi
 | Ver pendentes | `crontab -l` | `atq` |
 | Remover | `crontab -r` ou editar com `crontab -e` | `atrm [número]` |
 
-## Observabilidade do Sistema
+## 4. Observabilidade do Sistema
  
 ### 4.1 Logs: A Memória do Sistema
  

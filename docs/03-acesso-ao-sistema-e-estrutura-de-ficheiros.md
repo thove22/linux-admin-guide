@@ -54,7 +54,7 @@ Sendo o acesso validado mediante credenciais, a gestão destas é uma operação
 
 - Alteração Administrativa: Quando invocado com privilégios administrativos (ex: sudo passwd estudante), o administrador pode redefinir a senha de qualquer outro utilizador no sistema, dispensando a necessidade de conhecer a senha atual do mesmo. Esta funcionalidade é crucial para a recuperação de contas ou na rotatividade de credenciais de equipa.
 
-Uma senha administrativa robusta não deve ser baseada apenas na complexidade visual, mas principalmente na sua extensão (frequentemente implementada através de "passphrases" — frases-senha longas), minimizando a suscetibilidade a ataques de força bruta no ambiente de servidor.
+Uma senha administrativa robusta não deve ser baseada apenas na complexidade visual, mas principalmente na sua extensão (frequentemente implementada através de "passphrases", frases-senha longas), minimizando a suscetibilidade a ataques de força bruta no ambiente de servidor.
 
 
 ## O Sistema de Ficheiros: Estrutura e Organização
@@ -63,7 +63,7 @@ A utilidade de um sistema operativo mede-se, em grande parte, pela eficiência c
 
 ### A Filosofia "Tudo é um Ficheiro"
 
-A premissa arquitetural mais célebre do UNIX — e por herança, do Linux — dita que "tudo é um ficheiro". Embora seja uma ligeira simplificação, esta máxima é a chave para a elegância do sistema.
+A premissa arquitetural mais célebre do UNIX, e por herança do Linux, dita que "tudo é um ficheiro". Embora seja uma ligeira simplificação, esta máxima é a chave para a elegância do sistema.
 
 No seu nível mais rudimentar, um ficheiro para o kernel é apenas uma sequência bidimensional de bytes. O sistema operativo não impõe qualquer estrutura rígida ou significado a estes dados; a interpretação do conteúdo é estritamente delegada aos programas que os leem.
 
@@ -291,7 +291,7 @@ Se o directório contiver ficheiros ou subdirectórios, o `rmdir` falha. Esta re
  
 > **O `rm -r` é um dos poucos comandos capazes de causar danos graves e irreversíveis**, sobretudo quando executado com privilégios de superutilizador. Não existe lixeira nem forma de desfazer. Deve-se verificar sempre o comando antes de o executar, e evitar em absoluto combinar o `-r` com wildcards como o asterisco (`*`), uma combinação que pode apagar muito mais do que se pretendia num instante.
 
-# Wildcards (Globbing)
+## Wildcards (Globbing)
  
 Ao trabalhar na linha de comandos, é frequente querer aplicar uma operação a um conjunto de ficheiros em vez de a um único. Listar todos os ficheiros de texto de um directório, apagar todos os ficheiros de registo antigos, ou copiar todas as imagens de uma pasta são tarefas em que especificar cada ficheiro individualmente seria impraticável. Os **wildcards** (ou *globbing*) resolvem este problema, permitindo descrever padrões que a shell expande para os nomes de ficheiros correspondentes.
  

@@ -31,7 +31,7 @@ A configuração de rede mais comum em ambientes de escritório, laboratório e 
 
 <figure align="center">
   <img src="../assets/img/Lan.jpg" alt="Topologia de uma rede local típica" width="500">
-  <figcaption><b>img 1:</b> Topologia de uma rede local típica </figcaption>
+  <figcaption><b>img 1:</b> Topologia de uma rede local típica.</figcaption>
 </figure>
 
 ---
@@ -295,17 +295,17 @@ Este output mostra que o servidor tem SSH (porta 22), Nginx (porta 80) e MySQL (
 
 Administrar um servidor remotamente é, na prática, a maior parte do trabalho de um sysadmin. Raramente se tem acesso físico à máquina. Tudo acontece através da rede: configurar serviços, transferir ficheiros, executar comandos, monitorizar o estado do sistema. A qualidade e a segurança das ferramentas que se usam para isso determinam directamente a segurança de toda a infraestrutura.
 
-Esta secção cobre o ecossistema completo de acesso remoto e transferência de ficheiros, desde a ferramenta central que torna tudo possível — o SSH — até às alternativas para cada caso de uso específico.
+Esta secção cobre o ecossistema completo de acesso remoto e transferência de ficheiros, desde a ferramenta central que torna tudo possível, o SSH, até às alternativas para cada caso de uso específico.
 
 ---
 
-## 2.1 SSH: Acesso Remoto Seguro
+### 2.1 SSH: Acesso Remoto Seguro
 
 O protocolo SSH (Secure Shell) constitui uma das abordagens baseadas em software mais robustas e amplamente adotadas para a segurança de comunicações em redes informáticas. A sua excelência reside na capacidade de fornecer encriptação transparente: sempre que dados são transmitidos de um nó para a rede, o protocolo encarrega-se da sua cifragem automática; ao alcançarem o destinatário, os dados são decifrados e restituídos à sua forma original.
 
 Este mecanismo permite que a comunicação ocorra de forma fluida, sem que os utilizadores necessitem de intervir ativamente no processo criptográfico. Empregando algoritmos de cifra modernos e seguros, o SSH atinge um nível de fiabilidade que justifica a sua adoção mandatória em aplicações de missão crítica e nas maiores infraestruturas corporativas.
 
-### A tríade de segurança do SSH
+#### A tríade de segurança do SSH
 
 O protocolo SSH assenta em três pilares que, em conjunto, garantem a segurança da comunicação:
 
@@ -315,11 +315,11 @@ O protocolo SSH assenta em três pilares que, em conjunto, garantem a segurança
 
 **Integridade** garante que os dados chegam exactamente como foram enviados. Os algoritmos de verificação do SSH detectam qualquer alteração ao conteúdo em trânsito, protegendo contra ataques de man-in-the-middle onde um terceiro tenta modificar os dados sem ser detectado.
 
-### Arquitectura cliente-servidor
+#### Arquitectura cliente-servidor
 
 O SSH opera sob uma arquitetura estrita de Cliente-Servidor. Tipicamente, um programa servidor SSH (o daemon), gerido por um administrador de sistemas, opera em estado de escuta passiva, aceitando ou rejeitando conexões direcionadas à máquina hospedeira. Simultaneamente, utilizadores executam programas clientes SSH a partir de terminais remotos para submeter requisições ao servidor tais como pedidos de autenticação, transferência de ficheiros ou execução direta de comandos. A característica vital deste modelo é que todo o tráfego transacionado entreo cliente e o servidor é encriptado e protegido contra modificações e interceção (sniffing) por terceiros.
 
-#### Taxonomia e Versões do Protocolo
+##### Taxonomia e Versões do Protocolo
 
 Para uma correta documentação técnica, é necessário distinguir as versões do protocolo das suas implementações de software:
 - **SSH (Termo Genérico)**: Refere-se de forma abrangente ao protocolo ou aos produtos de software que o implementam.
@@ -328,53 +328,53 @@ Para uma correta documentação técnica, é necessário distinguir as versões 
 - **ssh (em minúsculas)**: Refere-se especificamente ao programa cliente incluído na maioria das distribuições. É a ferramenta que o utilizador invoca no terminal para iniciar sessões remotas ou executar comandos.
 - **OpenSSH**: Produto oriundo do projeto OpenBSD, constituindo a implementação mais difundida globalmente. É uma suite de software de código aberto que suporta ambas as versões do protocolo (SSH-1 e SSH-2), embora a utilização da versão 1 seja desencorajada por omissão.
 
-### Funcionalidades e Aplicabilidades do Ecossistema SSH
+#### Funcionalidades e Aplicabilidades do Ecossistema SSH
 
 O SSH transcende a simples conectividade, oferecendo um conjunto de funcionalidades que endereçam as vulnerabilidades críticas de redes inseguras. Estas capacidades podem ser categorizadas em quatro pilares principais de operação:
 
-#### Interatividade e Execução Remota de Comandos
+##### Interatividade e Execução Remota de Comandos
 
 Historicamente, protocolos como o Telnet e o rsh transmitiam credenciais e sessões completas em texto plano (plaintext), permitindo a interceção de dados sensíveis por agentes maliciosos (sniffing).
 
 - **Acesso Remoto Seguro (Login)**: Através do cliente ssh, estabelece-se uma sessão interativa onde o tráfego é cifrado antes de abandonar a máquina local. O processo é transparente para o utilizador, mantendo a experiência de uso mas elevando a segurança ao padrão industrial.
 - **Invocação Remota de Comandos**: O SSH permite a execução de comandos isolados em múltiplos servidores de forma automatizada (scripts). Ao contrário do legado rsh, os resultados retornados via rede são protegidos por encriptação robusta, garantindo que informações sensíveis sobre o estado do sistema não sejam expostas.
 
-#### Persistência e Transferência de Ativos (Dados)
+##### Persistência e Transferência de Ativos (Dados)
 
 A movimentação de ficheiros entre nós de rede é uma tarefa crítica que, através de protocolos tradicionais (FTP, rcp ou e-mail), carece de proteção nativa.
 - **Transferência Cifrada com scp**: O comando scp (Secure Copy) permite o transporte de ficheiros com uma sintaxe simplificada, onde a cifragem e decifragem ocorrem de forma automática nas extremidades da conexão. Esta abordagem elimina a necessidade de cifrar ficheiros manualmente com ferramentas externas (como PGP) antes do envio, otimizando o fluxo de trabalho do administrador.
 
-#### Mecanismos Avançados de Autenticação: Chaves e Agentes
+##### Mecanismos Avançados de Autenticação: Chaves e Agentes
 
 Uma das maiores vulnerabilidades em sistemas distribuídos é a dependência exclusiva de palavras-passe, que podem ser fracas ou expostas por erro humano.
 - **Autenticação Baseada em Chaves**: O SSH introduz o conceito de identidades digitais únicas através de pares de chaves criptográficas. O acesso é concedido mediante a prova de posse de uma chave privada, protegida por uma passphrase.
 - **Agentes de Autenticação (ssh-agent)** : Para mitigar a fadiga de autenticação em infraestruturas complexas, o uso de agentes permite carregar as chaves em memória uma única vez. 
 
-#### Extensibilidade e Segurança de Protocolos Terceiros
+##### Extensibilidade e Segurança de Protocolos Terceiros
 
 O SSH pode atuar como uma camada de transporte segura para outras aplicações baseadas em TCP/IP que não possuem segurança nativa ou que são bloqueadas por firewalls.
 - **Encaminhamento de Portas (Port Forwarding / Tunelamento)**: Esta técnica permite redirecionar conexões de rede através de um túnel SSH. Por exemplo, é possível encapsular o tráfego de um servidor de base de dados ou de notícias (porta 119) através de uma porta local segura, contornando restrições de firewall e garantindo a encriptação ponto-a-ponto de protocolos que, de outra forma, seriam vulneráveis.
 - **Controlo de Acesso Granular**: O sistema permite a delegação de tarefas específicas a terceiros (ex: permitir apenas a execução de um programa de e-mail) sem a necessidade de partilhar a palavra-passe principal ou conceder privilégios de super-utilizador, reforçando o princípio do privilégio mínimo.
 
-### Uso Básico do Cliente SSH: Exemplo Prático
+#### Uso Básico do Cliente SSH: Exemplo Prático
 
 
 O protocolo SSH assenta numa premissa simples, mas engloba múltiplos componentes complexos. Esta secção foi desenhada para iniciar a operação prática do SSH de forma ágil, abordando as suas funcionalidades mais utilitárias e imediatas. O foco incidirá sobre dois eixos fundamentais:
 - O estabelecimento de sessões de terminal remoto através de ligações seguras.
 - A transferência de ficheiros entre nós de rede sob um canal cifrado.
 
-#### O Cenário do Exemplo
+##### O Cenário do Exemplo
 
 Para demonstrar estas capacidades, estabeleceremos um ambiente de testes controlado. Suponha que atua como administrador de sistemas e necessita de gerir um servidor remotamente. Para este laboratório, utilizaremos duas instâncias virtuais (VMs) alocadas na mesma sub-rede virtual, embora o procedimento seja aplicável a quaisquer duas máquinas físicas ou virtuais com conectividade de rede:
 - **Máquina Local (Estação de Gestão)**: Uma VM equipada com Interface Gráfica (GUI), a partir da qual os comandos serão originados. Representaremos a linha de comandos desta máquina com o símbolo $.
-- **Máquina Remota (Servidor Alvo)**: Uma VM configurada em modo texto (CLI/Minimal), que receberá as conexões. Representaremos o seu terminal como servidor >.
+- **Máquina Remota (Servidor Alvo)**: Uma VM configurada em modo texto (CLI/Minimal), que receberá as conexões. Representaremos o seu terminal como `servidor>`.
 
-#### Verificação de Interfaces de Rede e Endereçamento
+##### Verificação de Interfaces de Rede e Endereçamento
 
 Antes de iniciar qualquer conexão SSH, é imperativo conhecer a topologia lógica, nomeadamente os endereços IP atribuídos a cada máquina. No ecossistema Linux, existem duas ferramentas primárias para este fim:
 
 
-##### O comando ip (Padrão Moderno):
+###### O comando ip (Padrão Moderno):
 
 Parte do pacote iproute2, é a ferramenta contemporânea para administração de rede no Linux. Para listar todas as interfaces de rede e os seus respetivos endereços IP (IPv4 e IPv6), executa-se o seguinte comando no Servidor Alvo:
 
@@ -384,7 +384,7 @@ Parte do pacote iproute2, é a ferramenta contemporânea para administração de
 
 Este comando revelará a interface de rede ativa (por exemplo, enp1s0 ou eth0) e o seu endereço inet (ex: 192.168.122.50).
 
-##### O comando ifconfig (Ferramenta Legada):
+###### O comando ifconfig (Ferramenta Legada):
 
 Historicamente pertencente ao pacote net-tools, o ifconfig foi o padrão durante décadas. Embora considerado obsoleto em distribuições modernas como o CentOS Stream, ainda é amplamente referenciado na literatura técnica. A sua execução fornece um output formatado de forma diferente, mas com o mesmo propósito de identificação de endereços físicos (MAC) e lógicos (IP):
 
@@ -393,7 +393,7 @@ Historicamente pertencente ao pacote net-tools, o ifconfig foi o padrão durante
 ```
 Nota: Para os exemplos subsequentes, assumiremos que o comando acima revelou que o Servidor Alvo possui o endereço IP 192.168.122.50 .
 
-##### Validação de Conectividade com ping
+###### Validação de Conectividade com ping
 A partir da Estação de Gestão (Local), a verificação da conectividade é efetuada mediante o seguinte comandoConhecido o endereço de destino, o passo lógico seguinte na engenharia de redes é validar a alcançabilidade do nó remoto. Para tal, recorre-se ao comando ping, que utiliza pacotes ICMP (Internet Control Message Protocol) de Echo Request e aguarda por um Echo Reply.
 
 A partir da Estação de Gestão (Local), a verificação da conectividade é efetuada mediante o seguinte comando:
@@ -404,7 +404,7 @@ A partir da Estação de Gestão (Local), a verificação da conectividade é ef
 O parâmetro -c 4 instrui o sistema a enviar exatamente quatro pacotes. Uma resposta bem-sucedida (indicando 0% de perda de pacotes) confirma que a rota de rede entre a estação de gestão e o servidor está funcional e pronta para estabelecer o túnel TCP necessário para o SSH.
 
 
-#### Sessões de Terminal Remoto com ssh
+##### Sessões de Terminal Remoto com ssh
 
 Suponha que a conta de utilizador no Servidor Alvo foi batizada como admin_sys. Para iniciar a sessão remota a partir da sua máquina de gestão local, utiliza-se a ferramenta cliente ssh, combinando o nome de utilizador e o endereço IP do destino. A sintaxe moderna e mais comum utiliza o formato utilizador@host:
 
@@ -422,7 +422,7 @@ servidor>
 Ao primeiro contacto, o cliente SSH alerta que a autenticidade do servidor não é conhecida e apresenta a sua impressão digital (fingerprint). Ao aceitar (yes), estabelece-se um canal seguro e as comunicações passam a ser integralmente cifradas. De seguida, o cliente solicita a palavra-passe, que já transita pela rede de forma criptografada.
 Uma vez autenticado, o servidor autoriza o acesso, alterando o prompt para o contexto da máquina remota. A partir deste momento, todos os comandos digitados localmente são executados no servidor de forma transparente, protegidos contra interceção.
 
-#### Transferência de Ficheiros com scp
+##### Transferência de Ficheiros com scp
 
 Após a consolidação da conectividade interativa, a etapa subsequente consiste na movimentação de dados entre os nós da rede. O utilitário scp (Secure Copy) é a ferramenta padrão para este fim, substituindo métodos legados e vulneráveis, como o FTP. O scp utiliza o protocolo SSH para assegurar que a integridade e a confidencialidade dos arquivos sejam preservadas durante o trânsito.
 
@@ -442,7 +442,7 @@ A estrutura lógica do comando scp é análoga à do comando cp (copy) nativo do
 
 A versatilidade desta ferramenta permite ainda omitir definições de caminho se pretendermos utilizar diretivas padrão (como ~/ para o diretório base do utilizador) ou até mesmo descarregar ficheiros do servidor para a máquina local invertendo a ordem dos argumentos na sintaxe.
 
-### Ficheiro de configuração do cliente SSH
+#### Ficheiro de configuração do cliente SSH
 
 O cliente SSH também tem um ficheiro de configuração: `~/.ssh/config`. Permite definir atalhos e configurações por servidor, eliminando a necessidade de repetir opções longas em cada ligação:
 
@@ -470,14 +470,14 @@ Com esta configuração, `ssh producao` é equivalente a `ssh -p 2222 -i ~/.ssh/
 
 ---
 
-## 2.2 Telnet
+### 2.2 Telnet
 
 O Telnet foi durante décadas o standard para acesso remoto a servidores. Funciona de forma simples: estabelece uma ligação TCP à porta 23 do servidor e transmite o input do teclado directamente, recebendo o output do terminal em troca.
 
 O problema é exactamente essa simplicidade: o Telnet não cifra nada. Credenciais, comandos e respostas passam pela rede em texto plano. Com ferramentas como o `tcpdump` ou o Wireshark, qualquer pessoa com acesso à rede entre o cliente e o servidor pode ler toda a sessão em tempo real, incluindo a senha de login.
 
 ```bash
-# Captura de tráfego Telnet — a senha aparece em texto claro
+# Captura de tráfego Telnet: a senha aparece em texto claro
 $ sudo tcpdump -i eth0 -A port 23
 ```
 
@@ -511,9 +511,9 @@ Para este uso específico, `nc` (netcat) ou `curl` são alternativas mais adequa
 
 ---
 
-## 2.3 wget e curl
+### 2.3 wget e curl
 
-### wget: transferência directa e recursiva
+#### wget: transferência directa e recursiva
 
 O `wget` é uma ferramenta de linha de comandos para transferir ficheiros via HTTP, HTTPS e FTP. É não-interactivo: recebe um URL, descarrega o conteúdo, e termina. Isto torna-o ideal para scripts e automação.
 
@@ -554,7 +554,7 @@ $ wget --limit-rate=5m https://exemplo.com/ficheiro.tar.gz
 $ wget -r -l 2 https://exemplo.com/docs/
 ```
 
-### curl: transferência e interacção com APIs
+#### curl: transferência e interacção com APIs
 
 O `curl` é mais versátil que o `wget`. Enquanto o `wget` é especializado em descarregar ficheiros, o `curl` suporta dezenas de protocolos e é a ferramenta standard para interagir com APIs HTTP. Escreve o output para stdout por defeito, o que o torna ideal para pipelines:
 
@@ -592,7 +592,7 @@ A última linha é particularmente útil em scripts de monitorização: verifica
 
 ---
 
-## 2.4 FTP
+### 2.4 FTP
 
 O FTP (*File Transfer Protocol*) é um dos protocolos mais antigos da internet. Permite navegar em sistemas de ficheiros remotos e transferir ficheiros em ambas as direcções. A sua maior fraqueza é a mesma do Telnet: transmite credenciais e dados em texto plano.
 
@@ -630,7 +630,7 @@ Para substituição moderna do FTP com segurança, use sempre SFTP ou SCP.
 
 ---
 
-### sftp
+#### sftp
 
 O `sftp` oferece uma interface interactiva semelhante ao FTP, mas sobre um túnel SSH. Não requer um servidor FTP dedicado no destino: basta que o SSH esteja activo:
 
@@ -645,7 +645,7 @@ sftp> put configuracao.txt
 sftp> bye
 ```
 
-### rsync
+#### rsync
 
 O `rsync` é a ferramenta de eleição para sincronização de directórios e backups. A diferença fundamental em relação ao `scp` é que o `rsync` compara o conteúdo de origem e destino e transfere apenas as diferenças. Numa primeira sincronização, transfere tudo. Nas seguintes, transfere apenas o que mudou, tornando o processo muito mais eficiente para conjuntos de dados grandes.
 
@@ -682,7 +682,7 @@ O `rsync` é a base de muitas soluções de backup em Linux. Uma tarefa cron que
 
 ---
 
-## 2.6 Análise de Tráfego com tcpdump
+### 2.6 Análise de Tráfego com tcpdump
 
 O `tcpdump` é uma ferramenta de captura e análise de pacotes de rede em tempo real. Requer privilégios de root porque precisa de aceder à interface de rede em modo promíscuo, lendo todos os pacotes que passam, não apenas os destinados à máquina local. É a ferramenta de diagnóstico de rede mais poderosa disponível na linha de comandos.
 
@@ -720,7 +720,7 @@ $ sudo tcpdump -r /tmp/captura.pcap
 $ sudo tcpdump -i enp0s31f6 -c 100 port 443
 ```
 
-### Casos de uso práticos
+#### Casos de uso práticos
 
 **Verificar se um serviço está a receber conexões:**
 
@@ -755,9 +755,9 @@ Estes serviços têm uma característica comum: quando funcionam, ninguém repar
 
 ---
 
-## 4.1 DNS: O Sistema de Nomes de Domínio
+### 4.1 DNS: O Sistema de Nomes de Domínio
 
-### O problema que o DNS resolve
+#### O problema que o DNS resolve
 
 Os endereços IP são eficientes para as máquinas e insuportáveis para os humanos. Ninguém memoriza `172.217.168.46` quando quer aceder ao Google, e mesmo que memorizasse, esse endereço pode mudar amanhã sem aviso. O DNS resolve este problema mapeando nomes legíveis para os endereços numéricos que a rede realmente usa.
 
@@ -765,7 +765,7 @@ Mas reduzir o DNS a uma tabela de tradução seria subestimá-lo. O DNS é tamb�
 
 A consequência prática é directa: quando o DNS falha, a rede continua funcional mas parece completamente avariada. Os pacotes fluem normalmente, o gateway responde, mas nada funciona porque nenhum nome é resolvido. Aprender a distinguir "a rede está em baixo" de "o DNS está em baixo" é uma das competências mais úteis de diagnóstico que um administrador pode ter.
 
-### Uma base de dados distribuída
+#### Uma base de dados distribuída
 
 O DNS é uma base de dados distribuída à escala planetária. Nenhum servidor conhece todos os nomes que existem. Em vez disso, a responsabilidade está delegada em hierarquia: cada organização mantém os registos dos seus próprios hosts, e os servidores cooperam entre si quando precisam de informação que não possuem.
 
@@ -782,7 +782,7 @@ Quando um cliente precisa de resolver `servidor.empresa.pt`, a sequência é a s
 
 Este processo parece moroso, mas na prática resolve-se em milissegundos porque a esmagadora maioria das respostas já está em cache algures na cadeia. Um servidor DNS local bem dimensionado responde à maior parte das queries sem contactar ninguém.
 
-### Servidores autoritativos e servidores recursivos
+#### Servidores autoritativos e servidores recursivos
 
 Existem dois papéis distintos que um servidor DNS pode desempenhar, e confundi-los é fonte de muitos mal-entendidos.
 
@@ -792,7 +792,7 @@ Um **servidor recursivo** não detém dados próprios. O seu trabalho é receber
 
 Na prática, servidores autoritativos são normalmente configurados num modelo primário/secundário. O **servidor primário** (master) detém a cópia de referência dos dados. Os **servidores secundários** (slaves) copiam os dados do primário através de um mecanismo chamado transferência de zona (*zone transfer*), e respondem às queries com os mesmos dados. Assim, alterações feitas no primário propagam-se automaticamente.
 
-### Registos de recurso
+#### Registos de recurso
 
 Os dados que compõem a base de dados DNS são chamados **registos de recurso** (*resource records*). Cada registo é uma linha que associa um nome a um tipo e a um valor. Os tipos que interessam a um administrador são estes:
 
@@ -832,7 +832,7 @@ empresa.pt.        IN  TXT   "v=spf1 mx -all"
 
 O campo **serial** no registo SOA é crítico em ambientes com servidores secundários: quando o serial aumenta, os secundários sabem que os dados mudaram e devem fazer uma nova transferência de zona. Esquecer de incrementar o serial após uma alteração é um erro clássico que resulta em servidores secundários a servir dados desactualizados indefinidamente.
 
-### Resolução inversa
+#### Resolução inversa
 
 A resolução inversa mapeia um endereço IP de volta para um nome, usando registos PTR numa zona especial chamada `in-addr.arpa`. Para o endereço `203.0.113.20`, o nome consultado é `20.113.0.203.in-addr.arpa`, com os octetos invertidos.
 
@@ -840,7 +840,7 @@ A resolução inversa mapeia um endereço IP de volta para um nome, usando regis
 
 A excepção importante é o email: muitos servidores de email rejeitam mensagens de servidores sem registo PTR válido, por ser um indicador comum de spam. Se administra um servidor de email, garanta que o registo PTR do seu endereço está configurado.
 
-### Configuração do cliente DNS
+#### Configuração do cliente DNS
 
 O ficheiro `/etc/resolv.conf` define quais os servidores DNS que o sistema consulta:
 
@@ -868,7 +868,7 @@ $ sudo nmcli connection modify "System enp0s31f6" ipv4.ignore-auto-dns yes
 $ sudo nmcli connection up "System enp0s31f6"
 ```
 
-### /etc/hosts e a ordem de resolução
+#### /etc/hosts e a ordem de resolução
 
 Antes de consultar o DNS, o sistema verifica o ficheiro `/etc/hosts`, que contém mapeamentos estáticos locais:
 
@@ -893,11 +893,11 @@ A palavra `files` refere-se a `/etc/hosts`, e `dns` ao sistema DNS. A ordem impo
 
 ---
 
-## 4.2 Ferramentas de Consulta DNS
+### 4.2 Ferramentas de Consulta DNS
 
 Quando a resolução de nomes falha, é preciso consultar o DNS directamente para descobrir onde está o problema. Existem três ferramentas principais, com propósitos ligeiramente diferentes.
 
-### host
+#### host
 
 O `host` é a ferramenta mais simples, ideal para verificações rápidas:
 
@@ -923,7 +923,7 @@ empresa.pt name server ns2.empresa.pt.
 $ host www.exemplo.com 1.1.1.1
 ```
 
-### nslookup
+#### nslookup
 
 O `nslookup` funciona em modo directo ou interactivo. O modo interactivo é conveniente quando se quer fazer várias consultas seguidas com configurações diferentes:
 
@@ -944,7 +944,7 @@ Address: 203.0.113.20
 > exit
 ```
 
-### dig
+#### dig
 
 O `dig` é a ferramenta preferida dos administradores. Produz um output verboso que mostra exactamente o que foi perguntado, o que foi respondido, qual servidor respondeu e quanto tempo demorou:
 
@@ -1002,7 +1002,7 @@ $ dig +noall +answer www.exemplo.com
 
 O `dig +trace` merece destaque. Percorre a cadeia completa de resolução mostrando cada passo, desde os servidores raiz até à resposta autoritativa final. É a ferramenta certa para diagnosticar problemas de delegação: quando um domínio não resolve mas os registos parecem correctos, o `+trace` mostra exactamente em que ponto a cadeia se quebra.
 
-### Fluxo de diagnóstico de problemas DNS
+#### Fluxo de diagnóstico de problemas DNS
 
 Quando um nome não resolve, a sequência de verificação é esta:
 
@@ -1029,9 +1029,9 @@ $ grep empresa.pt /etc/hosts
 
 ---
 
-## 4.3 DHCP: Configuração Automática de Rede
+### 4.3 DHCP: Configuração Automática de Rede
 
-### O que o DHCP faz
+#### O que o DHCP faz
 
 Quando se liga um computador a uma rede, ele normalmente obtém um endereço IP, define a rota por defeito, e descobre quais os servidores DNS a usar, tudo sem qualquer intervenção humana. O DHCP (*Dynamic Host Configuration Protocol*) é o mecanismo por trás dessa aparente magia.
 
@@ -1048,7 +1048,7 @@ Os parâmetros que um servidor DHCP pode distribuir incluem:
 
 A lista completa tem dezenas de parâmetros definidos no RFC 2132, mas na prática só os primeiros quatro são usados com frequência.
 
-### Como o DHCP funciona
+#### Como o DHCP funciona
 
 A interacção entre cliente e servidor segue quatro passos, conhecidos pelo acrónimo DORA:
 
@@ -1060,7 +1060,7 @@ A interacção entre cliente e servidor segue quatro passos, conhecidos pelo acr
 
 **Acknowledge.** O servidor confirma a atribuição, regista o lease na sua base de dados, e o cliente configura a interface com os parâmetros recebidos.
 
-### O conceito de lease
+#### O conceito de lease
 
 Um endereço atribuído por DHCP não é permanente. É cedido por um período definido, o **lease time**. Quando metade do tempo de lease decorre, o cliente tenta renová-lo contactando directamente o servidor que lho atribuiu. Se a renovação for bem-sucedida, o contador reinicia. Se o cliente desaparecer sem renovar, o lease expira e o servidor pode reatribuir o endereço a outro cliente.
 
@@ -1068,7 +1068,7 @@ O tempo de lease é configurável e envolve um compromisso. Leases curtos permit
 
 O servidor é obrigado a manter registo dos endereços que atribuiu, e essa informação tem de sobreviver a reinícios do servidor, caso contrário o servidor poderia atribuir o mesmo endereço a duas máquinas diferentes.
 
-### Configurar um servidor DHCP com ISC dhcpd
+#### Configurar um servidor DHCP com ISC dhcpd
 
 Em redes pequenas, o router faz normalmente de servidor DHCP e não é necessário configurar nada. Em redes maiores com múltiplas sub-redes, ou quando é necessário controlo fino sobre a atribuição de endereços, configura-se um servidor DHCP dedicado.
 
@@ -1128,7 +1128,7 @@ Todas as sub-redes ligadas às interfaces do servidor têm de ser declaradas, me
 
 As **reservas estáticas** (blocos `host`) associam um endereço MAC específico a um endereço IP fixo. A máquina continua a usar DHCP e a receber toda a configuração automaticamente, mas recebe sempre o mesmo endereço. Esta é a forma correcta de dar endereços fixos a servidores e impressoras: mantém a configuração centralizada em vez de espalhada por cada máquina.
 
-> ⚠️ **A sintaxe do `dhcpd.conf` é intolerante.** Um ponto e vírgula em falta produz mensagens de erro crípticas que raramente apontam para a linha correcta. Verifique sempre a sintaxe antes de reiniciar o serviço.
+> **A sintaxe do `dhcpd.conf` é intolerante.** Um ponto e vírgula em falta produz mensagens de erro crípticas que raramente apontam para a linha correcta. Verifique sempre a sintaxe antes de reiniciar o serviço.
 
 ```bash
 # Verificar sintaxe sem arrancar o serviço
@@ -1142,7 +1142,7 @@ $ sudo firewall-cmd --add-service=dhcp --permanent
 $ sudo firewall-cmd --reload
 ```
 
-### Ver os leases activos
+#### Ver os leases activos
 
 O servidor mantém a base de dados de leases num ficheiro de texto:
 
@@ -1166,7 +1166,7 @@ Para acompanhar a actividade do servidor em tempo real:
 $ sudo journalctl -u dhcpd -f
 ```
 
-### O agente de relay
+#### O agente de relay
 
 Um pedido DHCP inicial é enviado por broadcast, e os broadcasts não atravessam routers. Isto significa que cada sub-rede física precisaria do seu próprio servidor DHCP, o que é impraticável em redes grandes.
 
@@ -1179,7 +1179,7 @@ $ sudo systemctl edit --full dhcrelay
 $ sudo systemctl enable --now dhcrelay
 ```
 
-### O lado do cliente
+#### O lado do cliente
 
 O cliente DHCP raramente precisa de configuração. Em CentOS com NetworkManager, basta a interface estar definida como automática:
 
@@ -1199,9 +1199,9 @@ $ sudo nmcli connection modify "System enp0s31f6" ipv4.method auto
 
 ---
 
-## 4.4 NTP e chronyd: Sincronização de Tempo
+### 4.4 NTP e chronyd: Sincronização de Tempo
 
-### Por que o tempo importa
+#### Por que o tempo importa
 
 O relógio de um servidor não é uma comodidade, é infraestrutura crítica. As consequências de um relógio desfasado atravessam todo o sistema.
 
@@ -1215,7 +1215,7 @@ Bases de dados replicadas e sistemas de ficheiros distribuídos dependem de orde
 
 Num servidor com relógio errado, a questão não é se algo vai falhar. É o quê, e quando é que alguém vai descobrir a causa real.
 
-### O protocolo NTP e a hierarquia de stratum
+#### O protocolo NTP e a hierarquia de stratum
 
 O NTP (*Network Time Protocol*) organiza as fontes de tempo em níveis hierárquicos chamados **stratum**.
 
@@ -1227,7 +1227,7 @@ O **stratum 2** sincroniza com servidores de stratum 1, o **stratum 3** com stra
 
 Cada nível acrescenta uma pequena margem de erro, mas na prática qualquer stratum entre 2 e 4 oferece precisão largamente suficiente para um servidor.
 
-### chronyd: o cliente NTP em CentOS
+#### chronyd: o cliente NTP em CentOS
 
 O `chronyd` é o daemon de sincronização padrão no CentOS Stream e em todas as distribuições baseadas em RHEL. Substituiu o `ntpd` tradicional por boas razões: converge muito mais rapidamente para a hora correcta, lida melhor com redes de qualidade variável, e funciona bem em sistemas que são frequentemente desligados ou suspensos, como máquinas virtuais e portáteis.
 
@@ -1240,7 +1240,7 @@ $ sudo dnf install chrony -y
 $ sudo systemctl enable --now chronyd
 ```
 
-### Configuração
+#### Configuração
 
 O ficheiro de configuração é `/etc/chrony.conf`:
 
@@ -1274,7 +1274,7 @@ A directiva `iburst` acelera drasticamente a sincronização inicial. Em vez de 
 
 A directiva `makestep 1.0 3` merece explicação. Por defeito, o `chronyd` corrige o relógio gradualmente (*slewing*), acelerando ou abrandando ligeiramente a passagem do tempo até ao valor correcto. Isto evita saltos temporais que confundem aplicações. Mas se o desvio inicial for muito grande, o slewing demoraria horas. O `makestep` permite um salto abrupto (*step*), mas apenas nas três primeiras actualizações após o arranque. Depois disso, os ajustes voltam a ser sempre graduais.
 
-### Verificar o estado
+#### Verificar o estado
 
 ```bash
 # Estado geral e qualidade da sincronização
@@ -1333,7 +1333,7 @@ System clock synchronized: yes
 $ sudo timedatectl set-timezone Europe/Lisbon
 ```
 
-### chronyd como servidor NTP interno
+#### chronyd como servidor NTP interno
 
 Em infraestruturas com vários servidores, a boa prática é ter um ou dois servidores NTP internos que sincronizam com fontes externas, e ter todos os restantes hosts a sincronizar com esses servidores internos. Isto reduz o tráfego externo, garante que todos os hosts da rede têm exactamente a mesma hora, e mantém a sincronização funcional mesmo se a ligação à internet falhar.
 
@@ -1360,13 +1360,13 @@ $ sudo chronyc clients
 
 ---
 
-## 4.5 Servidor Web Apache
+### 4.5 Servidor Web Apache
 
-### Fundamentos: como funciona a web
+#### Fundamentos: como funciona a web
 
 Servir um site não é conceptualmente diferente de fornecer qualquer outro serviço de rede. Um daemon escuta ligações na porta TCP 80 (ou 443 para HTTPS), aceita pedidos de documentos, e transmite-os ao browser que os pediu. Grande parte desses documentos é hoje gerada dinamicamente por aplicações e bases de dados, mas isso é incidental ao protocolo subjacente.
 
-### URLs, URIs e URNs
+#### URLs, URIs e URNs
 
 A forma como os recursos são identificados na web obedece a uma taxonomia definida pela Internet Society, e vale a pena conhecer a distinção.
 
@@ -1389,9 +1389,9 @@ Os protocolos que podem aparecer num URL não se limitam ao HTTP:
 | `ldap` | Acede a serviços de directório LDAP | `ldap://ldap.empresa.pt:389/cn=Carlos` |
 | `mailto` | Envia email para um endereço | `mailto:admin@empresa.pt` |
 
-> *(imagem: Tabela 23.1 — URL protocols)*
+> *(imagem: Tabela 23.1: URL protocols)*
 
-### O protocolo HTTP na prática
+#### O protocolo HTTP na prática
 
 O HTTP é um protocolo cliente/servidor sem estado. O cliente pede o conteúdo de um URL específico, e o servidor responde com dados ou com uma mensagem de erro. Depois disso, a ligação pode ser reutilizada ou fechada, mas o servidor não guarda memória do pedido anterior.
 
@@ -1435,7 +1435,7 @@ $ curl -H "Host: www.empresa.pt" http://203.0.113.20
 
 Este último comando é particularmente útil: permite testar um site num servidor antes de o DNS apontar para lá, o que é essencial durante migrações.
 
-### Conteúdo dinâmico
+#### Conteúdo dinâmico
 
 Um servidor web não serve apenas ficheiros estáticos. Pode executar programas que geram conteúdo no momento do pedido. Existem três abordagens, com implicações de desempenho muito diferentes.
 
@@ -1450,11 +1450,11 @@ Um servidor web não serve apenas ficheiros estáticos. Pode executar programas 
 | PHP | `mod_php` (tradicional), PHP-FPM (moderno) | php.net |
 | Ruby on Rails | Phusion Passenger (`mod_rails`) | modrails.com |
 
-> *(imagem: Tabela 23.2 — Embedded scripting modules for the Apache web server)*
+> *(imagem: Tabela 23.2: Embedded scripting modules for the Apache web server)*
 
 **FastCGI** é a terceira via. Mantém o interpretador a correr num processo separado e persistente, evitando o custo de arranque a cada pedido mas sem o acoplar ao servidor web. Tem a vantagem de permitir reiniciar a aplicação sem reiniciar o servidor web. Em ambientes modernos com PHP, o PHP-FPM (*FastCGI Process Manager*) é a abordagem preferida.
 
-### Servidores de aplicação
+#### Servidores de aplicação
 
 Aplicações empresariais complexas podem precisar de mais funcionalidade do que um servidor HTTP oferece. Nestes casos, usa-se um servidor de aplicação, que corre a lógica de negócio e trabalha em conjunto com o Apache, tipicamente com o Apache a fazer de proxy inverso.
 
@@ -1467,9 +1467,9 @@ Aplicações empresariais complexas podem precisar de mais funcionalidade do que
 | WebSphere | Comercial | ibm.com/websphere |
 | WebLogic | Comercial | oracle.com/weblogic |
 
-> *(imagem: Tabela 23.3 — Application servers)*
+> *(imagem: Tabela 23.3: Application servers)*
 
-### Instalação em CentOS
+#### Instalação em CentOS
 
 ```bash
 $ sudo dnf install httpd -y
@@ -1488,7 +1488,7 @@ $ curl -I http://localhost
 
 Os binários do Apache ficam em `/usr/sbin` e a configuração em `/etc/httpd`. O directório raiz de documentos por defeito é `/var/www/html/`.
 
-### Estrutura de configuração
+#### Estrutura de configuração
 
 ```
 /etc/httpd/
@@ -1529,7 +1529,7 @@ ServerTokens Prod
 ServerSignature Off
 ```
 
-### Controlo de acesso a directórios
+#### Controlo de acesso a directórios
 
 O Apache controla o acesso ao sistema de ficheiros através de blocos `<Directory>`. A configuração por defeito nega acesso a tudo e depois autoriza explicitamente apenas o necessário, que é a abordagem correcta:
 
@@ -1560,7 +1560,7 @@ A opção `FollowSymLinks` permite ao Apache seguir links simbólicos. É um ris
 </Directory>
 ```
 
-### Virtual Hosts
+#### Virtual Hosts
 
 O virtual hosting permite que um único servidor responda a vários domínios com conteúdos distintos. É a funcionalidade que torna possível alojar dezenas de sites numa só máquina.
 
@@ -1611,7 +1611,7 @@ $ sudo systemctl reload httpd
 $ sudo apachectl -S
 ```
 
-### Logs do Apache
+#### Logs do Apache
 
 O Apache mantém dois logs por site. O **access log** regista todos os pedidos recebidos. O **error log** regista erros de processamento e mensagens de diagnóstico.
 
@@ -1634,7 +1634,7 @@ $ sudo awk '$9 == 404 {print $7}' /var/log/httpd/access_log | sort | uniq -c | s
 
 Estes pipelines são construídos com as mesmas ferramentas do Capítulo 4, e mostram como o conhecimento de `awk`, `sort` e `uniq` se traduz directamente em capacidade de análise operacional.
 
-### Comandos essenciais
+#### Comandos essenciais
 
 ```bash
 # Verificar configuração
@@ -1656,7 +1656,7 @@ $ sudo systemctl restart httpd
 $ ps aux | grep httpd
 ```
 
-### Escalabilidade e balanceamento de carga
+#### Escalabilidade e balanceamento de carga
 
 Prever quantos pedidos um servidor suporta é difícil: depende do hardware, do sistema operativo, e sobretudo da natureza do site. Um servidor que serve apenas HTML estático tem um perfil de carga completamente diferente de um que faz consultas a bases de dados a cada pedido. Só a medição directa do site real no hardware real responde a essa pergunta.
 
@@ -1670,9 +1670,9 @@ Por isso, em vez de optimizar para um único servidor, a estratégia correcta é
 
 ---
 
-## 4.6 Email: Arquitectura e Configuração
+### 4.6 Email: Arquitectura e Configuração
 
-### O sistema de email por dentro
+#### O sistema de email por dentro
 
 Do ponto de vista do utilizador, o email é trivial: escreve-se uma mensagem, carrega-se em enviar, e segundos depois ela está na caixa de correio do destinatário do outro lado do mundo. A infraestrutura que torna isto possível é bastante mais complexa, e compreendê-la é o que permite a um administrador diagnosticar problemas em vez de encolher os ombros.
 
@@ -1688,7 +1688,7 @@ O **DA** (*Delivery Agent*) recebe a mensagem do MTA local e deposita-a na caixa
 
 O **AA** (*Access Agent*) permite ao MUA aceder às mensagens armazenadas no servidor, através dos protocolos IMAP ou POP3.
 
-### IMAP e POP3
+#### IMAP e POP3
 
 Os dois protocolos de acesso resolvem o mesmo problema de forma diferente.
 
@@ -1698,7 +1698,7 @@ O **IMAP** mantém as mensagens no servidor e sincroniza-as com o cliente. Desca
 
 Em ambos os casos, deve usar-se sempre a variante cifrada: **IMAPS** (porta 993) ou **POP3S** (porta 995). As versões não cifradas transmitem credenciais em texto plano.
 
-### Anatomia de uma mensagem
+#### Anatomia de uma mensagem
 
 Uma mensagem de email tem três partes distintas, e saber distingui-las é fundamental para diagnóstico.
 
@@ -1708,7 +1708,7 @@ Os **cabeçalhos** são pares propriedade/valor que registam informação sobre 
 
 O **corpo** é o conteúdo. Normalmente texto simples, ainda que esse texto represente frequentemente uma codificação de conteúdo binário através do standard MIME.
 
-### Ler os cabeçalhos de uma mensagem
+#### Ler os cabeçalhos de uma mensagem
 
 Dissecar cabeçalhos de email é uma competência essencial de administração. Quando um utilizador reporta que uma mensagem não chegou, ou que uma mensagem suspeita chegou, os cabeçalhos contêm a resposta.
 
@@ -1739,9 +1739,9 @@ Neste exemplo, a mensagem saiu da workstation da Ana, passou pelo relay do domí
 
 A linha `Received-SPF: pass` indica que o servidor de origem estava autorizado a enviar email em nome do domínio `parceiro.com`. Um `fail` aqui é indicador de possível forja, embora também aconteça legitimamente em mensagens reencaminhadas.
 
-> ⚠️ **Os cabeçalhos podem ser forjados.** Qualquer servidor no percurso pode inserir linhas `Received` falsas. Só as linhas acrescentadas pelos servidores sob o seu controlo são de confiança. Use esta informação com cautela ao investigar mensagens suspeitas.
+> **Os cabeçalhos podem ser forjados.** Qualquer servidor no percurso pode inserir linhas `Received` falsas. Só as linhas acrescentadas pelos servidores sob o seu controlo são de confiança. Use esta informação com cautela ao investigar mensagens suspeitas.
 
-### O protocolo SMTP
+#### O protocolo SMTP
 
 O SMTP (*Simple Mail Transfer Protocol*) é o protocolo usado em quase todas as transferências dentro do sistema de email: do MUA para o MSA, do MSA para o MTA, entre MTAs, e do MTA para o agente de entrega.
 
@@ -1798,7 +1798,7 @@ QUIT
 
 Os códigos numéricos das respostas seguem uma lógica simples. O primeiro dígito indica o tipo: **2xx** significa sucesso, **4xx** significa erro temporário (o remetente deve tentar mais tarde), e **5xx** significa erro permanente (a mensagem não será entregue). Um `450` significa "tente novamente"; um `550` significa "desista".
 
-### Postfix: o MTA recomendado
+#### Postfix: o MTA recomendado
 
 O Postfix é o MTA padrão na maioria das distribuições Linux modernas. Foi criado por Wietse Venema com a segurança como prioridade absoluta, e o resultado fala por si: nunca foi encontrada uma vulnerabilidade explorável remotamente em nenhuma versão.
 
@@ -1806,7 +1806,7 @@ A arquitectura explica em parte esse historial. Ao contrário do sendmail, que �
 
 O Postfix é também compatível com o sendmail ao nível da interface: o comando `/usr/sbin/sendmail` existe como wrapper, e os ficheiros de aliases e `.forward` têm o mesmo formato. Scripts existentes continuam a funcionar sem alteração.
 
-### Os componentes do Postfix
+#### Os componentes do Postfix
 
 Vale a pena conhecer os programas principais, porque os nomes aparecem nos logs e saber o que cada um faz acelera muito o diagnóstico.
 
@@ -1814,7 +1814,7 @@ Do lado da **recepção**: o `smtpd` recebe mensagens que chegam por SMTP e veri
 
 Do lado do **envio**: o `qmgr` (queue manager) decide para onde cada mensagem deve seguir e gere as filas. O `smtp` entrega mensagens a servidores remotos. O `local` entrega mensagens a caixas de correio locais, resolvendo aliases e ficheiros `.forward`. O `virtual` entrega a caixas de correio que não correspondem a contas locais do sistema.
 
-### As filas do Postfix
+#### As filas do Postfix
 
 O `qmgr` gere cinco filas, e saber o que significa cada uma é essencial para diagnosticar problemas de entrega:
 
@@ -1848,7 +1848,7 @@ $ sudo postsuper -d 4A2B3C
 $ sudo postsuper -d ALL deferred
 ```
 
-### Instalação e configuração
+#### Instalação e configuração
 
 ```bash
 $ sudo dnf install postfix -y
@@ -1859,7 +1859,7 @@ O ficheiro de configuração principal é `/etc/postfix/main.cf`. Tem mais de 50
 
 O ficheiro `master.cf` configura quais os programas do Postfix que correm e como. Na maioria dos casos não precisa de ser alterado.
 
-### Configuração de null client
+#### Configuração de null client
 
 O cenário mais comum num servidor de aplicação não é receber email, é enviá-lo. Alertas de monitorização, relatórios de cron, notificações de aplicações. Para isto configura-se um **null client**: um servidor que não recebe email do exterior, mas encaminha todo o email que gera para um servidor de email central.
 
@@ -1905,7 +1905,7 @@ $ echo "Corpo da mensagem de teste" | mail -s "Teste de envio" admin@empresa.pt
 $ sudo tail -f /var/log/maillog
 ```
 
-### A ferramenta postconf
+#### A ferramenta postconf
 
 O `postconf` é a ferramenta central de gestão da configuração do Postfix:
 
@@ -1928,7 +1928,7 @@ $ sudo postconf -e "relayhost = [mail.empresa.pt]"
 
 O comando `postconf -n` é particularmente útil: mostra apenas o que foi efectivamente configurado, filtrando as centenas de parâmetros que estão nos valores por omissão. É a primeira coisa a executar quando se herda um servidor de email desconhecido.
 
-### Aliases
+#### Aliases
 
 O ficheiro `/etc/aliases` define redireccionamentos locais de email:
 
@@ -1948,7 +1948,7 @@ Após editar o ficheiro, é necessário compilá-lo para o formato binário que 
 $ sudo newaliases
 ```
 
-### Combate ao spam
+#### Combate ao spam
 
 Um servidor de email exposto à internet recebe volumes significativos de spam. As técnicas de defesa mais usadas são estas.
 
@@ -1974,9 +1974,9 @@ Configurar SPF e DKIM correctamente deixou de ser opcional: sem eles, os grandes
 
 ---
 
-## 4.7 Centralização de Logs com rsyslog
+### 4.7 Centralização de Logs com rsyslog
 
-### Por que centralizar
+#### Por que centralizar
 
 Gerir logs localmente em cada servidor cria três problemas sérios.
 
@@ -1988,7 +1988,7 @@ O terceiro é de retenção. Servidores individuais têm espaço em disco limita
 
 O `rsyslog` suporta envio de logs para servidores remotos nativamente, o que faz dele a base das arquitecturas de logging centralizado em Linux.
 
-### Configurar o cliente
+#### Configurar o cliente
 
 Em cada servidor que deve enviar logs, edita-se `/etc/rsyslog.conf` ou cria-se um ficheiro em `/etc/rsyslog.d/`:
 
@@ -2007,7 +2007,7 @@ Em cada servidor que deve enviar logs, edita-se `/etc/rsyslog.conf` ou cria-se u
 
 O duplo `@@` indica transporte TCP, que garante entrega. Um único `@` usaria UDP, mais rápido mas sem garantias: em caso de congestão de rede, mensagens perdem-se silenciosamente. Para logs de segurança, use sempre TCP.
 
-### Configurar o servidor central
+#### Configurar o servidor central
 
 No servidor de logs, activa-se a recepção e define-se como organizar o que chega:
 
@@ -2053,7 +2053,7 @@ $ sudo firewall-cmd --reload
 $ sudo systemctl restart rsyslog
 ```
 
-### Verificar que funciona
+#### Verificar que funciona
 
 ```bash
 # No cliente, gerar uma mensagem de teste
@@ -2066,7 +2066,7 @@ $ sudo grep "verificação" /var/log/hosts/*/teste-central.log
 $ sudo tail -f /var/log/hosts/*/*.log
 ```
 
-### Rotação dos logs centralizados
+#### Rotação dos logs centralizados
 
 Um servidor central acumula volumes de dados consideráveis. É indispensável configurar a rotação:
 
@@ -2093,9 +2093,9 @@ Esta configuração mantém 90 dias de histórico comprimido, o que é um ponto 
 
 ## 5. Segurança do Sistema
 
-## 5.1 Princípios de Hardening
+### 5.1 Princípios de Hardening
 
-### O sistema é seguro?
+#### O sistema é seguro?
 
 Não. E nenhum outro sistema operativo ligado a uma rede o é.
 
@@ -2107,7 +2107,7 @@ Do outro lado da balança está o facto de o código ser aberto. Milhares de pes
 
 Seria de esperar que a segurança melhorasse gradualmente à medida que os problemas fossem descobertos e corrigidos. Infelizmente não é isso que acontece. O software cresce em complexidade, os atacantes estão cada vez mais organizados e financiados, e os sistemas estão cada vez mais interligados. A segurança é uma batalha contínua que nunca fica verdadeiramente ganha.
 
-### A equação incómoda
+#### A equação incómoda
 
 Existe uma fórmula bem conhecida na literatura de administração de sistemas que resume, de forma deliberadamente absurda, uma verdade incontornável:
 
@@ -2119,11 +2119,11 @@ Esta relação deve estar presente em cada decisão de hardening. Exigir passwor
 
 Nenhuma destas medidas é correcta ou incorrecta em abstracto. Cada uma é um compromisso, e implementá-las sem ponderar o impacto nos utilizadores é uma forma de incompetência tão real como não as implementar de todo.
 
-### Como a segurança é comprometida na prática
+#### Como a segurança é comprometida na prática
 
 Antes de configurar firewalls e políticas, importa perceber por onde os problemas entram realmente. A grande maioria dos incidentes cabe em três categorias.
 
-#### Engenharia social
+##### Engenharia social
 
 Os utilizadores humanos, incluindo os administradores, são o elo mais fraco da cadeia. Mesmo com consciência elevada de segurança, pessoas bem-intencionadas são facilmente convencidas a revelar informação sensível. Nenhuma tecnologia protege contra isto.
 
@@ -2131,7 +2131,7 @@ O problema manifesta-se de muitas formas. Atacantes telefonam fazendo-se passar 
 
 A defesa é organizacional, não técnica. A política de segurança deve incluir formação para novos colaboradores e comunicação regular sobre o que fazer e não fazer. Uma regra que vale a pena estabelecer e repetir: **os administradores nunca pedem a password de um utilizador**, nem por email, nem por telefone, nem por mensagem. Qualquer pedido desse tipo deve ser reportado imediatamente.
 
-#### Vulnerabilidades de software
+##### Vulnerabilidades de software
 
 Ao longo dos anos foram descobertos incontáveis erros de programação com implicações de segurança. Explorando erros subtis, atacantes conseguem manipular sistemas para fazer o que querem.
 
@@ -2151,15 +2151,15 @@ A intenção é imprimir o conteúdo de um ficheiro dentro de `/var/www/html`. M
 
 O que pode um administrador fazer contra este tipo de falha? Muito pouco, até que o problema seja identificado e corrigido pelo autor do software. Por isso a manutenção de patches é a tarefa de segurança de maior valor que existe.
 
-#### Erros de configuração
+##### Erros de configuração
 
 Muito software pode ser configurado de forma segura ou de forma insegura. E porque o software é escrito para ser útil e não irritante, a configuração por defeito é frequentemente a menos segura. Contas sem password, partilhas acessíveis a toda a rede, bases de dados sem autenticação, serviços a correr que ninguém precisa.
 
 Esta é a categoria de problemas mais fácil de encontrar e corrigir. É também a mais comum. Grande parte do trabalho de hardening consiste simplesmente em garantir que não se deixou involuntariamente um tapete de boas-vindas à porta.
 
-### Os pilares práticos do hardening
+#### Os pilares práticos do hardening
 
-#### Patches
+##### Patches
 
 Manter o sistema actualizado é a tarefa de segurança com melhor retorno por unidade de esforço. Uma política razoável inclui três elementos.
 
@@ -2180,7 +2180,7 @@ $ sudo dnf update --security
 $ sudo dnf updateinfo info RHSA-2025:1234
 ```
 
-#### Serviços desnecessários
+##### Serviços desnecessários
 
 A maioria dos sistemas vem com vários serviços activos por defeito. Cada serviço a escutar numa porta é superfície de ataque. A regra é simples: se não é necessário, deve ser desactivado, e preferencialmente removido.
 
@@ -2201,23 +2201,23 @@ $ sudo systemctl disable --now avahi-daemon
 
 Alguns protocolos têm riscos de segurança inerentes que os tornam inaceitáveis em praticamente qualquer circunstância. O **FTP**, o **Telnet** e os programas "r" do BSD (`rcp`, `rlogin`, `rsh`) usam métodos de autenticação e transferência inseguros. Devem ser desactivados em todos os sistemas a favor de alternativas cifradas como o SSH.
 
-#### Passwords e autenticação
+##### Passwords e autenticação
 
 A regra é directa: toda a conta tem de ter password, e essa password não pode ser adivinhável. Nunca se devem transmitir passwords reutilizáveis em texto simples pela rede. Se o sistema permite login remoto, tem de ser através de SSH ou equivalente cifrado.
 
 Onde for possível, a autenticação por chave deve substituir completamente a autenticação por password, como visto na secção 2.1.
 
-#### Registo remoto de eventos
+##### Registo remoto de eventos
 
 Um servidor comprometido tem os seus logs comprometidos. A primeira coisa que um atacante competente faz é apagar o rasto. Logs enviados em tempo real para um servidor separado sobrevivem a essa limpeza e podem ser a única fonte fiável do que aconteceu. A centralização com `rsyslog` descrita na secção 4.7 não é apenas conveniência operacional, é uma medida de segurança.
 
-#### Cópias de segurança
+##### Cópias de segurança
 
 Backups regulares fazem parte de qualquer plano de segurança, e correspondem ao pilar da **disponibilidade** na tríade CIA (Confidencialidade, Integridade, Disponibilidade). Se ocorrer um incidente significativo, um backup limpo é o ponto a partir do qual se pode restaurar com confiança.
 
 Mas os backups são também um risco. Um conjunto de suportes roubado contorna toda a restante segurança do sistema. Backups guardados fora das instalações devem ser cifrados, e o local de armazenamento deve ser avaliado com o mesmo critério que se aplicaria a um datacenter.
 
-#### Vírus, worms e rootkits
+##### Vírus, worms e rootkits
 
 O Linux tem estado largamente imune a vírus. Existem alguns, quase todos de natureza académica, e nenhum causou os danos que se tornaram comuns no mundo Windows.
 
@@ -2229,13 +2229,13 @@ Os **rootkits** são uma categoria diferente e mais preocupante. São programas 
 
 Quando um rootkit é confirmado, a decisão pragmática raramente é limpá-lo. O tempo necessário para garantir uma limpeza completa é normalmente maior do que o tempo de salvar os dados, reformatar e reinstalar a partir de uma fonte confiável. E a limpeza nunca oferece garantias.
 
-#### Vigilância
+##### Vigilância
 
 A segurança de um sistema depende da monitorização regular do seu estado: ligações de rede, tabela de processos, logs, integridade dos ficheiros. Os problemas de segurança começam pequenos e crescem depressa, e quanto mais cedo uma anomalia for identificada, melhor.
 
 Isto significa ler efectivamente os relatórios das ferramentas de segurança. Um problema menor ignorado num relatório pode ter-se tornado uma catástrofe quando chega o relatório seguinte.
 
-### Filosofia geral
+#### Filosofia geral
 
 Alguns princípios que resumem a postura correcta:
 
@@ -2251,9 +2251,9 @@ Alguns princípios que resumem a postura correcta:
 
 ---
 
-## 5.2 firewalld e SELinux: As Camadas de Segurança do CentOS
+### 5.2 firewalld e SELinux: As Camadas de Segurança do CentOS
 
-### O conceito de firewall
+#### O conceito de firewall
 
 Além de proteger sistemas individualmente, é possível implementar segurança ao nível da rede. A ferramenta base é o **firewall**: um dispositivo ou software que impede pacotes indesejados de alcançar redes e sistemas.
 
@@ -2263,7 +2263,7 @@ Um **firewall de inspecção com estado** (*stateful*) vai mais longe. Em vez de
 
 A forma mais segura de configurar um filtro de pacotes é começar por uma configuração que **não permite nada** e depois abrir apenas o que se descobre ser necessário. O inverso, começar por permitir tudo e ir fechando, deixa sempre buracos que ninguém se lembrou de fechar.
 
-### Quão seguros são os firewalls?
+#### Quão seguros são os firewalls?
 
 Um firewall não deve ser a defesa principal, e muito menos a única. É um componente de uma estratégia em camadas.
 
@@ -2271,7 +2271,7 @@ O uso de firewalls confere frequentemente uma falsa sensação de segurança. Se
 
 No fim do dia, é a vigilância do administrador que torna uma rede segura, não uma peça de hardware.
 
-### A pilha de firewall no Linux
+#### A pilha de firewall no Linux
 
 No Linux, a filtragem de pacotes acontece no kernel, num subsistema chamado **Netfilter**. Por cima dele existem várias camadas de interface, e é importante perceber a relação entre elas porque a terminologia gera confusão.
 
@@ -2296,7 +2296,7 @@ O **nftables** substituiu o iptables como interface moderna para o Netfilter, co
 
 O **firewalld** é a camada de gestão de alto nível usada no CentOS. Não substitui o Netfilter, configura-o. A grande vantagem do firewalld é permitir alterações dinâmicas sem reiniciar todo o conjunto de regras e sem quebrar ligações estabelecidas, algo que com iptables puro exigia recarregar tudo.
 
-### firewalld: zonas
+#### firewalld: zonas
 
 O conceito central do firewalld é a **zona**. Uma zona é um conjunto de regras aplicado a um nível de confiança, e cada interface de rede é atribuída a uma zona. Isto permite tratar de forma diferente o tráfego que chega pela interface interna e o que chega pela interface exposta à internet.
 
@@ -2314,7 +2314,7 @@ As zonas pré-definidas, por ordem crescente de confiança:
 | `internal` | Rede interna, confiança elevada |
 | `trusted` | Aceita todo o tráfego |
 
-### Operação do firewalld
+#### Operação do firewalld
 
 ```bash
 # Estado do serviço
@@ -2363,9 +2363,9 @@ $ sudo firewall-cmd --remove-service=telnet --permanent
 $ sudo firewall-cmd --reload
 ```
 
-> ⚠️ **A distinção entre runtime e permanent é a fonte de erro mais comum no firewalld.** Sem `--permanent`, a alteração aplica-se imediatamente mas desaparece no próximo reload ou reinício. Com `--permanent`, é gravada mas não se aplica até fazer `--reload`. O procedimento seguro em servidores remotos é testar primeiro sem `--permanent`, confirmar que não perdeu o acesso, e só depois tornar permanente.
+> **A distinção entre runtime e permanent é a fonte de erro mais comum no firewalld.** Sem `--permanent`, a alteração aplica-se imediatamente mas desaparece no próximo reload ou reinício. Com `--permanent`, é gravada mas não se aplica até fazer `--reload`. O procedimento seguro em servidores remotos é testar primeiro sem `--permanent`, confirmar que não perdeu o acesso, e só depois tornar permanente.
 
-### Rich rules
+#### Rich rules
 
 Para regras que precisam de mais granularidade do que "abrir este serviço", o firewalld tem as *rich rules*:
 
@@ -2394,7 +2394,7 @@ $ sudo firewall-cmd --reload
 
 A primeira regra é particularmente útil e vale como padrão a seguir: restringir o SSH à rede de gestão em vez de o deixar aberto ao mundo elimina a esmagadora maioria das tentativas de intrusão automatizadas.
 
-### SELinux: a segunda camada
+#### SELinux: a segunda camada
 
 O firewall controla o que entra e sai pela rede. O **SELinux** (*Security-Enhanced Linux*) controla o que cada processo pode fazer dentro do sistema, independentemente das permissões tradicionais de ficheiros.
 
@@ -2402,7 +2402,7 @@ Esta é a diferença fundamental. O modelo de permissões UNIX visto no Capítul
 
 O efeito prático é de contenção. Se o servidor web for comprometido através de uma vulnerabilidade, o processo comprometido continua confinado à política definida para servidores web. Não consegue ler `/etc/shadow`, não consegue escrever fora dos directórios que lhe estão atribuídos, não consegue abrir ligações de rede arbitrárias. O ataque não é impedido, mas o seu alcance é drasticamente limitado.
 
-#### Modos de funcionamento
+##### Modos de funcionamento
 
 ```bash
 # Ver o modo actual
@@ -2437,9 +2437,9 @@ $ sudo setenforce 1
 
 Para alteração permanente edita-se `/etc/selinux/config`.
 
-> ⚠️ **Desactivar o SELinux é a solução errada.** É frequente encontrar guias na internet que sugerem `SELINUX=disabled` como primeiro passo de qualquer instalação. Isto resolve o sintoma eliminando uma camada inteira de defesa, e é o equivalente a desligar o alarme porque toca demasiado. Os problemas de SELinux são quase sempre questão de contexto de ficheiros ou de um boolean, e resolvem-se em segundos quando se sabe onde olhar.
+> **Desactivar o SELinux é a solução errada.** É frequente encontrar guias na internet que sugerem `SELINUX=disabled` como primeiro passo de qualquer instalação. Isto resolve o sintoma eliminando uma camada inteira de defesa, e é o equivalente a desligar o alarme porque toca demasiado. Os problemas de SELinux são quase sempre questão de contexto de ficheiros ou de um boolean, e resolvem-se em segundos quando se sabe onde olhar.
 
-#### Contextos de segurança
+##### Contextos de segurança
 
 Cada ficheiro, processo e porta tem um **contexto de segurança** associado. É esse contexto que a política usa para decidir o que é permitido.
 
@@ -2473,7 +2473,7 @@ $ sudo restorecon -Rv /dados/web
 $ sudo semanage port -a -t http_port_t -p tcp 8080
 ```
 
-#### Booleans
+##### Booleans
 
 Os *booleans* são interruptores que activam ou desactivam comportamentos permitidos pela política, sem precisar de a reescrever:
 
@@ -2491,7 +2491,7 @@ $ sudo setsebool -P httpd_can_network_connect_db on
 
 A opção `-P` torna a alteração permanente. Sem ela, volta ao estado anterior no reinício.
 
-#### Diagnosticar problemas de SELinux
+##### Diagnosticar problemas de SELinux
 
 Quando algo não funciona e as permissões parecem correctas, o SELinux é o suspeito imediato. As negações são registadas no log de auditoria:
 
@@ -2526,9 +2526,9 @@ $ sudo ausearch -m AVC -ts recent | audit2why
 
 ---
 
-## 5.3 OpenLDAP: Autenticação Centralizada
+### 5.3 OpenLDAP: Autenticação Centralizada
 
-### O problema das contas dispersas
+#### O problema das contas dispersas
 
 Num único servidor, gerir contas com `useradd` e `passwd` é perfeitamente adequado. Com dez servidores, começa a ser incómodo. Com cinquenta, torna-se insustentável.
 
@@ -2536,7 +2536,7 @@ Considere-se o que acontece quando um colaborador sai da organização num ambie
 
 A solução é centralizar: manter as identidades num único directório, e configurar todos os servidores para consultarem esse directório ao autenticar.
 
-### O que é um directório LDAP
+#### O que é um directório LDAP
 
 O **LDAP** (*Lightweight Directory Access Protocol*) é um protocolo de acesso a serviços de directório. Um directório é uma base de dados optimizada para leitura, organizada hierarquicamente, desenhada para armazenar informação sobre entidades: pessoas, grupos, máquinas, serviços.
 
@@ -2575,7 +2575,7 @@ mail: carlos@empresa.pt
 
 Repare-se em como estes atributos correspondem exactamente aos campos de `/etc/passwd` vistos na secção 2.1 do Capítulo 5. É precisamente essa a ideia: o LDAP substitui os ficheiros locais como fonte da informação de contas.
 
-### Instalação do servidor
+#### Instalação do servidor
 
 ```bash
 $ sudo dnf install openldap openldap-servers openldap-clients -y
@@ -2591,7 +2591,7 @@ $ sudo firewall-cmd --reload
 
 O daemon chama-se `slapd` (*Standalone LDAP Daemon*). Escuta na porta 389 para ligações não cifradas e 636 para LDAPS.
 
-### Configuração inicial
+#### Configuração inicial
 
 As versões modernas do OpenLDAP guardam a própria configuração dentro do directório, numa árvore separada chamada `cn=config`. Isto significa que a configuração se altera com operações LDAP, não editando ficheiros.
 
@@ -2633,7 +2633,7 @@ $ sudo ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/openldap/schema/nis.ldif
 $ sudo ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/openldap/schema/inetorgperson.ldif
 ```
 
-### Popular o directório
+#### Popular o directório
 
 Cria-se a estrutura base e as primeiras entradas:
 
@@ -2661,7 +2661,7 @@ $ ldapadd -x -D "cn=admin,dc=empresa,dc=pt" -W -f base.ldif
 
 As opções significam: `-x` autenticação simples, `-D` o DN com que se liga, `-W` pedir a password interactivamente, `-f` o ficheiro a carregar.
 
-### Consultar o directório
+#### Consultar o directório
 
 ```bash
 # Ver toda a árvore
@@ -2677,7 +2677,7 @@ $ ldapsearch -x -b "ou=people,dc=empresa,dc=pt" "(objectClass=posixAccount)" uid
 $ ldapsearch -x -H ldap://ldap.empresa.pt -b "dc=empresa,dc=pt"
 ```
 
-### Configurar os clientes com SSSD
+#### Configurar os clientes com SSSD
 
 Do lado dos servidores que devem autenticar contra o LDAP, a ferramenta moderna é o **SSSD** (*System Security Services Daemon*). Faz a ligação ao directório, mantém cache local das credenciais (o que permite login mesmo se o servidor LDAP estiver temporariamente inacessível) e integra-se com o PAM visto no Capítulo 5.
 
@@ -2720,7 +2720,7 @@ $ sudo systemctl enable --now oddjobd
 
 A opção `with-mkhomedir` faz com que o directório home seja criado automaticamente no primeiro login de um utilizador do directório.
 
-### Verificar
+#### Verificar
 
 ```bash
 # O sistema reconhece o utilizador do LDAP?
@@ -2734,15 +2734,15 @@ carlos:*:1001:1001:Carlos Silva:/home/carlos:/bin/bash
 $ su - carlos
 ```
 
-> ⚠️ **Use sempre LDAPS ou StartTLS.** O LDAP em texto simples transmite credenciais de autenticação sem cifra. Num serviço cuja função é precisamente autenticar toda a organização, isto é inaceitável. A configuração acima usa `ldaps://` e exige verificação do certificado.
+> **Use sempre LDAPS ou StartTLS.** O LDAP em texto simples transmite credenciais de autenticação sem cifra. Num serviço cuja função é precisamente autenticar toda a organização, isto é inaceitável. A configuração acima usa `ldaps://` e exige verificação do certificado.
 
 ---
 
-## 5.4 Auditoria e Verificação de Segurança
+### 5.4 Auditoria e Verificação de Segurança
 
 Configurar defesas é metade do trabalho. A outra metade é verificar continuamente que continuam no lugar e que ninguém as contornou.
 
-### auditd: o subsistema de auditoria
+#### auditd: o subsistema de auditoria
 
 O `auditd` regista eventos ao nível do kernel: acessos a ficheiros, chamadas de sistema, alterações de configuração, uso de comandos privilegiados. É o mecanismo que permite responder à pergunta "quem alterou este ficheiro e quando".
 
@@ -2783,9 +2783,9 @@ $ sudo aureport --summary
 $ sudo aureport --auth --summary
 ```
 
-### Verificação de integridade
+#### Verificação de integridade
 
-#### rpm -V: verificar pacotes instalados
+##### rpm -V: verificar pacotes instalados
 
 Uma capacidade subestimada do gestor de pacotes é a verificação de integridade. O `rpm` guarda checksums, permissões e propriedade de cada ficheiro instalado, e pode comparar o estado actual contra esses valores.
 
@@ -2802,7 +2802,7 @@ $ rpm -qf /usr/sbin/sshd
 
 O output do `rpm -V` usa códigos por posição. `S` indica tamanho alterado, `M` permissões alteradas, `5` checksum MD5 diferente, `U` dono diferente, `G` grupo diferente, `T` timestamp diferente. Um `5` num binário de sistema é um sinal grave: significa que o ficheiro foi substituído.
 
-#### AIDE: base de dados de integridade
+##### AIDE: base de dados de integridade
 
 O **AIDE** (*Advanced Intrusion Detection Environment*) cria uma base de dados com o estado de todos os ficheiros do sistema e detecta alterações posteriores.
 
@@ -2817,7 +2817,7 @@ $ sudo mv /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz
 $ sudo aide --check
 ```
 
-> 💡 **A base de dados do AIDE deve ser guardada fora do sistema que verifica.** Se um atacante comprometer a máquina, pode regenerar a base de dados para incluir os seus ficheiros modificados, e a verificação passará a dar tudo em ordem. Guardar uma cópia num servidor separado ou em suporte só de leitura resolve o problema.
+> **A base de dados do AIDE deve ser guardada fora do sistema que verifica.** Se um atacante comprometer a máquina, pode regenerar a base de dados para incluir os seus ficheiros modificados, e a verificação passará a dar tudo em ordem. Guardar uma cópia num servidor separado ou em suporte só de leitura resolve o problema.
 
 Uma verificação diária agendada com cron, como visto no Capítulo 5, transforma o AIDE numa vigilância contínua:
 
@@ -2826,7 +2826,7 @@ Uma verificação diária agendada com cron, como visto no Capítulo 5, transfor
 0 3 * * * /usr/sbin/aide --check | mail -s "AIDE: $(hostname)" admin@empresa.pt
 ```
 
-### Análise de portas e serviços expostos
+#### Análise de portas e serviços expostos
 
 ```bash
 # O que está a escutar localmente
@@ -2841,9 +2841,9 @@ $ sudo nmap -sS -p- 192.168.1.50
 
 A distinção importa: `ss` mostra o que o sistema pensa que está a escutar; `nmap` a partir de outra máquina mostra o que está efectivamente acessível através do firewall. As duas visões devem coincidir com o que se espera, e discrepâncias merecem investigação.
 
-> ⚠️ **Só faça scan de sistemas que administra ou para os quais tem autorização escrita.** Fazer port scan de infraestrutura de terceiros é ilegal em muitas jurisdições, independentemente da intenção.
+> **Só faça scan de sistemas que administra ou para os quais tem autorização escrita.** Fazer port scan de infraestrutura de terceiros é ilegal em muitas jurisdições, independentemente da intenção.
 
-### Detecção de rootkits
+#### Detecção de rootkits
 
 ```bash
 $ sudo dnf install rkhunter -y
@@ -2858,7 +2858,7 @@ $ sudo rkhunter --propupd
 $ sudo rkhunter --check --skip-keypress
 ```
 
-### Protecção contra força bruta com fail2ban
+#### Protecção contra força bruta com fail2ban
 
 O `fail2ban` monitoriza os logs à procura de padrões de ataque e bloqueia automaticamente os endereços responsáveis, criando regras de firewall temporárias.
 
@@ -2896,7 +2896,7 @@ $ sudo fail2ban-client status sshd
 $ sudo fail2ban-client set sshd unbanip 192.168.1.99
 ```
 
-### Revisão periódica de segurança
+#### Revisão periódica de segurança
 
 Alguns comandos que vale a pena executar com regularidade:
 
@@ -2924,7 +2924,7 @@ $ sudo journalctl -u sshd | grep "Failed password" | tail -20
 $ sudo ausearch -m USER_CMD -ts today
 ```
 
-### Uma lista de verificação de hardening
+#### Uma lista de verificação de hardening
 
 Uma forma prática de aplicar tudo o que foi visto é através de uma lista de verificação aplicada a cada sistema novo. Ter um procedimento documentado tem ainda a vantagem de ser demonstrável quando alguém pergunta que medidas foram tomadas.
 
