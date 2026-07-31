@@ -82,3 +82,95 @@ O Linux é o oposto: é **software livre e de código aberto** (*open source*). 
 Alguém poderá objectar: "que me importa isso? Não sou programador, não quero ver nem alterar como o meu sistema é construído." A resposta é que o facto de outros poderem usar software livre como bem entendem foi precisamente o motor que impulsionou o crescimento explosivo da internet, dos telemóveis, de dispositivos especializados e de centenas de empresas tecnológicas. O software livre reduziu drasticamente os custos da computação e permitiu uma explosão de inovação. As empresas que hoje assentam a sua infraestrutura em Linux precisam, cada vez mais, de pessoas com as competências para operar esses sistemas, e é para essas competências que este guia contribui.
 
 Fica, porém, uma pergunta por responder: como é que um sistema tão poderoso e flexível veio também a ser livre? Para o compreender, é preciso conhecer a sua origem, e a história peculiar do movimento do software livre que conduziu ao Linux, tema da secção seguinte.
+
+## 3. Unix e Linux: História e Evolução
+
+Compreender o Linux exige compreender de onde veio, porque a sua história explica quase tudo o que o define hoje: a arquitectura, a filosofia, e sobretudo o facto de ser livre. A pergunta deixada na secção anterior, como é que um sistema tão poderoso veio a ser gratuito, só tem resposta através desta história.
+
+Tudo começa com uma mensagem publicada por um estudante finlandês num grupo de discussão da internet, a 25 de Agosto de 1991:
+
+> Olá a todos os que usam minix. Estou a fazer um sistema operativo (livre) (apenas um passatempo, não vai ser grande e profissional como o gnu) para clones AT 386(486). [...] Quaisquer sugestões são bem-vindas, mas não prometo que as implemente.
+>
+> — Linus Torvalds
+
+Aquilo que Torvalds descreveu modestamente como um passatempo viria a tornar-se um dos sistemas operativos mais importantes do mundo. Mas para entender o que ele estava a construir, e porque conseguiu construí-lo, é preciso recuar mais de duas décadas, até às origens do Unix.
+
+### As origens do Unix nos Bell Labs
+
+Praticamente todos os sistemas operativos modernos, com a notável excepção do Microsoft Windows, descendem do Unix, criado originalmente pela AT&T. Isto inclui o macOS da Apple e o próprio Linux. Para apreciar como um sistema livre pôde ser modelado a partir de um sistema proprietário da AT&T, é preciso compreender a cultura em que o Unix nasceu.
+
+Nos anos 60 e 70, a AT&T era, sem rival, a companhia telefónica dos Estados Unidos. Esse monopólio dava-lhe o luxo de financiar investigação pura, e o centro dessa investigação eram os Bell Laboratories, em Nova Jérsia. Foi aí que, após o fracasso de um projecto chamado Multics por volta de 1969, dois funcionários, **Ken Thompson** e **Dennis Ritchie**, decidiram criar por conta própria um sistema operativo que oferecesse um ambiente melhor para desenvolver software.
+
+O Unix não nasceu de uma necessidade de mercado, mas do desejo de ultrapassar os obstáculos que dificultavam a produção de programas. E nasceu num ambiente comunitário, de partilha livre de código, tanto dentro como fora dos Bell Labs. Esta cultura de colaboração é decisiva: foi ela que permitiu o desenvolvimento rápido de um Unix de alta qualidade, e foi também ela que, mais tarde, a AT&T teria dificuldade em travar.
+
+### A filosofia Unix
+
+O Unix assentou em alguns elementos fundamentais que sobrevivem, praticamente inalterados, no Linux de hoje. Reconhecê-los agora ajuda a compreender decisões de design que aparecem ao longo de todo este guia.
+
+**O sistema de ficheiros hierárquico.** O Unix organizava os ficheiros numa estrutura de directórios e subdirectórios, uma árvore como a que o Capítulo 3 descreve em detalhe. Mais do que isso, simplificou o acesso a dispositivos complexos como discos e fitas representando-os também como ficheiros dentro dessa árvore. É a origem da filosofia "tudo é um ficheiro", já apresentada neste guia.
+
+**A redirecção de entrada e saída e os pipes.** O Unix permitia direccionar a saída de um comando para um ficheiro, com o símbolo `>`, e mais tarde encadear comandos, ligando a saída de um à entrada do seguinte com o símbolo `|`. Um exemplo clássico:
+
+```bash
+    $ cat ficheiro1 ficheiro2 | sort | pr | lpr
+```
+
+Este comando junta dois ficheiros, ordena as linhas alfabeticamente, formata o texto para impressão, e envia o resultado para a impressora. Cada programa faz uma coisa e passa o resultado ao seguinte. Esta modularidade foi revolucionária: permitiu que muito código fosse desenvolvido por muitas pessoas diferentes, cada uma criando pequenas utilidades que se combinavam com as existentes. É a mesma lógica que o Capítulo 6 explora ao tratar de shell scripting.
+
+**A portabilidade e a linguagem C.** Para que o Unix pudesse funcionar em máquinas diferentes, era necessária uma linguagem de programação de alto nível. Para esse fim, **Brian Kernighan** e **Dennis Ritchie** criaram a linguagem **C**, e em 1973 o Unix foi reescrito em C. Isto foi determinante: em vez de estar preso a um tipo de hardware, o Unix passou a poder ser adaptado a outras máquinas alterando apenas os controladores, sem tocar nos programas. Ainda hoje, a linguagem C é a principal usada para criar o kernel do Unix e do Linux.
+
+Desta época sobrevive também o formato das **man pages**, a documentação em linha que continua a ser a forma primária de documentar comandos no Unix e no Linux, e que este guia recomenda consultar sempre que necessário.
+
+### A comercialização e o nascimento do BSD
+
+Antes de 1984, a AT&T estava proibida de vender sistemas informáticos, por causa do seu monopólio telefónico. Em consequência, o código-fonte do Unix era licenciado às universidades por um valor simbólico. Não existia um Unix comercial pronto a usar: recebia-se o código e compilava-se.
+
+Foi a partir deste código que, na Universidade da Califórnia em Berkeley, nasceu a primeira grande variante do Unix, a **BSD** (*Berkeley Software Distribution*). Durante quase uma década, as versões da BSD e dos Bell Labs seguiram caminhos diferentes: a BSD manteve o espírito de partilha livre de código, enquanto a AT&T começou a orientar o Unix para a comercialização.
+
+Com a divisão da AT&T em 1984, a empresa ficou finalmente livre para vender o Unix. Esta nova postura de propriedade começou a corroer o espírito de contribuição aberta. Surgiram processos judiciais para proteger o código e a marca registada Unix. E foi precisamente esta nova versão restritiva do Unix que, em 1984, deu origem à organização que abriria caminho ao Linux.
+
+### O projecto GNU e a Free Software Foundation
+
+Em 1984, **Richard Stallman** iniciou o projecto **GNU**, um nome recursivo que significa *GNU is Not UNIX*. Como projecto da **Free Software Foundation** (FSF), o GNU tinha um objectivo ambicioso: reescrever todo o sistema operativo Unix de raiz, de forma que pudesse ser distribuído livremente.
+
+Reescrever milhões de linhas de código poderia parecer impossível para uma ou duas pessoas, mas ao distribuir o esforço por dezenas ou centenas de programadores, o projecto tornou-se viável. E aqui a filosofia Unix revelou-se uma vantagem decisiva: como o Unix era feito de peças pequenas com interfaces bem conhecidas, o trabalho de as recriar podia ser facilmente dividido. Mais ainda, como todos podiam ver o código produzido, código mal escrito era corrigido ou substituído rapidamente. Em alguns casos, o resultado era melhor do que o Unix original.
+
+O projecto GNU produziu com sucesso milhares de utilitários. Mas falhou em produzir uma peça crítica: o **kernel**. As suas tentativas de construir um kernel livre não foram bem-sucedidas, e faltava assim a peça central para completar um sistema operativo inteiramente livre.
+
+#### Software livre e a licença GPL
+
+Para definir claramente como o software livre deveria ser tratado, o projecto GNU criou a **GPL** (*GNU Public License*), a licença mais conhecida do mundo do software livre e a que cobre o próprio kernel do Linux. Os seus princípios fundamentais são simples:
+
+- O autor original mantém os direitos sobre o seu software.
+- Qualquer pessoa pode usar, alterar e redistribuir o software livremente, mas tem de incluir o código-fonte, ou torná-lo facilmente acessível.
+- Mesmo que alguém reempacote e revenda o software, o acordo original mantém-se, garantindo que todos os futuros destinatários têm a mesma liberdade de alterar o código.
+
+Este último princípio é o que distingue a GPL: as melhorias que se fazem ao código têm de ser disponibilizadas aos outros. Assim, toda a comunidade beneficia do trabalho de cada um, tal como cada um beneficiou do trabalho anterior dos outros.
+
+Com o tempo, o termo "software livre" foi sendo acompanhado pelo termo "código aberto" (*open source*). As duas designações refletem ênfases ligeiramente diferentes, a primeira preferida pela Free Software Foundation, a segunda pela Open Source Initiative, e há quem use a sigla FOSS (*Free and Open Source Software*) para abranger ambas.
+
+### Linus constrói a peça que faltava
+
+Estava montado o cenário. O projecto GNU tinha construído quase todo um sistema operativo livre, mas faltava-lhe o kernel. A BSD tinha um sistema quase completo, mas em 1992 foi atingida por um processo judicial da AT&T que, embora viesse a ser abandonado, gerou incerteza suficiente para travar o seu ímpeto. Muitos começaram a procurar uma alternativa livre. O momento estava maduro para um estudante finlandês que trabalhava no seu próprio kernel.
+
+**Linus Torvalds** começou a trabalhar no Linux em 1991, enquanto estudante na Universidade de Helsínquia. Queria um kernel semelhante ao Unix para poder usar em casa o mesmo tipo de sistema que usava na universidade. Usava então o Minix, mas queria ir além dos seus limites.
+
+Ainda que Torvalds tenha inicialmente afirmado que o Linux fora escrito para o processador 386 e provavelmente não seria portável, outros insistiram numa abordagem mais portável e contribuíram para ela. Em Outubro de 1991, a versão 0.02 já tinha grande parte do código original reescrito em C, o que abriu caminho à sua adaptação a outras máquinas.
+
+O kernel Linux era a última peça, e a mais importante, para completar um sistema operativo inteiramente livre ao abrigo da GPL. Foi por isso que, quando se começaram a montar distribuições juntando o kernel de Torvalds aos utilitários do GNU, o nome que ficou foi "Linux". Algumas distribuições, como o Debian, chamam-se a si próprias **GNU/Linux**, reconhecendo o contributo essencial do projecto GNU, uma questão sobre a qual alguns membros do projecto GNU insistem com razão.
+
+### Unix e Linux: a relação e a questão da certificação
+
+Compreendida a história, a relação entre Unix e Linux torna-se clara, e desfaz uma confusão comum.
+
+O Linux **não contém código do Unix original**. Foi escrito de raiz, recriando o comportamento do Unix a partir das suas interfaces públicas e dos padrões que as descreviam, nomeadamente o **POSIX** (*Portable Operating System Interface*) e a definição de interface do UNIX System V. Curiosamente, o próprio Torvalds pediu uma cópia do padrão POSIX nos primeiros tempos do projecto. Provavelmente ninguém na AT&T esperava que alguém conseguisse escrever um clone do Unix a partir dessas interfaces, sem usar uma única linha do código original.
+
+Daí a distinção precisa: o Linux não é Unix, é um sistema **semelhante ao Unix** (*Unix-like*). "Unix" é hoje uma marca registada, gerida pelo The Open Group, e um sistema só pode chamar-se oficialmente "Unix" se passar por um processo de certificação dispendioso. O Linux nunca foi certificado dessa forma, e não precisa de o ser: reflecte uma combinação de conformidade com os padrões POSIX, System V e BSD, sem carregar o rótulo formal.
+
+### Do desenvolvimento à actualidade
+
+Hoje, o desenvolvimento do Linux é coordenado pela **Linux Foundation**, uma organização sem fins lucrativos que emprega o próprio Linus Torvalds e cuja lista de patrocinadores é um retrato das maiores empresas de tecnologia do mundo: IBM, Red Hat, SUSE, Oracle, Intel, Google e muitas outras. A sua função é proteger e acelerar o crescimento do Linux, fornecendo proteção legal e padrões de desenvolvimento.
+
+O facto de gigantes tecnológicos, muitos deles concorrentes ferozes entre si, financiarem em conjunto o desenvolvimento de um sistema operativo livre é, talvez, a melhor prova de que o modelo colaborativo que começou nos Bell Labs há mais de meio século não só funcionou, como se tornou parte essencial da infraestrutura tecnológica mundial.
+
+Compreendida esta história, resta perceber como é que este kernel único dá origem à variedade de sistemas Linux que existem, e qual deles é o objecto deste guia. É o tema da secção seguinte, sobre distribuições.
