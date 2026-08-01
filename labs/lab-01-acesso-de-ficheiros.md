@@ -1,4 +1,4 @@
-# Laboratório 3 — Acesso ao Sistema e Estrutura de Ficheiros
+# Laboratório 1 - Acesso ao Sistema e Estrutura de Ficheiros
 
 ## Objectivos
 
@@ -25,11 +25,11 @@ No fim deste laboratório, deverá ser capaz de:
 
 ### Parte A  (Acesso e identidade)
 
-#### Exercício 3.1 
+#### Exercício 1 
 
 Um servidor tem várias consolas virtuais independentes, um recurso útil quando uma sessão fica bloqueada. A partir do ambiente gráfico (ou da consola principal), mude para a segunda consola virtual, inicie sessão com a sua conta de utilizador, execute alguns comandos simples (`whoami`, `pwd`, `date`), termine a sessão, e regresse ao ambiente de partida.
 
-#### Exercício 3.2 
+#### Exercício 2 
 
 Está a trabalhar com a sua conta normal e precisa de executar uma tarefa administrativa: consultar o ficheiro `/etc/shadow`, que só o root pode ler.
 
@@ -38,7 +38,7 @@ Está a trabalhar com a sua conta normal e precisa de executar uma tarefa admini
 3. Agora abra uma sessão interactiva de root com o método correcto (`sudo -i`), confirme com `whoami` que é root, execute a consulta, e regresse à sua conta.
 4. Reflita: porque é que `sudo -i` é preferível a `sudo su` do ponto de vista de auditoria? (A resposta está no Capítulo 3.)
 
-#### Exercício 3.3 
+#### Exercício 3 
 
 Uma nova colega, a Ana, vai juntar-se à equipa. Prepare a conta dela.
 
@@ -48,7 +48,7 @@ Uma nova colega, a Ana, vai juntar-se à equipa. Prepare a conta dela.
 
 ### Parte B  (Navegação)
 
-#### Exercício 3.4 
+#### Exercício 4 
 
 Sem usar o rato nem interface gráfica, apenas com a linha de comandos:
 
@@ -62,13 +62,13 @@ Sem usar o rato nem interface gráfica, apenas com a linha de comandos:
 
 Os exercícios seguintes constroem uma pequena estrutura de directórios. Fazem-se em sequência.
 
-#### Exercício 3.5 
+#### Exercício 5 
 
 1. No seu directório pessoal, crie um directório chamado `projectos`.
 2. Dentro de `projectos`, crie nove ficheiros vazios chamados `casa1`, `casa2`, e assim sucessivamente até `casa9`.
 3. Imaginando que o directório contém muitos outros ficheiros, encontre um único argumento para o `ls` que liste apenas estes nove ficheiros.
 
-#### Exercício 3.6
+#### Exercício 6
 
 Crie a seguinte hierarquia de directórios de uma só vez: `~/projectos/casas/portas/`. Depois, crie os seguintes ficheiros vazios, praticando tanto caminhos absolutos como relativos a partir do seu directório pessoal:
 
@@ -78,27 +78,27 @@ Crie a seguinte hierarquia de directórios de uma só vez: `~/projectos/casas/po
 
 (Note que `exterior/vegetacao/` ainda não existe: terá de a criar.)
 
-#### Exercício 3.7 
+#### Exercício 7 
 
 Copie os ficheiros `casa1` e `casa5` para o directório `~/projectos/casas/`.
 
-#### Exercício 3.8 
+#### Exercício 8 
 
 Copie recursivamente o directório `/usr/share/doc/` (ou um subdirectório à sua escolha, se preferir algo mais pequeno) para `~/projectos/`, mantendo as datas e permissões originais dos ficheiros. Que opção do `cp` preserva esses atributos?
 
-#### Exercício 3.9 
+#### Exercício 9 
 
 Liste recursivamente todo o conteúdo de `~/projectos/`, encaminhando o resultado para o `less`, de modo a poder percorrer a listagem página a página.
 
-#### Exercício 3.10 
+#### Exercício 10 
 
 Remova os ficheiros `casa6`, `casa7` e `casa8` de uma só vez, sem que o sistema peça confirmação para cada um.
 
-#### Exercício 3.11 
+#### Exercício 11 
 
 Mova os ficheiros `casa3` e `casa4` para o directório `~/projectos/casas/portas/`.
 
-#### Exercício 3.12 
+#### Exercício 12 
 
 Remova o directório `~/projectos/casas/portas/` juntamente com tudo o que contém.
 
@@ -106,7 +106,7 @@ Remova o directório `~/projectos/casas/portas/` juntamente com tudo o que cont�
 
 ### Parte D (Wildcards)
 
-#### Exercício 3.13 
+#### Exercício 13 
 
 Ainda dentro de `~/projectos/`, e usando wildcards:
 
@@ -116,7 +116,7 @@ Ainda dentro de `~/projectos/`, e usando wildcards:
 
 ### Parte E (Localizar ficheiros)
 
-#### Exercício 3.14 
+#### Exercício 14 
 
 1. Use o `find` para localizar o ficheiro de configuração `sshd_config` a partir da raiz do sistema.
 2. Use o `find` para encontrar todos os ficheiros terminados em `.conf` dentro de `/etc`. (Atenção à protecção do wildcard.)
@@ -125,7 +125,7 @@ Ainda dentro de `~/projectos/`, e usando wildcards:
 
 ### Parte F (Ligações)
 
-#### Exercício 3.15 
+#### Exercício 15 
 
 1. Crie um ficheiro `~/projectos/original.txt` com algum texto lá dentro.
 2. Crie uma ligação física para ele chamada `~/projectos/ligacao_fisica.txt`.
@@ -135,7 +135,7 @@ Ainda dentro de `~/projectos/`, e usando wildcards:
 
 ### Parte G (Gestão de pacotes)
 
-#### Exercício 3.16 
+#### Exercício 16 
 
 1. Procure nos repositórios um pacote relacionado com a ferramenta `tree` (que mostra directórios em árvore).
 2. Instale-o.
