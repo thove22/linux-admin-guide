@@ -26,7 +26,7 @@ No fim deste laboratório, deverá ser capaz de:
 Os exercícios assumem a seguinte topologia: um **servidor Linux** ligado, através de um switch, a quatro clientes (PC1–PC4). O servidor presta os serviços de rede (DHCP, DNS local, web, logs centralizados) e os clientes consomem-nos. Nas máquinas de que dispõe, o "servidor" é a sua VM CentOS e os "clientes" são a segunda VM (ou o próprio `localhost`).
 
 <figure align="center">
-  <img src="../assets/img/topologia_lab.png" alt="Topologia simulada: servidor Linux, switch e PC1-PC4" width="700">
+  <img src="../assets/img/topology.png" alt="Topologia simulada: servidor Linux, switch e PC1-PC4" width="700">
   <figcaption><b>Topologia do laboratório:</b> o servidor Linux serve os clientes PC1–PC4 através de um switch.</figcaption>
 </figure>
 
