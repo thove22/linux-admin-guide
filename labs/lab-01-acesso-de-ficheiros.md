@@ -50,8 +50,6 @@ Uma nova colega, a Ana, vai juntar-se à equipa. Prepare a conta dela.
 
 #### Exercício 4 
 
-Sem usar o rato nem interface gráfica, apenas com a linha de comandos:
-
 1. Descubra em que directório se encontra.
 2. Navegue até `/etc/systemd` usando um caminho absoluto.
 3. A partir daí, suba um nível usando um caminho relativo.
@@ -60,7 +58,6 @@ Sem usar o rato nem interface gráfica, apenas com a linha de comandos:
 
 ### Parte C  (Criar e manipular ficheiros)
 
-Os exercícios seguintes constroem uma pequena estrutura de directórios. Fazem-se em sequência.
 
 #### Exercício 5 
 

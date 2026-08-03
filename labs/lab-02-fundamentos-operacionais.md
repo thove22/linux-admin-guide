@@ -35,15 +35,11 @@ Antes de confiar num comando, um administrador prudente verifica o que ele realm
 
 #### Exercício 2 
 
-Recebeu a tarefa de "descobrir há quanto tempo o sistema está ligado", mas não se recorda do nome do comando.
-
 1. Use o `apropos` (ou o equivalente `man -k`) para procurar comandos relacionados com `uptime` ou `boot`.
 2. Escolha um candidato e confirme a sua finalidade numa única linha com o `whatis`.
 3. Abra a man page completa desse comando, procure lá dentro pela palavra `load` usando `/`, e depois saia do paginador com `q`.
 
 #### Exercício 3 
-
-Precisa de descobrir qual a opção do `mkdir` que cria automaticamente os directórios-pais em falta.
 
 1. Obtenha o sumário rápido com `mkdir --help` e identifique essa opção.
 2. Confirme a mesma informação na man page (`man mkdir`).
@@ -52,8 +48,6 @@ Precisa de descobrir qual a opção do `mkdir` que cria automaticamente os direc
 ### Parte B  (Aliases e encadeamento)
 
 #### Exercício 4 
-
-Uma tarefa recorrente do seu dia é entrar em `/var/log`, listar os ficheiros por tamanho e regressar ao ponto de partida.
 
 1. Execute essa sequência numa **única linha**, encadeando os três comandos com `;` (`cd /var/log`, `ls -lh`, `cd -`).
 2. Antes de criar um atalho, verifique com o `type` que o nome `verlogs` ainda não está ocupado por outro comando.
@@ -90,7 +84,6 @@ Uma equipa vai partilhar ficheiros através de um grupo comum.
 
 ### Parte D  (Permissões)
 
-Os exercícios seguintes constroem uma pequena área de trabalho. Fazem-se em sequência.
 
 #### Exercício 8 
 
@@ -109,7 +102,6 @@ Sobre o mesmo `relatorio.txt`, usando agora a **notação simbólica**:
 
 #### Exercício 10 
 
-As permissões de execução tornam-se concretas quando tenta correr um script.
 
 1. Crie um ficheiro `~/laboratorio/backup.sh` com uma linha: `echo "backup executado"`.
 2. Tente executá-lo com `./backup.sh`. Observe a mensagem de erro.
@@ -117,7 +109,6 @@ As permissões de execução tornam-se concretas quando tenta correr um script.
 
 #### Exercício 11
 
-As permissões especiais aparecem no dia a dia da administração.
 
 1. Liste `/tmp` com `ls -ld /tmp` e repare no caractere especial no fim das permissões. Que atributo é esse e que problema resolve num directório partilhado por todos?
 2. Crie um directório partilhado `/srv/equipa` (com `sudo`), atribua-lhe o grupo `projecto` e aplique-lhe o bit **setgid**.
@@ -131,22 +122,6 @@ As permissões especiais aparecem no dia a dia da administração.
 2. **Acrescente** ao mesmo ficheiro a listagem de `/usr/sbin`, sem apagar o conteúdo anterior.
 3. Confirme com `wc -l` quantas linhas o ficheiro passou a ter no total.
 
-#### Exercício 13 
-
-Como utilizador normal, procure em `/etc` todos os ficheiros chamados `passwd` (com o `find`). Vai deparar-se com muitas mensagens "Permission denied" misturadas com os resultados úteis.
-
-1. Execute a procura e observe a mistura de resultados e erros no ecrã.
-2. Repita, redireccionando **apenas os erros** (stderr) para `/dev/null`, de forma a ver só os resultados úteis.
-3. Repita mais uma vez, agora guardando os resultados válidos num ficheiro `~/laboratorio/encontrados.txt` e descartando os erros — tudo num único comando.
-
-#### Exercício 14 
-
-Escreva um pequeno ficheiro directamente a partir do teclado:
-
-1. Use `cat > ~/laboratorio/lembrete.txt`, escreva duas ou três linhas, e termine com Ctrl+D.
-2. Acrescente-lhe mais uma linha usando `cat >>` (sem apagar o que já lá estava).
-3. Confirme o conteúdo final.
-
 ### Parte F  (Pipelines e filtros)
 
 #### Exercício 15 
@@ -158,7 +133,6 @@ Quantos programas únicos existem entre `/bin` e `/usr/bin`?
 
 #### Exercício 16 
 
-O `grep` é a ferramenta de filtragem por excelência. Trabalhando sobre o ficheiro `/etc/services`:
 
 1. Liste todas as linhas que contêm `http`, ignorando maiúsculas/minúsculas.
 2. Repita, mas destacando o termo a cor (`--color`).
@@ -168,15 +142,12 @@ O `grep` é a ferramenta de filtragem por excelência. Trabalhando sobre o fiche
 
 #### Exercício 17 
 
-A monitorização de logs em tempo real é uma tarefa diária. Este exercício precisa de **duas sessões** (duas consolas virtuais ou dois terminais).
 
 1. Na primeira sessão, acompanhe em tempo real o log de autenticação com `sudo tail -f /var/log/secure`.
 2. Na segunda sessão, gere alguma actividade de autenticação (por exemplo, execute um `sudo` qualquer, ou faça login numa consola virtual).
 3. Observe as novas linhas a surgir instantaneamente na primeira sessão. Termine a monitorização com Ctrl+C.
 
 #### Exercício 18 
-
-Por vezes queremos guardar o resultado completo de um comando **e**, ao mesmo tempo, ver apenas uma parte filtrada.
 
 Guarde a listagem completa de `/usr/bin` no ficheiro `~/laboratorio/inventario.txt` e, em simultâneo, mostre no ecrã apenas os programas cujo nome contém `zip` — tudo num único comando, usando o `tee`.
 
@@ -201,8 +172,6 @@ Faça uma cópia de `~/laboratorio/relatorio.txt` (ou reutilize o `binarios.txt`
 5. Extraia o `.tar.gz` para um directório novo `~/restauro/` e confirme que a estrutura foi reconstruída correctamente.
 
 #### Exercício 22 
-
-Um colega que usa Windows pediu-lhe os ficheiros num formato que consiga abrir facilmente.
 
 1. Crie um arquivo `~/laboratorio.zip` com todo o conteúdo de `~/laboratorio/` (atenção ao modificador de recursividade `-r`).
 2. Descomprima-o para outro local com o `unzip` e confirme o conteúdo.

@@ -30,16 +30,12 @@ No fim deste laboratório, deverá ser capaz de:
 
 #### Exercício 1 
 
-O primeiro contacto com o `vi` é sempre o mesmo: aprender a entrar, escrever e — sobretudo — sair.
-
 1. Abra um ficheiro novo com `vi ~/servidor_notas.txt`.
 2. Entre em modo de inserção (`i`) e escreva quatro linhas: `hostname`, `ip`, `admin` e `estado` (com valores à sua escolha).
 3. Regresse ao modo de comando com `Esc` e guarde e saia com `:wq`.
 4. Reabra o ficheiro, acrescente uma linha nova por baixo da segunda com o comando `o`, e guarde de novo. Que diferença há entre `i`, `a`, `A` e `o`?
 
 #### Exercício 2 
-
-Um cenário clássico de edição sobre um ficheiro real (sem risco, porque trabalhamos sobre uma cópia).
 
 1. Copie o ficheiro `/etc/services` para `/tmp` (`cp /etc/services /tmp/`).
 2. Abra `/tmp/services` no `vi` e procure o termo `WorldWideWeb` com `/WorldWideWeb`.
@@ -69,8 +65,6 @@ Quando é preciso alterar valores em ficheiros sem os abrir, o `sed` é a ferram
 
 #### Exercício 5 
 
-Uma tarefa diária: ler um ficheiro de configuração sem o "ruído" dos comentários.
-
 1. Usando `sed`, mostre `/etc/services` **sem** as linhas de comentário (as que começam por `#`) e **sem** as linhas em branco, num único comando (`sed -e '/^#/d' -e '/^$/d'`).
 2. Usando `sed -n` com o comando `p`, imprima **apenas** as linhas 10 a 20 desse ficheiro.
 3. Encaminhe o resultado do ponto 1 para o `wc -l` e diga quantas linhas "úteis" o ficheiro tem.
@@ -79,16 +73,12 @@ Uma tarefa diária: ler um ficheiro de configuração sem o "ruído" dos coment�
 
 #### Exercício 6 
 
-Vai criar a conta de um novo colaborador, o João Baxter, de forma completa.
-
 1. Crie o utilizador `jbaxter` com o nome completo "John Baxter", usando `/bin/sh` como shell de login e deixando o UID ser atribuído por defeito. (Lembre-se das opções `-m`, `-s` e `-c`.)
 2. Defina-lhe uma password.
 3. Force a mudança de password no primeiro login.
 4. Confirme a entrada da conta em `/etc/passwd` e identifique os sete campos dessa linha.
 
 #### Exercício 7 
-
-Agora os grupos e a pertença a grupos.
 
 1. Crie um grupo chamado `testing` com o GID `315` (`groupadd -g 315 testing`).
 2. Adicione o `jbaxter` aos grupos `testing` e `wheel`, **sem** o remover dos grupos que já tem (atenção à diferença entre `-aG` e `-G`).
@@ -97,7 +87,6 @@ Agora os grupos e a pertença a grupos.
 
 #### Exercício 8 
 
-O fim do ciclo de vida de uma conta exige cuidado para não deixar ficheiros órfãos.
 
 1. Anote o UID atribuído ao `jbaxter` (`id -u jbaxter`).
 2. Bloqueie a conta com `usermod -L jbaxter` (boa prática antes de remover).
@@ -108,36 +97,20 @@ O fim do ciclo de vida de uma conta exige cuidado para não deixar ficheiros ór
 
 #### Exercício 9 
 
-O directório `/etc/skel` define o conteúdo inicial de cada novo home.
-
 1. Copie o ficheiro `/etc/services` para `/etc/skel/` (com `sudo`).
 2. Crie um novo utilizador `mjones`, com o nome completo "Mary Jones" e directório home em `/home/maryjones` (opção `-d`, mais `-m`).
 3. Confirme que o ficheiro que colocou em `/etc/skel/` apareceu automaticamente em `/home/maryjones/`.
 4. Encontre todos os ficheiros abaixo de `/home` que pertencem ao `mjones` (`find /home -user mjones`). Há algum que não esperava encontrar?
 
-### Parte D  (Delegação de privilégios)
-
-#### Exercício 10 
-
-Delegar acesso administrativo de forma controlada.
-
-1. Adicione o `mjones` ao grupo `wheel` para lhe conceder `sudo` completo (`usermod -aG wheel mjones`).
-2. Com o `visudo`, adicione uma regra que permita a um utilizador à sua escolha **apenas** reiniciar um serviço (por exemplo, `ALL=(root) /usr/bin/systemctl restart sshd`). Porque é que se usa o `visudo` e nunca se edita o `/etc/sudoers` directamente?
-3. Abra uma sessão administrativa prolongada com `sudo -i`, confirme com `whoami` que é root, e termine com `exit`.
-
 ### Parte E  (Sessões e comunicação)
 
 #### Exercício 11 
-
-Saber quem está no sistema é uma competência diária.
 
 1. Veja as sessões activas com o `who` e depois, com mais detalhe de actividade, com o `w`. Interprete a primeira linha do `w` (uptime e *load average*).
 2. Consulte o histórico de logins com o `last`.
 3. Consulte as tentativas de login **falhadas** com `sudo lastb`. Porque é que este comando exige privilégios administrativos e que valor de segurança tem?
 
 #### Exercício 12 
-
-Comunicação directa entre utilizadores (idealmente com **duas sessões** abertas).
 
 1. Envie um aviso a todos os utilizadores activos com `sudo wall "Manutenção às 22h"`.
 2. Numa segunda sessão (outra consola/terminal), com outro utilizador, envie uma mensagem direccionada com o `write`, terminando com Ctrl+D.
@@ -147,15 +120,11 @@ Comunicação directa entre utilizadores (idealmente com **duas sessões** abert
 
 #### Exercício 13 
 
-O `ps` é a fotografia instantânea do sistema.
-
 1. Liste **todos** os processos com o conjunto completo de colunas e encaminhe o resultado para o `less`, para poder percorrê-lo (`ps aux | less`).
 2. Liste todos os processos ordenados pelo **nome do utilizador** que os corre (dica: `ps aux --sort=user`, ou `ps -ef | sort`).
 3. Liste os processos mostrando apenas estas colunas: PID, utilizador, grupo, memória virtual, memória residente e comando (`ps -eo pid,user,group,vsz,rss,comm`).
 
 #### Exercício 14 
-
-O `top` mostra o sistema em tempo real.
 
 1. Lance o `top` e observe o cabeçalho (tarefas, uso de CPU, memória, *load average*).
 2. Alterne a ordenação entre consumo de CPU (`P`) e consumo de memória (`M`).
@@ -164,16 +133,12 @@ O `top` mostra o sistema em tempo real.
 
 #### Exercício 15 
 
-Controlo de jobs e sinais, no terminal. Primeiro crie um processo de longa duração para observar:
-
 1. Lance `sleep 600` e suspenda-o de imediato com Ctrl+Z. Confirme o estado com `jobs`.
 2. Retome-o em segundo plano com `bg %1` e verifique que ficou `Running`.
 3. Descubra o PID (`jobs -l` ou `ps`), envie-lhe o sinal de paragem `STOP` (`kill -STOP <PID>`), confirme que passou a `Stopped`/`T`, e volte a activá-lo com o sinal `CONT` (`kill -CONT <PID>`).
 4. Termine-o de forma ordenada com `kill <PID>` (sinal `TERM`, o padrão).
 
 #### Exercício 16 
-
-Terminar processos pelo nome.
 
 1. Lance três processos em segundo plano: `sleep 500 &` três vezes.
 2. Confirme que existem com `pgrep -a sleep` (ou `ps aux | grep sleep`).
@@ -184,7 +149,6 @@ Terminar processos pelo nome.
 
 #### Exercício 17 
 
-Ajustar a prioridade de escalonamento.
 
 1. Lance um processo com uma prioridade reduzida: `nice -n 5 sleep 600 &`.
 2. Confirme o valor de *niceness* com `ps -o pid,ni,comm -p <PID>` (coluna `NI`).
@@ -195,7 +159,6 @@ Ajustar a prioridade de escalonamento.
 
 #### Exercício 18 
 
-Automatizar tarefas recorrentes com o `cron`.
 
 1. Edite o seu crontab com `crontab -e` e agende um script (ou comando) para correr **todos os dias às 2:30 da manhã**, descartando a saída (`> /dev/null 2>&1`).
 2. Adicione uma segunda linha que registe o espaço em disco **de hora em hora** num ficheiro de log (`0 * * * * df -h >> ~/disk_usage.log`).
@@ -203,7 +166,6 @@ Automatizar tarefas recorrentes com o `cron`.
 
 #### Exercício 19 
 
-Agendar uma tarefa **única** com o `at`.
 
 1. Agende um comando para correr daqui a 5 minutos (`echo "tarefa concluida" > ~/at_resultado.txt` via `at now + 5 minutes`).
 2. Liste as tarefas pendentes com `atq`.
@@ -212,8 +174,6 @@ Agendar uma tarefa **única** com o `at`.
 ### Parte H  (Observabilidade do sistema)
 
 #### Exercício 20 
-
-Ler a "memória do sistema" e a sua arquitectura.
 
 1. Com o `journalctl`, veja os logs do serviço SSH (`journalctl -u sshd`), depois apenas as mensagens de nível de erro ou mais urgente (`-p err`) e, por fim, as mensagens desde as 06:00 de hoje (`--since`).
 2. Acompanhe os logs em **tempo real** com `journalctl -f` (termine com Ctrl+C).
