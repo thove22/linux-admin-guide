@@ -291,6 +291,158 @@ Se o directório contiver ficheiros ou subdirectórios, o `rmdir` falha. Esta re
  
 > **O `rm -r` é um dos poucos comandos capazes de causar danos graves e irreversíveis**, sobretudo quando executado com privilégios de superutilizador. Não existe lixeira nem forma de desfazer. Deve-se verificar sempre o comando antes de o executar, e evitar em absoluto combinar o `-r` com wildcards como o asterisco (`*`), uma combinação que pode apagar muito mais do que se pretendia num instante.
 
+## Criar e Manipular Ficheiros
+
+Dominada a navegação, o passo seguinte é agir sobre os ficheiros: criá-los, listá-los, copiá-los, movê-los e removê-los. Este conjunto de comandos é o vocabulário essencial do trabalho diário na linha de comandos, e todos partilham uma característica da tradição Unix que convém interiorizar desde já: quando têm sucesso, operam em silêncio. A ausência de mensagem não é falta de resposta, é a confirmação de que tudo correu como esperado.
+
+### ls: listar conteúdos
+
+O comando `ls` (*list*) mostra o conteúdo de um directório. Sem argumentos, lista o directório actual; com um caminho, lista o directório indicado.
+
+```bash
+    $ ls
+    documentos  projectos  notas.txt
+
+    $ ls /etc
+    fstab  hostname  passwd  ssh  systemd  ...
+```
+
+O comportamento do `ls` é modificado por opções, das quais três são de uso constante:
+
+```bash
+    # Mostrar também os ficheiros ocultos (nomes começados por ponto)
+    $ ls -a
+
+    # Formato longo: um ficheiro por linha, com metadados detalhados
+    $ ls -l
+
+    # Combinar opções: formato longo, incluindo ocultos, tamanhos legíveis
+    $ ls -lah
+```
+
+A opção `-a` (*all*) revela os ficheiros ocultos. Em Linux, qualquer ficheiro cujo nome comece por um ponto (`.bashrc`, `.ssh`) é considerado oculto e não aparece numa listagem normal. Não se trata de segurança, mas de arrumação: são tipicamente ficheiros de configuração que não interessa ver no dia-a-dia.
+
+A opção `-l` (*long*) apresenta o formato longo, com uma linha por ficheiro contendo o tipo e as permissões, o dono, o grupo, o tamanho e a data de modificação:
+
+```bash
+    $ ls -l
+    -rw-r--r--. 1 estudante estudante  220 Ago 31 14:52 notas.txt
+    drwxr-xr-x. 2 estudante estudante 4096 Ago 31 14:50 projectos
+```
+
+O primeiro caractere de cada linha indica a tipologia do ficheiro (`-` para regular, `d` para directório, `l` para link simbólico, e assim por diante), como visto na secção sobre tipos de ficheiros. A leitura detalhada de cada campo desta saída, em particular a string de permissões, é aprofundada no Capítulo 4, no contexto do modelo de segurança.
+
+A opção `-h` (*human-readable*) exibe os tamanhos numa forma legível (`4,0K`, `2,3M`, `1,1G`) em vez de bytes em bruto, e usa-se sempre em conjunto com o `-l`.
+
+### touch: criar ficheiros vazios
+
+O comando `touch` cria um ou mais ficheiros vazios. É a forma mais rápida de gerar ficheiros para depois preencher, ou de reservar nomes.
+
+```bash
+    # Criar um ficheiro vazio
+    $ touch relatorio.txt
+
+    # Criar vários ficheiros de uma vez
+    $ touch nota1.txt nota2.txt nota3.txt
+```
+
+Se o ficheiro indicado já existir, o `touch` não apaga nem altera o seu conteúdo: limita-se a actualizar a sua data de modificação para o instante actual. Esta é, na verdade, a sua função original (o nome vem de "tocar" no ficheiro para actualizar a data), e é útil em cenários de automação onde a data de um ficheiro serve de referência.
+
+> 💡 O `touch` cria ficheiros, mas nunca directórios, e não cria os directórios que contêm o ficheiro. Tentar `touch a/b/c.txt` sem que a pasta `a/b/` exista falha com `No such file or directory`. Para criar a estrutura de directórios, usa-se primeiro o `mkdir -p`, como visto na secção anterior.
+
+### cp: copiar ficheiros e directórios
+
+O comando `cp` (*copy*) duplica ficheiros. A sua forma básica recebe uma origem e um destino:
+
+```bash
+    # Copiar um ficheiro para outro nome
+    $ cp relatorio.txt relatorio_backup.txt
+
+    # Copiar um ficheiro para dentro de um directório
+    $ cp relatorio.txt documentos/
+```
+
+Quando o último argumento é um directório, o `cp` aceita várias origens e copia-as todas para lá dentro:
+
+```bash
+    $ cp nota1.txt nota2.txt nota3.txt documentos/
+```
+
+Ao contrário do que acontece com um único ficheiro, copiar um **directório** exige a opção `-r` (*recursive*), que copia o directório e todo o seu conteúdo, a qualquer profundidade:
+
+```bash
+    # Sem -r, o cp recusa-se a copiar um directório
+    $ cp -r projectos/ projectos_copia/
+```
+
+Duas outras opções são importantes ao copiar. A opção `-p` (*preserve*) mantém os atributos originais do ficheiro (permissões, dono, grupo e datas); sem ela, a cópia fica com a data actual e as permissões ajustadas pela configuração do sistema. A opção `-a` (*archive*) combina `-r`, `-p` e a preservação de links simbólicos, sendo a forma preferida para duplicar árvores de ficheiros com fidelidade:
+
+```bash
+    # Copiar preservando datas e permissões
+    $ cp -p configuracao.conf configuracao.conf.bak
+
+    # Copiar uma árvore inteira de forma fiel
+    $ cp -a /etc/skel/ /tmp/modelo/
+```
+
+Uma característica essencial do `cp` é que **os originais permanecem no sítio**: o `cp` duplica, nunca move. Para mover um ficheiro, usa-se o `mv`.
+
+### mv: mover e renomear
+
+O comando `mv` (*move*) desloca ficheiros de um sítio para outro. Ao contrário do `cp`, não deixa cópia na origem: o ficheiro deixa de existir no ponto de partida.
+
+```bash
+    # Mover um ficheiro para um directório
+    $ mv relatorio.txt documentos/
+
+    # Mover vários ficheiros de uma vez para um directório
+    $ mv nota1.txt nota2.txt documentos/
+```
+
+O `mv` tem uma segunda função, que à primeira vista pode parecer distinta mas é, para o Unix, a mesma operação: **renomear**. Mover um ficheiro para o mesmo directório com outro nome é, na prática, mudar-lhe o nome:
+
+```bash
+    # Renomear um ficheiro
+    $ mv relatorio.txt relatorio_final.txt
+
+    # Renomear um directório
+    $ mv projectos/ arquivo/
+```
+
+Não existe um comando separado para renomear em Linux, porque o `mv` já cumpre esse papel: mover e renomear são, no fundo, alterar a entrada de directório que aponta para o ficheiro.
+
+>  Tanto o `cp` como o `mv` sobrescrevem silenciosamente o ficheiro de destino se este já existir, sem pedir confirmação. Um `mv importante.txt documentos/` que aterre num `documentos/importante.txt` já existente substitui-o sem aviso. A opção `-i` (*interactive*) força um pedido de confirmação antes de sobrescrever, e é uma salvaguarda útil: `cp -i` e `mv -i`.
+
+### rm: remover ficheiros e directórios
+
+O comando `rm` (*remove*) apaga ficheiros. Na sua forma mais simples, recebe um ou mais nomes:
+
+```bash
+    # Remover um ficheiro
+    $ rm rascunho.txt
+
+    # Remover vários ficheiros
+    $ rm nota1.txt nota2.txt nota3.txt
+```
+
+Tal como o `rmdir` visto anteriormente só remove directórios vazios, o `rm` na sua forma básica só remove ficheiros. Para remover um directório e todo o seu conteúdo, usa-se a opção `-r` (*recursive*):
+
+```bash
+    $ rm -r projectos/
+```
+
+Duas outras opções ajustam o comportamento. A opção `-f` (*force*) suprime pedidos de confirmação e não devolve erro se o ficheiro não existir, útil em scripts mas a usar com consciência. A opção `-i` (*interactive*) faz o oposto: pede confirmação antes de apagar cada ficheiro, uma rede de segurança valiosa quando se apaga em lote.
+
+```bash
+    # Remover sem confirmação
+    $ rm -f ficheiro_temporario.log
+
+    # Remover pedindo confirmação para cada ficheiro
+    $ rm -i *.txt
+```
+
+> **O `rm` não tem lixeira nem forma de desfazer.** Ao contrário de uma interface gráfica, onde os ficheiros apagados vão para uma reciclagem, o `rm` elimina definitivamente. A combinação `rm -rf`, que apaga recursivamente e sem qualquer confirmação, é a mais perigosa do sistema: um erro no caminho, sobretudo com privilégios de root, pode destruir grandes porções da máquina num instante. A regra de ouro é ler o comando duas vezes antes de premir Enter, desconfiar sempre que o alvo estiver próximo da raiz (`/`), e nunca combinar o `-rf` com wildcards sem antes verificar o que será apagado, usando `ls` com o mesmo padrão.
+
 ## Wildcards (Globbing)
  
 Ao trabalhar na linha de comandos, é frequente querer aplicar uma operação a um conjunto de ficheiros em vez de a um único. Listar todos os ficheiros de texto de um directório, apagar todos os ficheiros de registo antigos, ou copiar todas as imagens de uma pasta são tarefas em que especificar cada ficheiro individualmente seria impraticável. Os **wildcards** (ou *globbing*) resolvem este problema, permitindo descrever padrões que a shell expande para os nomes de ficheiros correspondentes.
