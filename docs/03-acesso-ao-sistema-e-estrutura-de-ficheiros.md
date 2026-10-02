@@ -1,7 +1,7 @@
 # Acesso ao Sistema e Estrutura de Ficheiros
 
 
-## Controlo de Acesso e Arquitetura de Privilégios
+## 1. Controlo de Acesso e Arquitetura de Privilégios
 
 A segurança e a integridade de um sistema operativo Linux assentam na premissa de que nem todos os utilizadores possuem o mesmo nível de autoridade. Num ambiente de servidor, o controlo de acesso atua como o mecanismo central que avalia cada ação (como editar um ficheiro, reiniciar um serviço ou alterar configurações de rede) e emite um veredito sobre a sua permissibilidade. Compreender a hierarquia destas permissões é o primeiro passo crítico na administração de sistemas.
 
@@ -57,7 +57,7 @@ Sendo o acesso validado mediante credenciais, a gestão destas é uma operação
 Uma senha administrativa robusta não deve ser baseada apenas na complexidade visual, mas principalmente na sua extensão (frequentemente implementada através de "passphrases", frases-senha longas), minimizando a suscetibilidade a ataques de força bruta no ambiente de servidor.
 
 
-## O Sistema de Ficheiros: Estrutura e Organização
+## 2. O Sistema de Ficheiros: Estrutura e Organização
 
 A utilidade de um sistema operativo mede-se, em grande parte, pela eficiência com que gere e disponibiliza o acesso aos dados e aos recursos físicos da máquina. Em sistemas Linux e UNIX, o sistema de ficheiros transcende a mera função de armazenamento em disco; ele atua como o mecanismo central de organização. Compreende quatro componentes lógicos fundamentais: um espaço de nomes (namespace) hierárquico, uma interface de programação (API) para manipulação de objetos, um modelo de segurança e, por fim, a implementação de software que interliga este modelo abstrato ao hardware subjacente.
 
@@ -212,7 +212,7 @@ A distinção prática resume-se ao seguinte: a ligação física é um segundo 
 | Comando de criação | `ln` | `ln -s` |
 
 
-## Navegação no Sistema de Ficheiros
+## 3. Navegação no Sistema de Ficheiros
  
 Compreendida a estrutura estática da árvore de directórios, resta dominar o movimento através dela. A interacção com o sistema de ficheiros a partir da linha de comandos assenta num pequeno conjunto de comandos fundamentais e na noção de caminho.
  
@@ -291,7 +291,7 @@ Se o directório contiver ficheiros ou subdirectórios, o `rmdir` falha. Esta re
  
 > **O `rm -r` é um dos poucos comandos capazes de causar danos graves e irreversíveis**, sobretudo quando executado com privilégios de superutilizador. Não existe lixeira nem forma de desfazer. Deve-se verificar sempre o comando antes de o executar, e evitar em absoluto combinar o `-r` com wildcards como o asterisco (`*`), uma combinação que pode apagar muito mais do que se pretendia num instante.
 
-## Criar e Manipular Ficheiros
+## 4. Criar e Manipular Ficheiros
 
 Dominada a navegação, o passo seguinte é agir sobre os ficheiros: criá-los, listá-los, copiá-los, movê-los e removê-los. Este conjunto de comandos é o vocabulário essencial do trabalho diário na linha de comandos, e todos partilham uma característica da tradição Unix que convém interiorizar desde já: quando têm sucesso, operam em silêncio. A ausência de mensagem não é falta de resposta, é a confirmação de que tudo correu como esperado.
 
@@ -443,7 +443,7 @@ Duas outras opções ajustam o comportamento. A opção `-f` (*force*) suprime p
 
 > **O `rm` não tem lixeira nem forma de desfazer.** Ao contrário de uma interface gráfica, onde os ficheiros apagados vão para uma reciclagem, o `rm` elimina definitivamente. A combinação `rm -rf`, que apaga recursivamente e sem qualquer confirmação, é a mais perigosa do sistema: um erro no caminho, sobretudo com privilégios de root, pode destruir grandes porções da máquina num instante. A regra de ouro é ler o comando duas vezes antes de premir Enter, desconfiar sempre que o alvo estiver próximo da raiz (`/`), e nunca combinar o `-rf` com wildcards sem antes verificar o que será apagado, usando `ls` com o mesmo padrão.
 
-## Wildcards (Globbing)
+## 5. Wildcards (Globbing)
  
 Ao trabalhar na linha de comandos, é frequente querer aplicar uma operação a um conjunto de ficheiros em vez de a um único. Listar todos os ficheiros de texto de um directório, apagar todos os ficheiros de registo antigos, ou copiar todas as imagens de uma pasta são tarefas em que especificar cada ficheiro individualmente seria impraticável. Os **wildcards** (ou *globbing*) resolvem este problema, permitindo descrever padrões que a shell expande para os nomes de ficheiros correspondentes.
  
@@ -507,7 +507,7 @@ Esta técnica é essencial para comandos como o `find`, que fazem a sua própria
  
 > **Cuidado extremo ao combinar wildcards com comandos destrutivos.** Como a shell expande o padrão antes de o comando correr, um `rm *` apaga todos os ficheiros do directório num instante, sem confirmação. Um erro de digitação, como um espaço acidental em `rm * .txt` em vez de `rm *.txt`, transforma a intenção de apagar ficheiros `.txt` na eliminação de tudo. Verifique sempre o padrão, e em caso de dúvida use primeiro `ls` com o mesmo padrão para ver exactamente o que será afectado.
 
-## Localizar Ficheiros
+## 6. Localizar Ficheiros
  
 Saber que um ficheiro existe algures na árvore de directórios mas não saber onde é uma frustração comum. O Linux oferece duas ferramentas para o encontrar, com abordagens fundamentalmente diferentes: o `find`, que procura em tempo real, e o `locate`, que consulta um índice previamente construído.
  
@@ -594,7 +594,7 @@ O `find` é indispensável quando o ficheiro é recente e pode ainda não estar 
 | Critérios de procura | Nome, tamanho, data, dono, tipo, permissões | Apenas nome/caminho |
 | Disponibilidade | Sempre presente | Requer instalação e índice actualizado |
 
-## Gestão de Pacotes: rpm, yum e dnf
+## 7. Gestão de Pacotes: rpm, yum e dnf
 
 Instalar software é uma das primeiras necessidades ao administrar um sistema. Num sistema Linux, isto raramente se faz descarregando executáveis avulsos de sítios na internet, como é hábito noutros sistemas operativos. Em vez disso, o software distribui-se em **pacotes**, geridos por um sistema centralizado que resolve dependências, verifica autenticidade e mantém um registo rigoroso de tudo o que está instalado.
 

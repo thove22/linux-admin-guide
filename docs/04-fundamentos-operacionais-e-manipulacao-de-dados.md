@@ -2,7 +2,7 @@
 
 O terminal do Linux não é um mero recetor de palavras isoladas, mas sim um ambiente estruturado que avalia e processa instruções antes da sua execução. Para operar e manipular dados com precisão, o primeiro passo investigativo é compreender a natureza das instruções fornecidas aosistema. Um comando aparente pode, na realidade, pertencer a diferentes categorias estruturais.
 
-## A Natureza Estrutural dos Comandos
+## 1. A Natureza Estrutural dos Comandos
 
 Quando uma palavra é introduzida no terminal, o interpretador (o shell, como o Bash) analisa-a e tenta enquadrá-la numa de quatro tipologiasfundamentais:
 
@@ -14,7 +14,7 @@ Quando uma palavra é introduzida no terminal, o interpretador (o shell, como o 
 
 - **Aliases (Atalhos)**: São substituições textuais definidas pelo utilizador ou pelo sistema. Atuam como "macros", onde uma palavra simples é substituída por uma cadeia de comandos mais complexa antes da execução real.
 
-## Anatomia e Sintaxe Básica de uma Instrução
+## 2. Anatomia e Sintaxe Básica de uma Instrução
 
 Antes de analisar a origem ou a categoria de um comando, é necessário compreender a sua arquitetura sintática. A execução de qualquer instrução no ecossistema Linux segue uma lógica estrutural padronizada, dividida em três componentes fundamentais:
 
@@ -53,7 +53,7 @@ Nesta linha de comandos, identificam-se os seguintes componentes:
 - projetos/aula4: O argumento que determina o caminho e o nome da árvore de diretórios a ser gerada pelo sistema de ficheiros.
 
 
-## Avaliação e Localização Prática (type e which)
+## 3. Avaliação e Localização Prática (type e which)
 
 Dado que diferentes tipos de comandos respondem de formas distintas, é necessário analisar como o sistema os interpreta antes de os invocar.
 
@@ -90,7 +90,7 @@ Enquanto o type identifica a categoria, o which foca-se estritamente na localiza
 ```
 Importa notar que which funciona principalmente com programas executáveis. Em muitos casos, não mostra builtins nem alguns aliases, Isto ocorre logicamente porque o cd não existe como um ficheiro independente nas pastas do sistema; ele reside na memória do próprio shell em execução.
 
-## O Ecossistema de Documentação Interna
+## 4. O Ecossistema de Documentação Interna
 
 A arquitetura UNIX/Linux foi desenhada para ser auto-documentada. A compreensão de um comando faz-se consultando as suas fontes de ajuda, que variam consoante a tipologia do comando.
 
@@ -212,7 +212,7 @@ O whatis executa uma consulta cirúrgica e de alta velocidade na base de dados i
 ```
 O retorno devolve uma resposta direta em linha única, permitindo ao utilizador validar o propósito da ferramenta sem interromper o fluxo de trabalho no terminal com a abertura de um paginador de texto completo.
 
-## Extensibilidade do Ambiente: Criação de Comandos via alias
+## 5. Extensibilidade do Ambiente: Criação de Comandos via alias
 
 A introdução ao comando alias representa a primeira experiência prática de automação e programação dentro do interpretador de comandos. Esta ferramenta permite expandir o vocabulário do shell, criando instruções personalizadas ou simplificando sequências operacionais complexas.
 
@@ -273,7 +273,7 @@ Num contexto de administração do sistema, é comum aceder ao diretório de log
 Neste exemplo, o alias entra no diretório dos logs, mostra os ficheiros com detalhes, abre o ficheiro syslog para análise e depois regressa ao diretório anterior. Este tipo de alias é útil porque junta numa única instrução várias operações típicas de suporte e manutenção do sistema.
 
 
-## Identidade, Posse e Segurança no Sistema de Ficheiros
+## 6. Identidade, Posse e Segurança no Sistema de Ficheiros
 
 Os sistemas operativos baseados na tradição UNIX diferenciam-se historicamente de outras arquiteturas pioneiras, como o MS-DOS, por terem sido concebidos nativamente não apenas como sistemas multitarefa, mas essencialmente como ambientes multilizador (multiuser). Esta característica estrutural implica que múltiplos utilizadores podem interagir com o sistema e executar processos em simultâneo na mesma máquina. Mesmo num cenário computacional contemporâneo onde existe apenas um monitor e um teclado físicos, o acesso concorrente realiza-se através de conexões de rede encriptadas via SSH (Secure Shell) ou pela execução remota de aplicações gráficas.
 
@@ -533,7 +533,7 @@ Por exemplo, para alterar o grupo de um ficheiro para developers, pode utilizar-
 ```
 Contudo, dada a evolução do chown  que agora agrupa ambas as funções numa única ferramenta através da sintaxe com dois-pontos (:), a utilização do chgrp tornou-se largamente redundante nas operações diárias de administração de sistemas.
 
-## Manipulação de Dados e Redirecionamento de Fluxos (I/O)
+## 7. Manipulação de Dados e Redirecionamento de Fluxos (I/O)
 
 Na arquitetura de sistemas baseados em UNIX, vigora o princípio fundamental de que "tudo é um ficheiro". Esta abstração aplica-se não apenas aos dados armazenados no disco, mas também aos dispositivos de hardware e aos processos em execução.
 
@@ -705,7 +705,7 @@ Isto é extremamente útil para guardar o estado completo dos dados antes de apl
 Neste cenário, a listagem completa dos binários é preservada no ficheiro **inventario_completo.txt**, enquanto o terminal exibe apenas os resultados finais filtrados pelo comando **grep**.
 
 
-## Gestão de Espaço, Arquivamento e Cópias de Segurança (Backups)
+## 8. Gestão de Espaço, Arquivamento e Cópias de Segurança (Backups)
 
 Uma das responsabilidades primárias na administração de sistemas UNIX, é a garantia da integridade e segurança dos dados. Este objetivo é frequentemente alcançado através da execução metódica de cópias de segurança (backups). Contudo, a movimentação de vastos volumes de dados entre dispositivos ou redes exige uma gestão rigorosa do espaço de armazenamento e da largura de banda, o que nos introduz aos conceitos de compressão e arquivamento de ficheiros.
 

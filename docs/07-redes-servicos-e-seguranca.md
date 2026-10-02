@@ -682,7 +682,7 @@ O `rsync` é a base de muitas soluções de backup em Linux. Uma tarefa cron que
 
 ---
 
-### 2.6 Análise de Tráfego com tcpdump
+### 2.5 Análise de Tráfego com tcpdump
 
 O `tcpdump` é uma ferramenta de captura e análise de pacotes de rede em tempo real. Requer privilégios de root porque precisa de aceder à interface de rede em modo promíscuo, lendo todos os pacotes que passam, não apenas os destinados à máquina local. É a ferramenta de diagnóstico de rede mais poderosa disponível na linha de comandos.
 
@@ -747,7 +747,7 @@ O conteúdo deve ser ilegível. Se aparecer texto em claro numa sessão que deve
 > **O `tcpdump` em redes partilhadas pode capturar dados de outros utilizadores.** Usar `tcpdump` para interceptar tráfego que não é seu, mesmo numa rede que administra, pode ter implicações legais e de privacidade. Use-o estritamente para diagnóstico de problemas nos sistemas que administra.
 
 
-## 4. Serviços de Rede Essenciais
+## 3. Serviços de Rede Essenciais
 
 Um servidor Linux raramente existe isolado. Faz parte de uma infraestrutura onde vários serviços comunicam entre si e servem clientes. E a maioria desses serviços depende de infraestrutura invisível: resolução de nomes para encontrar outros servidores, distribuição automática de endereços para que as máquinas entrem na rede sem configuração manual, sincronização de tempo para que os logs e certificados façam sentido, e um sistema centralizado de recolha de logs para saber o que se passa em toda a rede.
 
@@ -755,7 +755,7 @@ Estes serviços têm uma característica comum: quando funcionam, ninguém repar
 
 ---
 
-### 4.1 DNS: O Sistema de Nomes de Domínio
+### 3.1 DNS: O Sistema de Nomes de Domínio
 
 #### O problema que o DNS resolve
 
@@ -893,7 +893,7 @@ A palavra `files` refere-se a `/etc/hosts`, e `dns` ao sistema DNS. A ordem impo
 
 ---
 
-### 4.2 Ferramentas de Consulta DNS
+### 3.2 Ferramentas de Consulta DNS
 
 Quando a resolução de nomes falha, é preciso consultar o DNS directamente para descobrir onde está o problema. Existem três ferramentas principais, com propósitos ligeiramente diferentes.
 
@@ -1029,7 +1029,7 @@ $ grep empresa.pt /etc/hosts
 
 ---
 
-### 4.3 DHCP: Configuração Automática de Rede
+### 3.3 DHCP: Configuração Automática de Rede
 
 #### O que o DHCP faz
 
@@ -1199,7 +1199,7 @@ $ sudo nmcli connection modify "System enp0s31f6" ipv4.method auto
 
 ---
 
-### 4.4 NTP e chronyd: Sincronização de Tempo
+### 3.4 NTP e chronyd: Sincronização de Tempo
 
 #### Por que o tempo importa
 
@@ -1360,7 +1360,7 @@ $ sudo chronyc clients
 
 ---
 
-### 4.5 Servidor Web Apache
+### 3.5 Servidor Web Apache
 
 #### Fundamentos: como funciona a web
 
@@ -1670,7 +1670,7 @@ Por isso, em vez de optimizar para um único servidor, a estratégia correcta é
 
 ---
 
-### 4.6 Email: Arquitectura e Configuração
+### 3.6 Email: Arquitectura e Configuração
 
 #### O sistema de email por dentro
 
@@ -1974,7 +1974,7 @@ Configurar SPF e DKIM correctamente deixou de ser opcional: sem eles, os grandes
 
 ---
 
-### 4.7 Centralização de Logs com rsyslog
+### 3.7 Centralização de Logs com rsyslog
 
 #### Por que centralizar
 
@@ -2091,9 +2091,9 @@ Esta configuração mantém 90 dias de histórico comprimido, o que é um ponto 
 
 >  **rsyslog e journald em conjunto.** Em CentOS Stream, o `journald` é o ponto central de recolha local, e o `rsyslog` pode ser configurado para ler directamente do journal através do módulo `imjournal` e reencaminhar para o servidor central. Esta combinação aproveita a recolha estruturada do journald com a capacidade de transporte remoto do rsyslog, e é a arquitectura recomendada em sistemas RHEL modernos.
 
-## 5. Segurança do Sistema
+## 4. Segurança do Sistema
 
-### 5.1 Princípios de Hardening
+### 4.1 Princípios de Hardening
 
 #### O sistema é seguro?
 
@@ -2251,7 +2251,7 @@ Alguns princípios que resumem a postura correcta:
 
 ---
 
-### 5.2 firewalld e SELinux: As Camadas de Segurança do CentOS
+### 4.2 firewalld e SELinux: As Camadas de Segurança do CentOS
 
 #### O conceito de firewall
 
@@ -2526,7 +2526,7 @@ $ sudo ausearch -m AVC -ts recent | audit2why
 
 ---
 
-### 5.3 OpenLDAP: Autenticação Centralizada
+### 4.3 OpenLDAP: Autenticação Centralizada
 
 #### O problema das contas dispersas
 
@@ -2738,7 +2738,7 @@ $ su - carlos
 
 ---
 
-### 5.4 Auditoria e Verificação de Segurança
+### 4.4 Auditoria e Verificação de Segurança
 
 Configurar defesas é metade do trabalho. A outra metade é verificar continuamente que continuam no lugar e que ninguém as contornou.
 
